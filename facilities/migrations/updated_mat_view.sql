@@ -21,7 +21,6 @@ facilities_facilitystatus.name as operation_status_name, facilities_facilitystat
 facilities_facilitystatus.is_public_visible as is_public_visible,
 array(select distinct service_id from facilities_facilityservice where facilities_facilityservice.facility_id=facilities_facility.id) as services,
 array(select distinct category_id from facilities_facilityservice inner join facilities_service on facilities_service.id=facilities_facilityservice.service_id where facilities_facilityservice.facility_id=facilities_facility.id) as categories
-
 FROM facilities_facility
 LEFT JOIN facilities_kephlevel ON facilities_kephlevel.id = facilities_facility.keph_level_id
 LEFT JOIN facilities_owner ON facilities_owner.id = facilities_facility.owner_id

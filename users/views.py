@@ -46,7 +46,7 @@ class GroupListView(generics.ListCreateAPIView):
         if user.county:
             group_ids = [
                 grp.id for grp in ProxyGroup.objects.all()
-                if not grp.is_national or grp.is_county_level
+                if  grp.is_county_level
             ]
             return ProxyGroup.objects.filter(id__in=group_ids)
         elif user.sub_county or user.constituency:
@@ -108,7 +108,7 @@ class UserList(generics.ListCreateAPIView):
             return self.queryset.filter(
                 id__in=area_users).exclude(id=self.request.user.id)
         elif user.is_national and not user.is_superuser:
-            return MflUser.objects.all()
+            return self.queryset.exclude(is_national=True)
 
         elif user.constituency or user.sub_county:
             all_users = MflUser.objects.all()
@@ -127,7 +127,7 @@ class UserList(generics.ListCreateAPIView):
                 id__in=users_to_see, created_by_id=self.request.user.id
             ).exclude(id=self.request.user.id)
         elif user.is_superuser:
-            return self.queryset.all().exclude(id=self.request.user.id)
+            return self.queryset.all()
 
         else:
             # The user is not allowed to see the users

@@ -108,18 +108,31 @@ class DashBoard(QuerysetFilterMixin, APIView):
         return top_10_wards_summary
 
     def get_facility_type_summary(self):
-        facility_types = FacilityType.objects.all()
+        facility_type_parents_names = []
+        for f_type in FacilityType.objects.all():
+            if f_type.sub_division:
+                facility_type_parents_names.append(f_type.sub_division)
+
+        facility_types = FacilityType.objects.filter(
+            sub_division__in=facility_type_parents_names)
+
         facility_type_summary = []
+        summaries = {}
+        for parent in facility_type_parents_names:
+            summaries[parent] = 0
+
         for facility_type in facility_types:
-                facility_type_summary.append(
-                    {
-                        "name": str(facility_type.name),
-                        "count": self.get_queryset().filter(
-                            facility_type=facility_type).count()
-                    })
+            summaries[facility_type.sub_division] = summaries.get(
+                facility_type.sub_division) + self.get_queryset().filter(
+                        facility_type=facility_type).count()
+
+        facility_type_summary =  [
+            {"name": key, "count": value } for key, value in summaries.items()
+        ]
+
         facility_type_summary_sorted = sorted(
             facility_type_summary,
-            key=lambda x: x, reverse=True)[0:5]
+            key=lambda x: x, reverse=True)
 
         return facility_type_summary_sorted
 
@@ -248,9 +261,9 @@ class DashBoard(QuerysetFilterMixin, APIView):
             "county_summary": self.get_facility_county_summary()
             if user.is_national else [],
             "constituencies_summary": self.get_facility_constituency_summary()
-            if user.county else [],
+            if user.county and not user.sub_county else [],
             "wards_summary": self.get_facility_ward_summary()
-            if user.constituency else [],
+            if user.sub_county else [],
             "owners_summary": self.get_facility_owner_summary(),
             "types_summary": self.get_facility_type_summary(),
             "status_summary": self.get_facility_status_summary(),
@@ -266,6 +279,7 @@ class DashBoard(QuerysetFilterMixin, APIView):
                 facility__in=self.get_queryset()).count()
 
         }
+
         fields = self.request.query_params.get("fields", None)
         if fields:
             required = fields.split(",")
