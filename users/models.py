@@ -104,8 +104,9 @@ class MflUserManager(BaseUserManager):
                           is_staff=is_staff, is_active=True,
                           is_superuser=False, date_joined=now, **extra_fields)
         user.save(using=self._db)
-        send_email_on_signup(
-            user.id, email, first_name, employee_number, password)
+        # Skip sending email for testing purposes
+        # send_email_on_signup(
+        #     user.id, email, first_name, employee_number, password)
         return user
 
     def create_superuser(self, email, first_name, employee_number,
