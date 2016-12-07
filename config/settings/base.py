@@ -22,7 +22,7 @@ env = environ.Env(
     STORAGE_BACKEND=(str, ''),
     ADMINS=(str, "admin:admin@example.com,"),
     SERVER_EMAIL=(str, "root@localhost"),
-    ALLOWED_HOSTS=(str, "")
+    ALLOWED_HOSTS=(str, "localhost")
 
 
 )
