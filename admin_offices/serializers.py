@@ -53,7 +53,7 @@ class AdminOfficeSerializer(
     class Meta:
         model = AdminOffice
         fields = [
-            "id", "name", "county_name", "county", "sub_county",
+            "id", "code", "name", "county_name", "county", "sub_county",
             "sub_county_name", "sub_county_name", "sub_county",
             "phone_number", "email", "is_national", "contacts"
         ]
