@@ -182,8 +182,8 @@ class FacilityCoordinates(CoordinatesValidatorMixin, GISAbstractBase):
             ]
         }
     def validate_coordinates_decimal_places_at_least_six(self):
-        if (len(str(self.coordinates[0])) < 8 or
-                len(str(self.coordinates[1])) < 8):
+        if (len(str(self.coordinates[0])) < 7 or
+                len(str(self.coordinates[1])) < 7):
             raise ValidationError({
                 "coordinates":
                     ["Please provide at-least 6 decimal places number. "]
