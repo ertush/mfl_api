@@ -669,7 +669,7 @@ class Facility(SequenceMixin, AbstractBase):
     Health Centers, Dispensaries, Hospitals etc.
     """
     name = models.CharField(
-        max_length=100,
+        max_length=100, unique=True,
         help_text='This is the unique name of the facility')
     official_name = models.CharField(
         max_length=150, null=True, blank=True,
@@ -811,6 +811,9 @@ class Facility(SequenceMixin, AbstractBase):
         RegulationStatus, null=True, blank=True,
         on_delete=models.PROTECT,
         help_text='The regulatory status of the hospital')
+
+    # class Meta:
+    #     unique_together = ('official_name', 'ward')
 
     def update_facility_regulation_status(self):
         self.regulated = True
