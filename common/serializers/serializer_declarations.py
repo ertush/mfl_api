@@ -16,9 +16,54 @@ from ..models import (
     SubCounty,
     DocumentUpload,
     ErrorQueue,
-    UserSubCounty
+    UserSubCounty,
+    Notification,
+    NoficiationGroup
 )
 from .serializer_base import AbstractFieldsMixin
+
+
+class NotificationGroupSerializer(AbstractFieldsMixin, serializers.ModelSerializer):
+    group_name = serializers.ReadOnlyField(source='group.name')
+
+    class Meta:
+        model = NoficiationGroup
+
+
+class NotificationSerializer(AbstractFieldsMixin, serializers.ModelSerializer):
+    summary = serializers.ReadOnlyField()
+    notification_groups = NotificationGroupSerializer(many=True, read_only=True)
+    simple_groups = serializers.ReadOnlyField()
+
+    class Meta:
+        model = Notification
+
+    def create(self, validated_data):
+        groups = self.initial_data.pop('groups', [])
+        notification = super(NotificationSerializer, self).create(validated_data)
+
+        for group in groups:
+            NoficiationGroup.objects.create(
+                notification=notification,
+                group_id=group.get('id'),
+                created_by=notification.created_by,
+                updated_by=notification.updated_by
+            )
+        return notification
+
+    def update(self, instance, validated_data):
+        groups = self.initial_data.pop('groups', [])
+        notification = super(NotificationSerializer, self).update(instance, validated_data)
+
+        NoficiationGroup.objects.filter(notification=notification).delete()
+        for group in groups:
+            NoficiationGroup.objects.create(
+                notification=notification,
+                group_id=group.get('id'),
+                created_by=notification.created_by,
+                updated_by=notification.updated_by
+            )
+        return notification
 
 
 class UserSubCountySerializer(

@@ -5,6 +5,7 @@ import json
 from django.db import models
 from django.conf import settings
 from django.utils import encoding, timezone
+from django.contrib.auth.models import Group
 
 from rest_framework.exceptions import ValidationError
 
@@ -310,7 +311,7 @@ class UserContact(AbstractBase):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         related_name='user_contacts', on_delete=models.PROTECT)
-    contact = models.ForeignKey(Contact)
+    contact = models.ForeignKey(Contact, on_delete=models.PROTECT,)
 
     def __str__(self):
         return "{}: ({})".format(self.user, self.contact)
@@ -339,8 +340,9 @@ class UserContact(AbstractBase):
 @encoding.python_2_unicode_compatible
 class UserConstituency(UserAdminAreaLinkageMixin, AbstractBase):
     user = models.ForeignKey(
-        settings.AUTH_USER_MODEL, related_name='user_constituencies')
-    constituency = models.ForeignKey(Constituency)
+        settings.AUTH_USER_MODEL, related_name='user_constituencies',
+        on_delete=models.PROTECT,)
+    constituency = models.ForeignKey(Constituency, on_delete=models.PROTECT,)
 
     def validate_constituency_county_in_creator_county(self):
         error = {
@@ -422,7 +424,7 @@ class PhysicalAddress(AbstractBase):
 class DocumentUpload(AbstractBase):
     name = models.CharField(max_length=255, unique=True)
     description = models.TextField(null=True, blank=True)
-    fyl = models.FileField()
+    fyl = models.FileField(null=True, blank=True)
 
     def __str__(self):
         return self.name
@@ -457,9 +459,45 @@ class UserSubCounty(AbstractBase):
     Link a user to a sub-county
     """
     user = models.ForeignKey(
-        settings.AUTH_USER_MODEL, related_name='user_sub_counties')
+        settings.AUTH_USER_MODEL,
+        related_name='user_sub_counties',
+        on_delete=models.PROTECT,)
     sub_county = models.ForeignKey(SubCounty, on_delete=models.PROTECT)
 
     def __str__(self):
         return "{0} - {1}".format(
             self.user.email, self.sub_county.name)
+
+
+class Notification(AbstractBase):
+    """
+    Send a notification to a particular group of the users in KMHFL
+    """
+    title = models.CharField(max_length=255)
+    message = models.TextField()
+
+    def __str__(self):
+        return self.title
+
+    def summary(self):
+        return self.message[0:100]
+
+    def simple_groups(self):
+        if self.notification_groups.all():
+            return ", ".join([obj.group.name for obj in self.notification_groups.all()])
+        return "ALL"
+
+    class Meta:
+        ordering = ('-created', )
+
+
+class NoficiationGroup(AbstractBase):
+    """
+    A notification can be sent to more than one group
+    """
+
+    group = models.ForeignKey(Group)
+    notification = models.ForeignKey(Notification, related_name='notification_groups')
+
+    def __str__(self):
+        return self.group.name

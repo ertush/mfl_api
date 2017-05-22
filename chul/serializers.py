@@ -14,8 +14,26 @@ from .models import (
     CommunityHealthUnitContact,
     CHUService,
     CHURating,
-    ChuUpdateBuffer
+    ChuUpdateBuffer,
+    CHUServiceLink
 )
+
+
+class CHUServiceLinkSerializer(
+        AbstractFieldsMixin, serializers.ModelSerializer):
+    health_unit = serializers.PrimaryKeyRelatedField(
+        validators=[], required=False,
+        queryset=CommunityHealthUnit.objects.all())
+    service = serializers.PrimaryKeyRelatedField(
+        validators=[], required=False,
+        queryset=CHUService.objects.all())
+    name = serializers.CharField(
+        source='service.name', required=False)
+    health_unit_name = serializers.CharField(
+        source='health_unit.name', required=False)
+
+    class Meta(object):
+        model = CHUServiceLink
 
 
 class ChuUpdateBufferSerializer(
@@ -70,6 +88,8 @@ class CommunityHealthUnitSerializer(
     latest_update = serializers.ReadOnlyField(source='latest_update.id')
     avg_rating = serializers.ReadOnlyField(source='average_rating')
     number_of_ratings = serializers.ReadOnlyField(source='rating_count')
+    services = CHUServiceLinkSerializer(
+        many=True, required=False, validators=[])
     inlined_errors = {}
 
     class Meta(object):
@@ -95,7 +115,8 @@ class CommunityHealthUnitSerializer(
         return json.dumps(updates)
 
     def buffer_updates(
-            self, validated_data, chu_instance, chews=None, contacts=None, ):
+            self, validated_data, chu_instance, chews=None, contacts=None,
+            services=None):
 
         try:
             update = ChuUpdateBuffer.objects.get(
@@ -121,6 +142,19 @@ class CommunityHealthUnitSerializer(
 
             chews = json.dumps(chews)
             update.workers = chews
+
+        if services:
+            for service in services:
+                sev_rec = CHUService.objects.get(id=service['service'])
+                service.pop('created', None)
+                service.pop('updated', None)
+                service.pop('updated_by', None)
+                service.pop('created_by', None)
+                service['name'] = sev_rec.name
+
+            services = json.dumps(services)
+            update.services = services
+
         if contacts:
             for contact in contacts:
                 contact_type = ContactType.objects.get(
@@ -159,6 +193,14 @@ class CommunityHealthUnitSerializer(
                 chew_data = CommunityHealthWorkerSerializer(
                     data=chew, context=context)
                 chew_data.save() if chew_data.is_valid() else None
+
+    def save_chu_services(self, instance, services, context):
+        CHUServiceLink.objects.filter(health_unit=instance).delete()
+        for service in services:
+            service['health_unit'] = instance.id
+            chu_service = CHUServiceLinkSerializer(
+                data=service, context=context)
+            chu_service.save() if chu_service.is_valid() else None
 
     def _validate_contacts(self, contacts):
         for contact in contacts:
@@ -223,6 +265,8 @@ class CommunityHealthUnitSerializer(
         self.inlined_errors = {}
         chews = self.initial_data.pop('health_unit_workers', [])
         contacts = self.initial_data.pop('contacts', [])
+        services = self.initial_data.pop('services', [])
+        validated_data.pop('services', [])
 
         self._validate_contacts(contacts)
         self._validate_chew(chews)
@@ -234,6 +278,7 @@ class CommunityHealthUnitSerializer(
                 validated_data)
             self.save_chew(chu, chews, self.context)
             self.create_chu_contacts(chu, contacts, validated_data)
+            self.save_chu_services(chu, services, self.context)
             return chu
         else:
             raise ValidationError(self.inlined_errors)
@@ -241,20 +286,27 @@ class CommunityHealthUnitSerializer(
     def update(self, instance, validated_data):
         self.inlined_errors = {}
         chews = self.initial_data.pop('health_unit_workers', [])
+
         contacts = self.initial_data.pop('contacts', [])
+        services = self.initial_data.pop('services', [])
+        validated_data.pop('services', [])
         chu = CommunityHealthUnit.objects.get(id=instance.id)
         self._validate_contacts(contacts)
         self._validate_chew(chews)
 
         if not self.inlined_errors:
             if chu.is_approved and not instance.is_rejected:
-                self.buffer_updates(validated_data, instance, chews, contacts)
+                self.buffer_updates(
+                    validated_data, instance, chews, contacts,
+                    services
+                )
                 return instance
 
             super(CommunityHealthUnitSerializer, self).update(
                 instance, validated_data)
             self.save_chew(instance, chews, self.context)
             self.create_chu_contacts(instance, contacts, validated_data)
+            self.save_chu_services(chu, services, self.context)
             return instance
         else:
             raise ValidationError(self.inlined_errors)

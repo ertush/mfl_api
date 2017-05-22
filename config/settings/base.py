@@ -22,7 +22,7 @@ env = environ.Env(
     STORAGE_BACKEND=(str, ''),
     ADMINS=(str, "admin:admin@example.com,"),
     SERVER_EMAIL=(str, "root@localhost"),
-    ALLOWED_HOSTS=(str, "")
+    ALLOWED_HOSTS=(str, "localhost")
 
 
 )
@@ -69,7 +69,7 @@ EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_SUBJECT_PREFIX = '[Master Facility List] '
 
-ALLOWED_HOSTS = env('ALLOWED_HOSTS').split(',')
+ALLOWED_HOSTS = env('ALLOWED_HOSTS').split(',') + ['localhost', '127.0.0.1', '0.0.0.0']
 
 INSTALLED_APPS = (
     'django.contrib.sites',
@@ -103,6 +103,7 @@ INSTALLED_APPS = (
     'mfl_gis',
     'search',
     'reporting',
+    'admin_offices',
 )
 # LOCAL_APPS is now just a convenience setting for the metadata API
 # It is *NOT* appended to INSTALLED_APPS ( **deliberate** DRY violation )
@@ -118,6 +119,7 @@ LOCAL_APPS = [
     'data',
     'reporting',
     'search',
+    'admin_offices',
 ]
 CORS_ALLOW_CREDENTIALS = False
 CORS_ORIGIN_ALLOW_ALL = True
@@ -175,13 +177,13 @@ REST_FRAMEWORK = {
     'EXCEPTION_HANDLER': 'exception_handler.handler.custom_exception_handler',
     'DEFAULT_PAGINATION_CLASS': 'common.paginator.MflPaginationSerializer',
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework.authentication.SessionAuthentication',
         'oauth2_provider.ext.rest_framework.OAuth2Authentication',
+        'rest_framework.authentication.SessionAuthentication',
     ),
     'PAGINATE_BY': 30,
     'PAGINATE_BY_PARAM': 'page_size',
     # Should be able to opt in to see all wards at once
-    'MAX_PAGINATE_BY': 15000,
+    'MAX_PAGINATE_BY': 150000,
     'TEST_REQUEST_DEFAULT_FORMAT': 'json',
     'TEST_REQUEST_RENDERER_CLASSES': (
         'rest_framework.renderers.JSONRenderer',
@@ -281,13 +283,7 @@ TEMPLATES = [
 ]
 CACHES = {
     "default": {
-        "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": "redis://127.0.0.1:6379/1",
-        "OPTIONS": {
-            "CLIENT_CLASS": "django_redis.client.DefaultClient",
-            "COMPRESS_MIN_LEN": 10,
-            "IGNORE_EXCEPTIONS": True,
-        }
+        "BACKEND": "django.core.cache.backends.dummy.DummyCache"
     }
 }
 CACHE_MIDDLEWARE_SECONDS = 15  # Intentionally conservative by default

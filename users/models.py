@@ -104,8 +104,9 @@ class MflUserManager(BaseUserManager):
                           is_staff=is_staff, is_active=True,
                           is_superuser=False, date_joined=now, **extra_fields)
         user.save(using=self._db)
-        send_email_on_signup(
-            user.id, email, first_name, employee_number, password)
+        # Skip sending email for testing purposes
+        # send_email_on_signup(
+        #     user.id, email, first_name, employee_number, password)
         return user
 
     def create_superuser(self, email, first_name, employee_number,
@@ -203,9 +204,11 @@ class MflUser(AbstractBaseUser, PermissionsMixin):
     search = models.CharField(max_length=255, null=True, blank=True)
     deleted = models.BooleanField(default=False)
     created_by = models.ForeignKey(
-        'self', null=True, blank=True, related_name='+')
+        'self', null=True, blank=True, related_name='+',
+        on_delete=models.PROTECT)
     updated_by = models.ForeignKey(
-        'self', null=True, blank=True, related_name='+')
+        'self', null=True, blank=True, related_name='+',
+        on_delete=models.PROTECT)
     updated = models.DateTimeField(default=timezone.now)
     created = models.DateTimeField(default=timezone.now)
 
