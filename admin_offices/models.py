@@ -52,3 +52,4 @@ class AdminOffice(SequenceMixin, AbstractBase):
             self.code = self.generate_next_code_sequence()
         super(AdminOffice, self).save(*args, **kwargs)
 
+

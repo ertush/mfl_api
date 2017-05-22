@@ -1,4 +1,5 @@
 from rest_framework import generics
+from rest_framework.views import Response
 
 from common.views import AuditableDetailViewMixin
 from common.models import UserCounty, UserSubCounty
@@ -60,6 +61,12 @@ class AdminOfficeDetailView(
     """
     queryset = AdminOffice.objects.all()
     serializer_class = AdminOfficeSerializer
+
+    def delete(self, request, *args, **kwargs):
+        obj = AdminOffice.objects.get(id=kwargs.get('pk'))
+        AdminOfficeContact.objects.filter(admin_office=obj).delete()
+        obj.delete()
+        return Response(status=204)
 
 
 class AdminOfficeContactListView(

@@ -69,7 +69,7 @@ EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_SUBJECT_PREFIX = '[Master Facility List] '
 
-ALLOWED_HOSTS = env('ALLOWED_HOSTS').split(',')
+ALLOWED_HOSTS = env('ALLOWED_HOSTS').split(',') + ['localhost', '127.0.0.1', '0.0.0.0']
 
 INSTALLED_APPS = (
     'django.contrib.sites',

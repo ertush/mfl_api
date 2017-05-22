@@ -78,13 +78,13 @@ from ..utilities import CustomRetrieveUpdateDestroyView
 class NotificationListView(generics.ListCreateAPIView):
     queryset = Notification.objects.all()
     serializer_class = NotificationSerializer
-    ordering_fields = ('group','created', 'title')
+    ordering_fields = ('group', 'created', 'title')
     filter_class = NotificationFilter
 
     def get_queryset(self, *args, **kwargs):
         user = self.request.user
         if not user.is_national:
-            user_groups =user.groups.all()
+            user_groups = user.groups.all()
             return self.queryset.filter(group__in=user_groups)
         return self.queryset
 

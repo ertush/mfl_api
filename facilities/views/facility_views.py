@@ -172,12 +172,9 @@ class QuerysetFilterMixin(object):
 
             # filter both facilities and facilities materialized view
             try:
-                self.queryset = self.queryset.filter(
-                    approved=True,
-                    operation_status__is_public_visible=True)
+                self.queryset = self.queryset.filter(approved=True, operation_status__is_public_visible=True)
             except:
-                self.queryset = self.queryset.filter(
-                    approved=True, is_public_visible=True)
+                self.queryset = self.queryset.filter(approved=True, is_public_visible=True)
 
     def filter_rejected_facilities(self):
         if self.request.user.has_perm("facilities.view_rejected_facilities") \

@@ -158,6 +158,7 @@ class FacilityOfficerSerializer(
     registration_number = serializers.ReadOnlyField(
         source='officer.registration_number')
     job_title = serializers.ReadOnlyField(source='officer.job_title.name')
+    contacts = serializers.ReadOnlyField(source='officer.get_officer_contacts')
 
     class Meta(object):
         model = FacilityOfficer
@@ -456,6 +457,7 @@ class FacilitySerializer(
     county_id = serializers.ReadOnlyField(
         source='ward.constituency.county.id')
     keph_level_name = serializers.ReadOnlyField(source='keph_level.name')
+    lat_long = serializers.ReadOnlyField()
 
     class Meta(object):
         model = Facility

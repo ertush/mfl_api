@@ -139,7 +139,8 @@ class OfficerContact(AbstractBase):
     """
     officer = models.ForeignKey(
         'Officer',
-        help_text="The is the officer in charge", on_delete=models.PROTECT)
+        help_text="The is the officer in charge", on_delete=models.PROTECT,
+        related_name='officer_contacts')
     contact = models.ForeignKey(
         Contact,
         help_text="The contact of the officer in-charge may it be email, "
@@ -175,6 +176,11 @@ class Officer(AbstractBase):
     contacts = models.ManyToManyField(
         Contact, through=OfficerContact,
         help_text='Personal contacts of the officer in charge')
+
+    def get_officer_contacts(self):
+        all_contacts = [contact.contact.contact for contact in self.officer_contacts.all()]
+
+        return " / ".join(all_contacts)
 
     def __str__(self):
         return self.name
@@ -669,7 +675,7 @@ class Facility(SequenceMixin, AbstractBase):
     Health Centers, Dispensaries, Hospitals etc.
     """
     name = models.CharField(
-        max_length=100, unique=True,
+        max_length=100,
         help_text='This is the unique name of the facility')
     official_name = models.CharField(
         max_length=150, null=True, blank=True,
@@ -811,9 +817,6 @@ class Facility(SequenceMixin, AbstractBase):
         RegulationStatus, null=True, blank=True,
         on_delete=models.PROTECT,
         help_text='The regulatory status of the hospital')
-
-    # class Meta:
-    #     unique_together = ('official_name', 'ward')
 
     def update_facility_regulation_status(self):
         self.regulated = True
@@ -1049,7 +1052,7 @@ class Facility(SequenceMixin, AbstractBase):
 
     def clean(self, *args, **kwargs):
         self.validate_closing_date_supplied_on_close()
-        self.validate_ward_and_sub_county()
+        #self.validate_ward_and_sub_county()
         super(Facility, self).clean()
 
     def _get_field_human_attribute(self, field_obj):

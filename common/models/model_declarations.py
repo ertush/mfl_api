@@ -475,10 +475,29 @@ class Notification(AbstractBase):
     """
     title = models.CharField(max_length=255)
     message = models.TextField()
-    group = models.ForeignKey(Group, null=True, blank=True)
+
+    def __str__(self):
+        return self.title
 
     def summary(self):
         return self.message[0:100]
 
+    def simple_groups(self):
+        if self.notification_groups.all():
+            return ", ".join([obj.group.name for obj in self.notification_groups.all()])
+        return "ALL"
+
     class Meta:
         ordering = ('-created', )
+
+
+class NoficiationGroup(AbstractBase):
+    """
+    A notification can be sent to more than one group
+    """
+
+    group = models.ForeignKey(Group)
+    notification = models.ForeignKey(Notification, related_name='notification_groups')
+
+    def __str__(self):
+        return self.group.name

@@ -291,6 +291,7 @@ class FacilityStatusFilter(CommonFieldsFilterset):
 class FacilityTypeFilter(CommonFieldsFilterset):
     name = django_filters.CharFilter(lookup_type='icontains')
     sub_division = django_filters.CharFilter(lookup_type='icontains')
+    is_parent = NullFilter(name='parent')
 
     class Meta(object):
         model = FacilityType
@@ -359,11 +360,11 @@ class FacilityFilter(CommonFieldsFilterset):
                 Q(
                     Q(rejected=False),
                     Q(has_edits=True) |
-                    Q(approved=False)
+                    Q(approved=False,rejected=False)
                 ) |
                 Q(
                     Q(rejected=True),
-                    Q(has_edits=True) | Q(approved=False))
+                    Q(has_edits=True) | Q(approved=False,rejected=False))
             )
         else:
             return self.filter(

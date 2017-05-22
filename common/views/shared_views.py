@@ -71,11 +71,19 @@ class AuditableDetailViewMixin(RetrieveModelMixin):
             old = versions[i]
             diff = self._compare_objs(fieldnames, old, new)
             if diff:
-                ans.append({
-                    "updates": diff,
-                    "updated_by": new.revision.user.get_full_name,
-                    "updated_on": new.revision.date_created
-                })
+                if  hasattr(new.revision.user, 'get_full_name'):
+                    
+                    ans.append({
+                        "updates": diff,
+                        "updated_by": new.revision.user.get_full_name,
+                        "updated_on": new.revision.date_created
+                    })
+                # else:
+                #    ans.append({
+                #        "updates": diff,
+                #        "updated_by": "System Manager",
+                #        "updated_on": new.revision.date_created
+                #    })
 
         return ans
 

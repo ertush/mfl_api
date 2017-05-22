@@ -232,6 +232,9 @@ class DashBoard(QuerysetFilterMixin, APIView):
             list(set(list(updated_pending_approval) + list(newly_created)))
         )
 
+    def get_facilities_approved_count(self):
+        return self.queryset.filter(approved=True, rejected=False).count()
+
     def get_chus_pending_approval(self):
         """
         Get the number of CHUs pending approval
@@ -276,7 +279,8 @@ class DashBoard(QuerysetFilterMixin, APIView):
             "rejected_chus": self.get_rejected_chus(),
             "chus_pending_approval": self.get_chus_pending_approval(),
             "total_chus": CommunityHealthUnit.objects.filter(
-                facility__in=self.get_queryset()).count()
+                facility__in=self.get_queryset()).count(),
+            "approved_facilities": self.get_facilities_approved_count()
 
         }
 
