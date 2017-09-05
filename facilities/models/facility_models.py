@@ -1,3 +1,4 @@
+from __future__ import print_function
 from __future__ import division
 
 import reversion
@@ -21,9 +22,13 @@ from users.models import JobTitle  # NOQA
 from search.search_utils import index_instance
 from common.models import (
     AbstractBase, Ward, Contact, SequenceMixin, SubCounty, County,
-    Town
+    Town, ApiAuthentication
 )
 from common.fields import SequenceField
+
+from django.contrib.sessions.backends.db import SessionStore
+
+session_store = SessionStore(session_key="dhis2_api")
 
 LOGGER = logging.getLogger(__name__)
 
@@ -1606,6 +1611,42 @@ class FacilityUpgrade(AbstractBase):
         )
 
 
+@encoding.python_2_unicode_compatible
+class DhisAuth(ApiAuthentication):
+
+    '''
+    Authenticates to DHIS via OAuth2.
+    Also does token refresh
+    '''
+
+    oauth2_token_variable_name = models.CharField(max_length=255, default="api_oauth2_token", null=False, blank=False)
+    type = models.CharField(max_length=255, default="DHIS2")
+
+    def get_oauth2_token(self):
+        import requests, base64
+
+        r = requests.post(
+            self.server+"uaa/oauth/",
+            headers={
+                "Authorization": "Basic "+base64.b64encode(self.client_id+":"+self.client_secret),
+                "Accept": "application/json"
+            },
+            params={
+                "grant_type": "password",
+                "username": self.username,
+                "password": self.password
+            }
+        )
+
+        response = str(r.status_code)
+        print("Response @ get_oauth2 ", response)
+        session_store[self.oauth2_token_variable_name] = response
+        session_store.save()
+
+    def __str__(self):
+        return "{}: {}".format("Dhis Auth - ", self.username)
+
+
 @reversion.register(follow=['facility', ])
 @encoding.python_2_unicode_compatible
 class FacilityApproval(AbstractBase):
@@ -1621,8 +1662,15 @@ class FacilityApproval(AbstractBase):
         default=False, help_text='Cancel a facility approval'
     )
 
+    dhis2_api_auth = DhisAuth()
+
     def validate_rejection_comment(self):
         if self.is_cancelled and not self.comment:
+
+            self.dhis2_api_auth.get_oauth2_token()
+
+            print("Response @ Approve Facility ", session_store[self.dhis2_api_auth.oauth2_token_variable_name])
+
             raise ValidationError(
                 {
                     "rejection": ["A reason for the rejection is required"]
