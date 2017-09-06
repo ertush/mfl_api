@@ -29,8 +29,6 @@ from common.fields import SequenceField
 from django.contrib.sessions.backends.db import SessionStore
 import threading, requests, base64
 
-session_store = SessionStore(session_key="dhis2_api")
-
 LOGGER = logging.getLogger(__name__)
 
 
@@ -1617,11 +1615,12 @@ class DhisAuth(ApiAuthentication):
 
     '''
     Authenticates to DHIS via OAuth2.
-    Also does token refresh
+    Handles All API related functions
     '''
 
     oauth2_token_variable_name = models.CharField(max_length=255, default="api_oauth2_token", null=False, blank=False)
     type = models.CharField(max_length=255, default="DHIS2")
+    session_store = SessionStore(session_key="dhis2_api_12904rs")
 
     def set_interval(interval, times=-1):
         # This will be the actual decorator,
@@ -1660,15 +1659,15 @@ class DhisAuth(ApiAuthentication):
             },
             params={
                 "grant_type": "refresh_token",
-                "refresh_token": json.loads(session_store[self.oauth2_token_variable_name].replace("u", "")
+                "refresh_token": json.loads(self.session_store[self.oauth2_token_variable_name].replace("u", "")
                     .replace("'", '"'))["refresh_token"]
             }
         )
 
         response = str(r.json())
         # print("Response @ refresh_oauth2 ", response)
-        session_store[self.oauth2_token_variable_name] = response
-        session_store.save()
+        self.session_store[self.oauth2_token_variable_name] = response
+        self.session_store.save()
 
     def get_oauth2_token(self):
         r = requests.post(
@@ -1686,33 +1685,46 @@ class DhisAuth(ApiAuthentication):
 
         response = str(r.json())
         # print("Response @ get_oauth2 ", response)
-        session_store[self.oauth2_token_variable_name] = response
-        session_store.save()
+        self.session_store[self.oauth2_token_variable_name] = response
+        self.session_store.save()
         self.refresh_oauth2_token()
 
     def get_parent_id(self, facility_name):
         r = requests.get(
             self.server+"api/organisationUnits.json",
             headers={
-                "Authorization": "Bearer " + json.loads(session_store[self.oauth2_token_variable_name].replace("u", "")
+                "Authorization": "Bearer " + json.loads(self.session_store[self.oauth2_token_variable_name].replace("u", "")
                     .replace("'", '"'))["access_token"],
                 "Accept": "application/json"
             },
             params={
                 "query": facility_name,
-                "fields": "[id]",
+                "fields": "[id,name]",
                 "filter": "level:in:[4]",
                 "paging": "false"
             }
         )
+        print(r.json())
+        dhis2_facility_name = r.json()["organisationUnits"][0]["name"].lower()
+        facility_name = str(facility_name)+ " Ward"
+        facility_name = facility_name.lower()
+        print("1", dhis2_facility_name, "2", facility_name, len(r.json()["organisationUnits"]))
 
-        return r.json()["organisationUnits"][0]["id"]
+        if len(r.json()["organisationUnits"]) is 1:
+            if dhis2_facility_name == facility_name:
+                return r.json()["organisationUnits"][0]["id"]
+        else:
+            raise ValidationError(
+                {
+                    "Error!": ["Unable to resolve exact parent of the new facility in DHIS2"]
+                }
+            )
 
     def push_facility_to_dhis2(self, new_facility_payload):
         r = requests.post(
             self.server+"api/organisationUnits",
             headers={
-                "Authorization": "Bearer " + json.loads(session_store[self.oauth2_token_variable_name].replace("u", "")
+                "Authorization": "Bearer " + json.loads(self.session_store[self.oauth2_token_variable_name].replace("u", "")
                                                         .replace("'", '"'))["access_token"],
                 "Accept": "application/json"
             },
@@ -1721,8 +1733,14 @@ class DhisAuth(ApiAuthentication):
 
         print("Create Facility Response", r.url, r.status_code, r.json())
 
+        if r.json()["status"] is not "Created":
+            raise ValidationError(
+                {
+                    "Error!": ["Unable to push facility to DHIS2"]
+                }
+            )
+
     def format_coordinates(self, str_coordinates):
-        from decimal import Decimal
         coordinates_str_list = str_coordinates.split(" ")
         return str([float(coordinates_str_list[0]), float(coordinates_str_list[1])])
 
@@ -1748,35 +1766,7 @@ class FacilityApproval(AbstractBase):
     dhis2_api_auth = DhisAuth()
 
     def validate_rejection_comment(self):
-        from mfl_gis.models import FacilityCoordinates
-        import re
         if self.is_cancelled and not self.comment:
-
-            self.dhis2_api_auth.get_oauth2_token()
-
-            oauth2_token = json.loads(session_store[self.dhis2_api_auth.oauth2_token_variable_name].replace("u", "")
-                                      .replace("'", '"'))
-
-            # print("Response @ Approve Facility ", oauth2_token["access_token"])
-            # print("Ward ID", self.facility.ward_id, "Ward", self.facility.ward, "Ward Name", self.facility.ward_name)
-            dhis2_parent_id = self.dhis2_api_auth.get_parent_id(self.facility.ward_name)
-
-            new_facility_payload = {
-                "code": str(self.facility.code),
-                "name": str(self.facility.name),
-                "shortName": str(self.facility.name),
-                "displayName": str(self.facility.official_name),
-                "parent": {
-                    "id": str(dhis2_parent_id)
-                },
-                "openingDate": self.facility.date_established.strftime("%Y-%m-%d"),
-                "coordinates": self.dhis2_api_auth.format_coordinates(re.search(r'\((.*?)\)', str(FacilityCoordinates.objects.values('coordinates')
-                                         .get(facility_id=self.facility.id)['coordinates'])).group(1))
-            }
-
-            print("Payload ", new_facility_payload)
-
-            self.dhis2_api_auth.push_facility_to_dhis2(new_facility_payload)
 
             raise ValidationError(
                 {
@@ -1791,6 +1781,7 @@ class FacilityApproval(AbstractBase):
         else:
             self.facility.rejected = False
             self.facility.approved = True
+            self.push_new_facility()
             self.facility.is_published = True
         self.facility.save(allow_save=True)
 
@@ -1798,6 +1789,30 @@ class FacilityApproval(AbstractBase):
         self.validate_rejection_comment()
         self.facility.save(allow_save=True)
         self.update_facility_rejection()
+
+    def push_new_facility(self):
+        from mfl_gis.models import FacilityCoordinates
+        import re
+        self.dhis2_api_auth.get_oauth2_token()
+
+        dhis2_parent_id = self.dhis2_api_auth.get_parent_id(self.facility.ward_name)
+
+        new_facility_payload = {
+            "code": str(self.facility.code),
+            "name": str(self.facility.name),
+            "shortName": str(self.facility.name),
+            "displayName": str(self.facility.official_name),
+            "parent": {
+                "id": dhis2_parent_id
+            },
+            "openingDate": self.facility.date_established.strftime("%Y-%m-%d"),
+            "coordinates": self.dhis2_api_auth.format_coordinates(
+                re.search(r'\((.*?)\)', str(FacilityCoordinates.objects.values('coordinates')
+                                            .get(facility_id=self.facility.id)['coordinates'])).group(1))
+        }
+
+        print("New Facility Push Payload => ", new_facility_payload)
+        self.dhis2_api_auth.push_facility_to_dhis2(new_facility_payload)
 
     def __str__(self):
         msg = "rejected" if self.is_cancelled else "approved"
