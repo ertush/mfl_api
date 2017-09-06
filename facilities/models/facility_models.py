@@ -27,6 +27,7 @@ from common.models import (
 from common.fields import SequenceField
 
 from django.contrib.sessions.backends.db import SessionStore
+import threading, time
 
 session_store = SessionStore(session_key="dhis2_api")
 
@@ -1622,11 +1623,60 @@ class DhisAuth(ApiAuthentication):
     oauth2_token_variable_name = models.CharField(max_length=255, default="api_oauth2_token", null=False, blank=False)
     type = models.CharField(max_length=255, default="DHIS2")
 
+    def set_interval(interval, times=-1):
+        # This will be the actual decorator,
+        # with fixed interval and times parameter
+        def outer_wrap(function):
+            # This will be the function to be
+            # called
+            def wrap(*args, **kwargs):
+                stop = threading.Event()
+
+                # This is another function to be executed
+                # in a different thread to simulate setInterval
+                def inner_wrap():
+                    i = 0
+                    while i != times and not stop.isSet():
+                        stop.wait(interval)
+                        function(*args, **kwargs)
+                        i += 1
+
+                t = threading.Timer(0, inner_wrap)
+                t.daemon = True
+                t.start()
+                return stop
+
+            return wrap
+
+        return outer_wrap
+
+    @set_interval(10.0)
+    def refresh_oauth2_token(self):
+        import requests, base64
+
+        r = requests.post(
+            self.server+"uaa/oauth/token",
+            headers={
+                "Authorization": "Basic " + base64.b64encode(self.client_id + ":" + self.client_secret),
+                "Accept": "application/json"
+            },
+            params={
+                "grant_type": "refresh_token",
+                "refresh_token": json.loads(session_store[self.oauth2_token_variable_name].replace("u", "")
+                    .replace("'", '"'))["refresh_token"]
+            }
+        )
+
+        response = str(r.json())
+        print("Response @ refresh_oauth2 ", response)
+        session_store[self.oauth2_token_variable_name] = response
+        session_store.save()
+
     def get_oauth2_token(self):
         import requests, base64
 
         r = requests.post(
-            self.server+"uaa/oauth/",
+            self.server+"uaa/oauth/token",
             headers={
                 "Authorization": "Basic "+base64.b64encode(self.client_id+":"+self.client_secret),
                 "Accept": "application/json"
@@ -1638,14 +1688,14 @@ class DhisAuth(ApiAuthentication):
             }
         )
 
-        response = str(r.status_code)
+        response = str(r.json())
         print("Response @ get_oauth2 ", response)
         session_store[self.oauth2_token_variable_name] = response
         session_store.save()
+        self.refresh_oauth2_token()
 
     def __str__(self):
         return "{}: {}".format("Dhis Auth - ", self.username)
-
 
 @reversion.register(follow=['facility', ])
 @encoding.python_2_unicode_compatible
@@ -1669,7 +1719,10 @@ class FacilityApproval(AbstractBase):
 
             self.dhis2_api_auth.get_oauth2_token()
 
-            print("Response @ Approve Facility ", session_store[self.dhis2_api_auth.oauth2_token_variable_name])
+            oauth2_token = json.loads(session_store[self.dhis2_api_auth.oauth2_token_variable_name].replace("u", "")
+                                      .replace("'", '"'))
+
+            print("Response @ Approve Facility ", oauth2_token["access_token"])
 
             raise ValidationError(
                 {
