@@ -165,3 +165,43 @@ class SequenceMixin(object):
             app_label=self._meta.app_label,
             model_name=self._meta.model_name
         ).next()
+
+
+class ApiAuthentication(models.Model):
+    username = models.CharField(max_length=255, default="healthit", null=False, blank=False)
+    password = models.CharField(max_length=255, default="hEALTHIT2017", null=False, blank=False)
+    client_id = models.CharField(max_length=255, default="101", null=False, blank=False)
+    client_secret = models.CharField(max_length=255, default="873079d99-95b4-46f5-8369-9f23a3dd877", null=False,
+                                     blank=False)
+    server = models.CharField(max_length=255, default="http://test.hiskenya.org/", null=False, blank=False)
+    session_key = models.CharField(max_length=255, default="dhis2_api_12904rs", null=False, blank=False)
+
+    @property
+    def get_api_username(self):
+        "Returns the API username."
+        return '%s' % self.username
+
+    @property
+    def get_api_password(self):
+        "Returns the API password."
+        return '%s' % self.password
+
+    @property
+    def get_api_client_id(self):
+        "Returns the API client_id."
+        return '%s' % self.client_id
+
+    @property
+    def get_api_client_secret(self):
+        "Returns the API client_secret."
+        return '%s' % self.client_secret
+
+    @property
+    def get_api_server(self):
+        "Returns the API server."
+        return '%s' % self.server
+
+    @property
+    def get_api_session_key(self):
+        "Returns the API session_key."
+        return '%s' % self.session_key
