@@ -55,7 +55,7 @@ from ..utils import CreateFacilityOfficerMixin
 
 class FacilityExportExcelMaterialViewSerializer(serializers.ModelSerializer):
 
-    class Meta(object):
+    class Meta(AbstractFieldsMixin.Meta):
         model = FacilityExportExcelMaterialView
         fields = [
             "code",
@@ -95,6 +95,8 @@ class FacilityExportExcelMaterialViewSerializer(serializers.ModelSerializer):
             "closed",
             "is_published",
             "id",
+            "lat",
+            "long"
         ]
 
 
@@ -117,7 +119,7 @@ class RegulatorSyncSerializer(
             {"regulatory_body": ["The user is not assigned a regulatory body"]}
         )
 
-    class Meta(object):
+    class Meta(AbstractFieldsMixin.Meta):
         model = RegulatorSync
         read_only_fields = ('regulatory_body', 'mfl_code', )
 
@@ -125,13 +127,13 @@ class RegulatorSyncSerializer(
 class FacilityLevelChangeReasonSerializer(
         AbstractFieldsMixin, serializers.ModelSerializer):
 
-    class Meta(object):
+    class Meta(AbstractFieldsMixin.Meta):
         model = FacilityLevelChangeReason
 
 
 class KephLevelSerializer(AbstractFieldsMixin, serializers.ModelSerializer):
 
-    class Meta(object):
+    class Meta(AbstractFieldsMixin.Meta):
         model = KephLevel
 
 
@@ -146,7 +148,7 @@ class RegulatoryBodyUserSerializer(
     regulatory_body = serializers.PrimaryKeyRelatedField(
         validators=[], required=False, queryset=RegulatingBody.objects.all())
 
-    class Meta(object):
+    class Meta(AbstractFieldsMixin.Meta):
         model = RegulatoryBodyUser
 
 
@@ -159,8 +161,13 @@ class FacilityOfficerSerializer(
         source='officer.registration_number')
     job_title = serializers.ReadOnlyField(source='officer.job_title.name')
     contacts = serializers.ReadOnlyField(source='officer.get_officer_contacts')
+    email = serializers.ReadOnlyField(source='officer.email')
+    postal = serializers.ReadOnlyField(source='officer.postal')
+    mobile = serializers.ReadOnlyField(source='officer.mobile')
+    landline = serializers.ReadOnlyField(source='officer.landline')
+    fax = serializers.ReadOnlyField(source='officer.fax')
 
-    class Meta(object):
+    class Meta(AbstractFieldsMixin.Meta):
         model = FacilityOfficer
 
 
@@ -173,7 +180,7 @@ class RegulatingBodyContactSerializer(
 
     )
 
-    class Meta(object):
+    class Meta(AbstractFieldsMixin.Meta):
         model = RegulatingBodyContact
 
 
@@ -184,14 +191,14 @@ class FacilityUpgradeSerializer(
     current_facility_type = serializers.ReadOnlyField(
         source='facility.facility_type_name')
 
-    class Meta(object):
+    class Meta(AbstractFieldsMixin.Meta):
         model = FacilityUpgrade
 
 
 class FacilityOperationStateSerializer(
         AbstractFieldsMixin, serializers.ModelSerializer):
 
-    class Meta(object):
+    class Meta(AbstractFieldsMixin.Meta):
         model = FacilityOperationState
 
 
@@ -199,27 +206,27 @@ class FacilityApprovalSerializer(
         AbstractFieldsMixin, serializers.ModelSerializer):
     done_by = serializers.ReadOnlyField(source="created_by.get_full_name")
 
-    class Meta(object):
+    class Meta(AbstractFieldsMixin.Meta):
         model = FacilityApproval
 
 
 class ServiceCategorySerializer(
         AbstractFieldsMixin, serializers.ModelSerializer):
 
-    class Meta(object):
+    class Meta(AbstractFieldsMixin.Meta):
         model = ServiceCategory
 
 
 class OptionSerializer(AbstractFieldsMixin, serializers.ModelSerializer):
 
-    class Meta(object):
+    class Meta(AbstractFieldsMixin.Meta):
         model = Option
 
 
 class ServiceSerializer(AbstractFieldsMixin, serializers.ModelSerializer):
     category_name = serializers.CharField(read_only=True)
 
-    class Meta(object):
+    class Meta(AbstractFieldsMixin.Meta):
         model = Service
         read_only_fields = ('code',)
 
@@ -233,14 +240,14 @@ class FacilityServiceSerializer(
     number_of_ratings = serializers.ReadOnlyField()
     service_has_options = serializers.ReadOnlyField()
 
-    class Meta(object):
+    class Meta(AbstractFieldsMixin.Meta):
         model = FacilityService
 
 
 class FacilityStatusSerializer(
         AbstractFieldsMixin, serializers.ModelSerializer):
 
-    class Meta(object):
+    class Meta(AbstractFieldsMixin.Meta):
         model = FacilityStatus
 
 
@@ -326,34 +333,34 @@ class RegulatingBodySerializer(
             self.create_reg_body_contacts(instance, contact, validated_data)
         return instance
 
-    class Meta(object):
+    class Meta(AbstractFieldsMixin.Meta):
         model = RegulatingBody
 
 
 class OwnerTypeSerializer(AbstractFieldsMixin, serializers.ModelSerializer):
 
-    class Meta(object):
+    class Meta(AbstractFieldsMixin.Meta):
         model = OwnerType
 
 
 class FacilityRegulationStatusSerializer(
         AbstractFieldsMixin, serializers.ModelSerializer):
 
-    class Meta(object):
+    class Meta(AbstractFieldsMixin.Meta):
         model = FacilityRegulationStatus
 
 
 class FacilityTypeSerializer(AbstractFieldsMixin, serializers.ModelSerializer):
     owner_type_name = serializers.ReadOnlyField(source='owner_type.name')
 
-    class Meta(object):
+    class Meta(AbstractFieldsMixin.Meta):
         model = FacilityType
 
 
 class OfficerContactSerializer(
         AbstractFieldsMixin, serializers.ModelSerializer):
 
-    class Meta(object):
+    class Meta(AbstractFieldsMixin.Meta):
         model = OfficerContact
 
 
@@ -361,6 +368,7 @@ class JobTitleSerializer(serializers.ModelSerializer):
 
     class Meta(object):
         model = JobTitle
+        fields = '__all__'
 
 
 class RegulationStatusSerializer(
@@ -368,7 +376,7 @@ class RegulationStatusSerializer(
     next_state_name = serializers.CharField(read_only=True)
     previous_state_name = serializers.CharField(read_only=True)
 
-    class Meta(object):
+    class Meta(AbstractFieldsMixin.Meta):
         model = RegulationStatus
 
 
@@ -376,7 +384,7 @@ class OfficerSerializer(
         AbstractFieldsMixin, serializers.ModelSerializer):
     job_title_name = serializers.ReadOnlyField(source='job_title.name')
 
-    class Meta(object):
+    class Meta(AbstractFieldsMixin.Meta):
         model = Officer
 
 
@@ -384,7 +392,7 @@ class OwnerSerializer(AbstractFieldsMixin, serializers.ModelSerializer):
 
     owner_type_name = serializers.ReadOnlyField(source='owner_type.name')
 
-    class Meta(object):
+    class Meta(AbstractFieldsMixin.Meta):
         model = Owner
         read_only_fields = ('code',)
 
@@ -395,7 +403,7 @@ class FacilityContactSerializer(
         source="contact.contact_type.name")
     actual_contact = serializers.ReadOnlyField(source="contact.contact")
 
-    class Meta(object):
+    class Meta(AbstractFieldsMixin.Meta):
         model = FacilityContact
 
 
@@ -406,7 +414,7 @@ class FacilityUnitSerializer(
     regulating_body_name = serializers.ReadOnlyField(
         source="unit.regulatory_body.name")
 
-    class Meta(object):
+    class Meta(AbstractFieldsMixin.Meta):
         model = FacilityUnit
 
 
@@ -458,8 +466,10 @@ class FacilitySerializer(
         source='ward.constituency.county.id')
     keph_level_name = serializers.ReadOnlyField(source='keph_level.name')
     lat_long = serializers.ReadOnlyField()
+    is_complete = serializers.ReadOnlyField()
+    in_complete_details = serializers.ReadOnlyField()
 
-    class Meta(object):
+    class Meta(AbstractFieldsMixin.Meta):
         model = Facility
 
     @transaction.atomic
@@ -634,6 +644,10 @@ class FacilityDetailSerializer(FacilitySerializer):
         if services:
             [create_facility_child_entity(
                 "create_facility_services", service) for service in services]
+
+        # If all details are complete call save in order for the code to be generated
+        if instance.is_complete:
+            instance.save()
         if self.inlining_errors:
             raise ValidationError(self.inlining_errors)
         return instance
@@ -641,7 +655,7 @@ class FacilityDetailSerializer(FacilitySerializer):
 
 class FacilityListSerializer(FacilitySerializer):
 
-    class Meta(object):
+    class Meta(AbstractFieldsMixin.Meta):
         model = Facility
         fields = [
             'code', 'name', 'id', 'county', 'constituency',
@@ -665,14 +679,14 @@ class FacilityServiceRatingSerializer(
         source='facility_service.service.name'
     )
 
-    class Meta(object):
+    class Meta(AbstractFieldsMixin.Meta):
         model = FacilityServiceRating
 
 
 class FacilityUnitRegulationSerializer(
         AbstractFieldsMixin, serializers.ModelSerializer):
 
-    class Meta(object):
+    class Meta(AbstractFieldsMixin.Meta):
         model = FacilityUnitRegulation
 
 
@@ -692,7 +706,7 @@ class FacilityUpdatesSerializer(
 class OptionGroupSerializer(AbstractFieldsMixin, serializers.ModelSerializer):
     options = OptionSerializer(required=False, many=True)
 
-    class Meta(object):
+    class Meta(AbstractFieldsMixin.Meta):
         model = OptionGroup
 
 
@@ -703,5 +717,5 @@ class FacilityDepartmentSerializer(
         source='regulatory_body.name'
     )
 
-    class Meta(object):
+    class Meta(AbstractFieldsMixin.Meta):
         model = FacilityDepartment

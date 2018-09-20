@@ -9,7 +9,7 @@ class AdminOfficeContactSerializer(
     contact_type_name = serializers.ReadOnlyField(
         source='contact_type.name')
 
-    class Meta:
+    class Meta(AbstractFieldsMixin.Meta):
         model = AdminOfficeContact
 
 
@@ -50,7 +50,7 @@ class AdminOfficeSerializer(
         return super(AdminOfficeSerializer, self).update(
             instance, validated_data)
 
-    class Meta:
+    class Meta(AbstractFieldsMixin.Meta):
         model = AdminOffice
         fields = [
             "id", "name", "county_name", "county", "sub_county",

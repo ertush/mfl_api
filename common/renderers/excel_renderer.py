@@ -10,13 +10,19 @@ from rest_framework import renderers
 from .shared import DownloadMixin
 
 
-def remove_keys(sample_list):
+def remove_keys(sample_list, request):
     """
     Removes keys that should not be in excel e.g PKs and audit fields
     """
-    return [
-        item for item in sample_list
-        if item not in settings.EXCEL_EXCEPT_FIELDS]
+    if request.user.is_staff:
+        return [
+            item for item in sample_list
+            if item not in settings.EXCEL_EXCEPT_FIELDS]
+    else:
+        return [
+            item for item in sample_list
+            if item not in settings.EXCEL_EXCEPT_FIELDS_FOR_PUBLIC_USERS]
+
 
 
 def _build_name_from_list(name_list):
@@ -65,7 +71,7 @@ def sanitize_field_names(sample_keys):
     return key_map
 
 
-def _write_excel_file(data):  # noqa
+def _write_excel_file(data, request):  # noqa
     mem_file = cStringIO.StringIO()
     workbook = xlsxwriter.Workbook(mem_file)
     format = workbook.add_format(
@@ -90,7 +96,7 @@ def _write_excel_file(data):  # noqa
             sample_keys = example_dict.keys()
 
             # remove columns that should not be in excel
-            sample_keys = remove_keys(sample_keys)
+            sample_keys = remove_keys(sample_keys, request)
 
             # find uuid fields and remove them from data
             data = work_sheet_data[0]
@@ -122,7 +128,7 @@ def _write_excel_file(data):  # noqa
                 data_keys = data_dict.keys()
 
                 # remove colums that should not be in excel
-                data_keys = remove_keys(data_keys)
+                data_keys = remove_keys(data_keys, request)
 
                 for key in data_keys:
                     if not isinstance(data_dict.get(key), list):
@@ -179,4 +185,4 @@ class ExcelRenderer(DownloadMixin, renderers.BaseRenderer):
         is_list = self.check_list_output(data, renderer_context)
         if is_list is not True:
             return is_list
-        return _write_excel_file(data['results'])
+        return _write_excel_file(data['results'], renderer_context.get('request'))

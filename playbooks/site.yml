@@ -1,6 +1,6 @@
 ---
 - hosts: all
-  name: Install MFL API and front-ends
+  name: Install KMHFL API and front-ends
   sudo: True
   vars:
     mfl_public_web_version: "0.0.1a13"

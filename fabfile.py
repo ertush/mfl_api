@@ -275,64 +275,7 @@ def backup_mfl_db(*args, **kwargs):
     tar_command = "tar -czf {0}.tar.gz {1}.sql".format(
         file_name, file_name)
     local(tar_command)
-
-    def save_the_db_backup_to_s3():
-        # send the file generated to aws s3
-        aws_key = os.environ.get('AWS_KEY')
-        aws_secret = os.environ.get('AWS_SECRET')
-        aws_connection = S3Connection(aws_key, aws_secret)
-
-        try:
-            bucket = aws_connection.create_bucket(
-                os.environ.get('AWS_DB_BACKUP_BUCKET'))
-        except:
-            bucket = aws_connection.get_bucket(
-                os.environ.get('AWS_DB_BACKUP_BUCKET'))
-
-        k = Key(bucket)
-        k.key = "{0}.tar.gz".format(file_name)
-
-        # upload the file in chunks just in case its too big
-        source_file_path = os.path.join(BASE_DIR, k.key)
-        source_size = os.stat(source_file_path).st_size
-        mp = bucket.initiate_multipart_upload(
-            os.path.basename(source_file_path))
-
-        chunk_size = 20971520  # 20 MB
-        chunk_count = int(math.ceil(source_size / float(chunk_size)))
-
-        for i in range(chunk_count):
-            offset = chunk_size * i
-            bytes = min(chunk_size, source_size - offset)
-            with FileChunkIO(source_file_path, 'r', offset=offset,
-                             bytes=bytes) as fp:
-                mp.upload_part_from_file(fp, part_num=i + 1)
-
-        mp.complete_upload()
-
-    def test_generated_backup_file(*args, **kwargs):
-        # check the file generated does not have errors in it
-        no_sudo = True if 'no-sudo' in args else False
-        kwargs['sql'] if 'sql' in kwargs else None
-        db_name = 'mfl_backup_db'
-        db_user = base.DATABASES.get('default').get('USER')
-        psql("DROP DATABASE IF EXISTS {0}".format(db_name), no_sudo)
-        psql('CREATE DATABASE {0}'.format(db_name), no_sudo)
-        psql('CREATE EXTENSION IF NOT EXISTS postgis')
-        psql('GRANT ALL on database {0} to {1}'.format(db_name, db_user))
-        command = 'sudo -u postgres psql {0} < {1}.sql'.format(
-            db_name, file_name)
-        local(command)
-        psql("DROP DATABASE IF EXISTS {0}".format(db_name), no_sudo)
-
-    def remove_local_files():
-        # remove the local files created during the backup process
-        local('rm {0}.tar.gz'.format(file_name))
-        local('rm {0}.sql'.format(file_name))
-
-    test_generated_backup_file()
-    save_the_db_backup_to_s3()
-    remove_local_files()
+    local('mv {}.tar.gz /home/moh/database_dumps'.format(file_name))
 
 
 def restore_db(*args, **kwargs):
@@ -447,11 +390,3 @@ def port_data():
     manage('link_officers_to_facilities')
     manage('load_service_catalogue')
     manage('load_facility_services')
-
-
-# add the closed facility operation status in setup
-# load live towns
-#load all facility status
-# load all towns
-# loads the facility owner types
-# load Facility owners

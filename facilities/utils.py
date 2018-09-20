@@ -7,6 +7,7 @@ import json
 import uuid
 
 from django.utils import timezone
+from django.core.exceptions import MultipleObjectsReturned
 
 from common.models import Contact, ContactType
 from common.serializers import ContactSerializer
@@ -105,6 +106,8 @@ def create_contact(contact_data, validated_data):
         contact = ContactSerializer(data=contact_data)
         return contact.save() if contact.is_valid() else \
             inlining_errors.append(json.dumps(contact.errors))
+    except MultipleObjectsReturned:
+        return Contact.objects.filter(contact=contact_data["contact"])[0]
 
 
 def create_facility_contacts(instance, contact_data, validated_data):
@@ -126,6 +129,8 @@ def create_facility_contacts(instance, contact_data, validated_data):
             data=facility_contact_data_with_audit)
         fac_contact.save() if fac_contact.is_valid() else \
             inlining_errors.append(fac_contact.errors)
+    except MultipleObjectsReturned:
+        pass
 
 
 def create_facility_units(instance, unit_data, validated_data):

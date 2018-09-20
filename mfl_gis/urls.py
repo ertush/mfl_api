@@ -1,5 +1,5 @@
 from django.conf import settings
-from django.conf.urls import url, patterns
+from django.conf.urls import url
 from django.views.decorators.cache import cache_page
 from django.views.decorators.gzip import gzip_page
 
@@ -35,9 +35,7 @@ cache_seconds = settings.GIS_BORDERS_CACHE_SECONDS
 coordinates_cache_seconds = (60 * 60 * 24)
 
 
-urlpatterns = patterns(
-    '',
-
+urlpatterns = (
     url(
         r'^drilldown/facility/$',
         cache_page(60*60)(DrillFacilityCoords.as_view()),

@@ -1,11 +1,9 @@
-from django.conf.urls import url, patterns
+from django.conf.urls import url
 
 from .. import views
 
 
-urlpatterns = patterns(
-    '',
-
+urlpatterns = (
     url(r'^material/$',
         views.FacilityExportMaterialListView.as_view(),
         name='material'),
@@ -242,7 +240,6 @@ urlpatterns = patterns(
     url(r'^option_groups/(?P<pk>[^/]+)/$',
         views.OptionGroupDetailView.as_view(),
         name='option_group_detail'),
-
 
     url(r'^facility_depts/$',
         views.FacilityDepartmentListView.as_view(),

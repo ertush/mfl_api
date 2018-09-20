@@ -178,9 +178,34 @@ class Officer(AbstractBase):
         help_text='Personal contacts of the officer in charge')
 
     def get_officer_contacts(self):
-        all_contacts = [contact.contact.contact for contact in self.officer_contacts.all()]
+        return [
+            {
+                "contact": contact.contact.contact,
+                "contact_type": contact.contact.contact_type.name
+            } for contact in self.officer_contacts.all()]
 
-        return " / ".join(all_contacts)
+    def get_contact_by_type(self, contact_type_name):
+        contacts =  self.get_officer_contacts()
+        cons = [
+            contact.get('contact') for contact in contacts
+            if contact.get('contact_type') == contact_type_name
+        ]
+        return ', '.join(cons)
+
+    def email(self):
+        return self.get_contact_by_type('EMAIL')
+
+    def postal(self):
+        return self.get_contact_by_type('POSTAL')
+
+    def mobile(self):
+        return self.get_contact_by_type('MOBILE')
+
+    def landline(self):
+        return self.get_contact_by_type('LANDLINE')
+
+    def fax(self):
+        return self.get_contact_by_type('FAX')
 
     def __str__(self):
         return self.name
@@ -519,7 +544,7 @@ class FacilityRegulationStatus(AbstractBase):
         'Facility', on_delete=models.PROTECT,
         related_name='regulatory_details')
     regulating_body = models.ForeignKey(
-        RegulatingBody, on_delete=models.PROTECT)
+        RegulatingBody, on_delete=models.PROTECT, null=True, blank=True)
     regulation_status = models.ForeignKey(
         RegulationStatus, on_delete=models.PROTECT)
     reason = models.TextField(
@@ -539,14 +564,20 @@ class FacilityRegulationStatus(AbstractBase):
 
     # def clean(self, *args, **kwargs):
     #     self.facility.regulated = True
+    #     self.facility.license_number = self.license_number
     #     self.facility.save(allow_save=True)
 
     class Meta(AbstractBase.Meta):
         verbose_name_plural = 'facility regulation statuses'
 
     def save(self, *args, **kwargs):
-        self.regulating_body = self.created_by.regulator if not \
-            self.regulating_body else self.regulating_body
+
+        if not self.regulating_body and self.facility.regulatory_body:
+            self.regulating_body = self.facility.regulatory_body
+
+        if not self.regulating_body and  self.created_by.regulator:
+            self.regulating_body =  self.created_by.regulatory
+
         super(FacilityRegulationStatus, self).save(*args, **kwargs)
 
 
@@ -654,6 +685,8 @@ class FacilityExportExcelMaterialView(models.Model):
     updated = models.DateTimeField()
     closed = models.BooleanField(default=False)
     is_published = models.BooleanField(default=False)
+    long = models.CharField(max_length=30, null=True, blank=True)
+    lat = models.CharField(max_length=30, null=True, blank=True)
 
     class Meta(object):
         managed = False
@@ -676,13 +709,14 @@ class Facility(SequenceMixin, AbstractBase):
     """
     name = models.CharField(
         max_length=100,
-        help_text='This is the unique name of the facility')
+        help_text='This is the unique name of the facility', unique=True)
     official_name = models.CharField(
         max_length=150, null=True, blank=True,
         help_text='The official name of the facility')
     code = SequenceField(
         unique=True, editable=False,
-        help_text='A sequential number allocated to each facility')
+        help_text='A sequential number allocated to each facility',
+        null=True, blank=True)
     registration_number = models.CharField(
         max_length=100, null=True, blank=True,
         help_text="The registration number given by the regulator")
@@ -817,6 +851,40 @@ class Facility(SequenceMixin, AbstractBase):
         RegulationStatus, null=True, blank=True,
         on_delete=models.PROTECT,
         help_text='The regulatory status of the hospital')
+
+    def validate_facility_name(self):
+        if self.pk:
+            if self.__class__.objects.filter(name=self.name).count() != 1:
+                raise ValidationError({"name": "The name must be unique"})
+        else:
+            if self.__class__.objects.filter(name=self.name()).count() > 0:
+                raise ValidationError({"name": "The name must be unique"})
+
+    @property
+    def in_complete_details(self):
+        """
+        Check whether  a facility has all the details filled in:
+            1. Coordinates
+            2. Contacts and officers
+            3. Services
+
+        This will be used to determine if the facility should have an MFL Code.
+        The incomplete facilities should not have MFL codes
+        """
+        in_complete_data = []
+        if not self.coordinates:
+            in_complete_data.append('coordinates')
+
+        if len(self.facility_contacts.all()) == 0:
+            in_complete_data.append('contacts')
+
+        if len(self.facility_services.all()) == 0:
+            in_complete_data.append('services')
+        return ", ".join(in_complete_data)
+
+    @property
+    def is_complete(self):
+        return self.in_complete_details == ""
 
     def update_facility_regulation_status(self):
         self.regulated = True
@@ -1050,9 +1118,41 @@ class Facility(SequenceMixin, AbstractBase):
                     }
                 )
 
+    def ensure_closed_facility_operation_status_is_closed(self):
+        # expects only one to be closed
+        closed_fs = FacilityStatus.objects.get(name__search='closed')
+
+        if self.closed:
+            self.operation_status = closed_fs
+
+        if self.operation_status == closed_fs:
+            self.closed = True
+
+        if self.closed and not self.closed_date:
+            self.closed_date =  timezone.now()
+
+    def ensure_operational_status_after_opening_facility(self):
+        old_details = None
+        try:
+            old_details = Facility.objects.get(id=self.id)
+
+        except Facility.DoesNotExist:
+            return
+
+        if old_details.closed  and not self.closed:
+            operational_status = FacilityStatus.objects.get(name='Operational')
+            self.operational_status = operational_status
+
     def clean(self, *args, **kwargs):
         self.validate_closing_date_supplied_on_close()
         #self.validate_ward_and_sub_county()
+        self.validate_facility_name()
+
+        if self.closed:
+            self.ensure_closed_facility_operation_status_is_closed()
+
+        if not self.closed and self.pk:
+            self.ensure_operational_status_after_opening_facility()
         super(Facility, self).clean()
 
     def _get_field_human_attribute(self, field_obj):
@@ -1093,7 +1193,7 @@ class Facility(SequenceMixin, AbstractBase):
     def _dump_updates(self, origi_model):
         fields = [field.name for field in self._meta.fields]
         forbidden_fields = [
-            'closed', 'closing_reason', 'closed_date']
+            'closed', 'closing_reason', 'closed_date', 'code']
         data = []
         for field in fields:
             if (getattr(self, field) != getattr(origi_model, field) and
@@ -1143,11 +1243,21 @@ class Facility(SequenceMixin, AbstractBase):
         approved.
         """
         from facilities.serializers import FacilityDetailSerializer
-        if not self.code:
+        if not self.code and self.is_complete:
             self.code = self.generate_next_code_sequence()
+
         if not self.official_name:
             self.official_name = self.name
-        if not self.is_approved:
+
+        if not self.is_complete and not self.is_approved:
+            kwargs.pop('allow_save', None)
+            super(Facility, self).save(*args, **kwargs)
+            self.index_facility_material_view()
+            self.update_facility_regulation_status()
+            return
+
+
+        if  self.is_complete and not self.is_approved:
             kwargs.pop('allow_save', None)
             super(Facility, self).save(*args, **kwargs)
             self.index_facility_material_view()
@@ -1189,21 +1299,22 @@ class Facility(SequenceMixin, AbstractBase):
 
         origi_model = self.__class__.objects.get(id=self.id)
         allow_save = kwargs.pop('allow_save', None)
+
         if allow_save:
             super(Facility, self).save(*args, **kwargs)
             self.index_facility_material_view()
-            self.update_facility_regulation_status()
+            # self.update_facility_regulation_status()
         else:
             updates = self._dump_updates(origi_model)
             try:
                 updates.pop('updated_by')
             except:
                 pass
+
             # try:
             #     updates.pop('updated_by_id')
             # except:
             #     pass
-
             if updates:
                 try:
                     facility_update = FacilityUpdates.objects.filter(
@@ -1349,13 +1460,14 @@ class FacilityUpdates(AbstractBase):
             self.facility.has_edits = True
         else:
             self.facility.has_edits = False
-        old_facility = Facility.objects.get(id=self.facility.id)
-        if self.facility_updates:
-            data = json.loads(self.facility_updates)
-            for field_changed in data:
-                field_name = field_changed.get("field_name")
-                old_value = getattr(old_facility, field_name)
-                setattr(self.facility, field_name, old_value)
+        # old_facility = Facility.objects.get(id=self.facility.id)
+
+        # if self.facility_updates:
+        #     data = json.loads(self.facility_updates)
+        #     for field_changed in data:
+        #         field_name = field_changed.get("field_name")
+        #         old_value = getattr(old_facility, field_name)
+        #         setattr(self.facility, field_name, old_value)
         self.facility.save(allow_save=True)
 
     def update_facility(self):
@@ -1367,8 +1479,11 @@ class FacilityUpdates(AbstractBase):
                     value = parser.parse(field_changed.get("actual_value"))
                     new_date = datetime.date(year=value.year, month=value.month, day=value.day)
                     value = new_date
+                elif field_name == 'sub_county_id':
+                    value =  SubCounty.objects.get(name=field_changed.get('display_value')).id
                 else:
                     value = field_changed.get("actual_value")
+
                 setattr(self.facility, field_name, value)
             self.facility.save(allow_save=True)
 

@@ -1,3 +1,8 @@
+# MAGIC HACK: without this, a recent Homebrew update broke GDAL!
+GDAL_LIBRARY_PATH = "/usr/local/lib/libgdal.dylib"
+import ctypes
+ctypes.CDLL(GDAL_LIBRARY_PATH)
+
 import os
 import environ
 
@@ -7,7 +12,7 @@ BASE_DIR = os.path.dirname(
 # Override in production via env
 
 env = environ.Env(
-    DATABASE_URL=(str, 'postgres://mfl:mfl@localhost:5432/mfl'),
+    DATABASE_URL=(str, 'postgres://mfl:mfl@localhost:5432/mfl_live'),
     DEBUG=(bool, True),
     FRONTEND_URL=(str, "http://localhost:8062"),
     REALTIME_INDEX=(bool, False),
@@ -22,7 +27,7 @@ env = environ.Env(
     STORAGE_BACKEND=(str, ''),
     ADMINS=(str, "admin:admin@example.com,"),
     SERVER_EMAIL=(str, "root@localhost"),
-    ALLOWED_HOSTS=(str, "localhost")
+    ALLOWED_HOSTS=(str, ".localhost, .health.go.ke")
 
 
 )
@@ -47,7 +52,7 @@ DATABASES = {
         'USER': ENV_DB['USER'],
     }
 }  # Env should have DATABASE_URL
-MIDDLEWARE_CLASSES = (
+MIDDLEWARE = (
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.cache.UpdateCacheMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -59,7 +64,8 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.security.SecurityMiddleware',
-    'reversion.middleware.RevisionMiddleware'
+    'reversion.middleware.RevisionMiddleware',
+    'debug_toolbar.middleware.DebugToolbarMiddleware'
 )
 
 EMAIL_HOST = env('EMAIL_HOST')
@@ -67,9 +73,11 @@ EMAIL_HOST_USER = env('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD')
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-EMAIL_SUBJECT_PREFIX = '[Master Facility List] '
+
+EMAIL_SUBJECT_PREFIX = '[Kenya Master Health Facility List] '
 
 ALLOWED_HOSTS = env('ALLOWED_HOSTS').split(',') + ['localhost', '127.0.0.1', '0.0.0.0']
+#ALLOWED_HOSTS = ['.locahost', '.health.go.ke', '198.199.125.166', 'api.kmhfltest.health.go.ke']
 
 INSTALLED_APPS = (
     'django.contrib.sites',
@@ -82,6 +90,7 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.postgres',
     'oauth2_provider',
     'rest_framework',
     'rest_framework.authtoken',
@@ -96,10 +105,10 @@ INSTALLED_APPS = (
     'gunicorn',
     'debug_toolbar',
     'storages',
+    'django_filters',
     'facilities',
     'data_bootstrap',
     'chul',
-    'data',
     'mfl_gis',
     'search',
     'reporting',
@@ -109,6 +118,8 @@ INSTALLED_APPS = (
 # It is *NOT* appended to INSTALLED_APPS ( **deliberate** DRY violation )
 # This was forced by the need to override rest_framework templates in common
 # It is a list because order matters
+
+
 LOCAL_APPS = [
     'users',
     'common',
@@ -180,7 +191,7 @@ REST_FRAMEWORK = {
         'oauth2_provider.ext.rest_framework.OAuth2Authentication',
         'rest_framework.authentication.SessionAuthentication',
     ),
-    'PAGINATE_BY': 30,
+    'PAGE_SIZE': 30,
     'PAGINATE_BY_PARAM': 'page_size',
     # Should be able to opt in to see all wards at once
     'MAX_PAGINATE_BY': 150000,
@@ -228,7 +239,7 @@ LOGGING = {
     },
     'handlers': {
         'console': {
-            'level': 'DEBUG',
+            'level': 'INFO',
             'class': 'logging.StreamHandler',
             'formatter': 'verbose'
         }
@@ -237,28 +248,28 @@ LOGGING = {
         'django': {
             'handlers': ['console'],
             'propagate': True,
-            'level': 'ERROR',
+            'level': 'INFO',
         },
         'django.request': {
             'handlers': ['console'],
-            'level': 'ERROR',
+            'level': 'INFO',
             'propagate': False,
         },
         'rest_framework': {
             'handlers': ['console'],
-            'level': 'ERROR'
+            'level': 'INFO'
         },
         'common': {
             'handlers': ['console'],
-            'level': 'ERROR'
+            'level': 'INFO'
         },
         'facilities': {
             'handlers': ['console'],
-            'level': 'ERROR'
+            'level': 'INFO'
         },
         'users': {
             'handlers': ['console'],
-            'level': 'ERROR'
+            'level': 'INFO'
         },
         'data_bootstrap': {
             'handlers': ['console'],
@@ -266,21 +277,36 @@ LOGGING = {
         },
         'mfl_gis': {
             'handlers': ['console'],
-            'level': 'ERROR'
+            'level': 'INFO'
         },
         'exception_handler': {
             'handlers': ['console'],
-            'level': 'ERROR'
+            'level': 'INFO'
         }
     }
 }
+
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': os.path.join(BASE_DIR, '/common/templates/'),
         'APP_DIRS': True,
+         'OPTIONS': {
+            'context_processors': [
+                # Insert your TEMPLATE_CONTEXT_PROCESSORS here or use this
+                # list if you haven't customized them:
+                'django.contrib.auth.context_processors.auth',
+                'django.template.context_processors.debug',
+                'django.template.context_processors.i18n',
+                'django.template.context_processors.media',
+                'django.template.context_processors.static',
+                'django.template.context_processors.tz',
+                'django.contrib.messages.context_processors.messages',
+            ],
+        }
     },
 ]
+
 CACHES = {
     "default": {
         "BACKEND": "django.core.cache.backends.dummy.DummyCache"
@@ -470,8 +496,10 @@ SITE_ID = 1
 
 EXCEL_EXCEPT_FIELDS = [
     'id', 'updated', 'created', 'created_by', 'updated_by', 'active',
-    'deleted', 'search', 'services', 'categories', 'is_published'
+    'deleted', 'search', 'services', 'categories', 'is_published',
 ]
+
+EXCEL_EXCEPT_FIELDS_FOR_PUBLIC_USERS = EXCEL_EXCEPT_FIELDS + ['lat', 'long']
 
 FRONTEND_URL = env("FRONTEND_URL")
 PASSWORD_RESET_URL = "%s/#/reset_pwd_confirm/{uid}/{token}" % FRONTEND_URL

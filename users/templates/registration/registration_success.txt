@@ -1,22 +1,22 @@
 Hi {{first_name}},
 
-A user account linked to your email has been created on the Master Facility List Kenya (MFL).
-The email and password to login to the MFL are as given below:
+A user account linked to your email has been created on the Kenya Master Health Facility List Kenya (KMHFL).
+The email and password to login to the KMHFL are as given below:
 Email: {{email}}
 Employee Number: {{employee_number}}
 Password: {{user_password}}
 
 
-Click on the link given below to login to MFL.
+Click on the link given below to login to KMHFL.
 {{login_url}}
 
 Note:
 1. You will be required to change your password once you log in the first time.
-2. You can use either your email or your employee number to login to MFL.
+2. You can use either your email or your employee number to login to KMHFL.
 
-If you have issues regarding this information contact the MFL team using the email helpdesk@ehealth.or.ke
+If you have issues regarding this information contact the KMHFL team using the email helpdesk@ehealth.or.ke
 
 
 Warm Regards,
 
-The MFL Team http://www.kmhf.health.go.ke
+The KMHFL Team http://www.kmhfl.health.go.ke

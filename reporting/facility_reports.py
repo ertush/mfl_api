@@ -112,7 +112,10 @@ class FilterReportMixin(object):
             return self._get_facility_count(category=False)
 
         if report_type == "facility_count_by_facility_type":
-            return self._get_facility_count(category=False, f_type=True)
+            return self._get_facility_count_by_facility_type()
+
+        if report_type == "facility_count_by_facility_type_details":
+            return self._get_facility_count_by_facility_type_details()
 
         if report_type == "gis":
             return self._get_gis_report()
@@ -543,6 +546,112 @@ class FilterReportMixin(object):
             data.append(data_dict)
         return data, []
 
+    def _get_facility_count_by_facility_type(self):
+        county = self.request.query_params.get('county', None)
+        sub_county = self.request.query_params.get('sub_county', None)
+        ward = self.request.query_params.get('ward', None)
+
+        vals = []
+        vals.append(county) if county else None
+        vals.append(sub_county) if sub_county else None
+        vals.append(ward) if ward else None
+
+        for val in vals:
+            try:
+                for c in val.split(','):
+                    uuid.UUID(c)
+            except:
+                raise ValidationError(
+                    {
+                        "Administrative area": [
+                            "The area id provided is"
+                            " in the wrong format"
+                        ]
+                    }
+                )
+
+        admin_area_filter = {}
+        if county:
+            admin_area_filter = {
+                "ward__sub_county__county_id__in": county.split(',')
+            }
+        if sub_county:
+            admin_area_filter = {
+                "ward__sub_county_id__in": sub_county.split(',')
+            }
+        if ward:
+            admin_area_filter = {
+                "ward_id__in": ward.split(',')
+            }
+        data = []
+        for ft in FacilityType.objects.filter(parent__isnull=True):
+            ft_children=  FacilityType.objects.filter(parent=ft)
+            data_dict = {
+                    'type_category': ft.name,
+                    "id": str(ft.id),
+                    "number_of_facilities": Facility.objects.filter(
+                        facility_type__in=ft_children).filter(
+                        **admin_area_filter).count()
+                }
+            data.append(data_dict)
+        return data, []
+
+
+    def _get_facility_count_by_facility_type_details(self):
+        county = self.request.query_params.get('county', None)
+        sub_county = self.request.query_params.get('sub_county', None)
+        ward = self.request.query_params.get('ward', None)
+        parent = self.request.query_params.get('parent', None)
+
+        vals = []
+        vals.append(county) if county else None
+        vals.append(sub_county) if sub_county else None
+        vals.append(ward) if ward else None
+
+        for val in vals:
+            try:
+                for c in val.split(','):
+                    uuid.UUID(c)
+            except:
+                raise ValidationError(
+                    {
+                        "Administrative area": [
+                            "The area id provided is"
+                            " in the wrong format"
+                        ]
+                    }
+                )
+
+        admin_area_filter = {}
+        if county:
+            admin_area_filter = {
+                "ward__sub_county__county_id__in": county.split(',')
+            }
+        if sub_county:
+            admin_area_filter = {
+                "ward__sub_county_id__in": sub_county.split(',')
+            }
+        if ward:
+            admin_area_filter = {
+                "ward_id__in": ward.split(',')
+            }
+        data = []
+
+        if parent:
+            allowed_fts = FacilityType.objects.filter(parent_id=parent)
+        else:
+            allowed_fts = FacilityType.objects.filter(parent__isnull=False)
+        for ft in allowed_fts:
+            data_dict = {
+                    'type_category': ft.name,
+                    "id": str(ft.id),
+                    "number_of_facilities": Facility.objects.filter(
+                        facility_type=ft).filter(
+                        **admin_area_filter).count()
+                }
+            data.append(data_dict)
+        return data, []
+
 
 class ReportView(FilterReportMixin, APIView):
 
@@ -682,14 +791,25 @@ class CommunityHealthUnitReport(APIView):
         counties = County.objects.all()
         total_chus = 0
         for county in counties:
-            chu_count = queryset.filter(
-                facility__ward__constituency__county=county).count()
+            chus = queryset.filter(
+                facility__ward__constituency__county=county)
+            chu_count = chus.count()
             total_chus += chu_count
+
+            total_chvs = 0
+            total_chews = 0
+
+            for chu in chus:
+                total_chews += chu.health_unit_workers.count()
+                total_chvs += chu.number_of_chvs
+
             data.append(
                 {
                     "county_name": county.name,
                     "county_id": county.id,
-                    "number_of_units": chu_count
+                    "number_of_units": chu_count,
+                    "chvs": total_chvs,
+                    "chews": total_chews
                 }
             )
         return data, total_chus
@@ -702,14 +822,24 @@ class CommunityHealthUnitReport(APIView):
             constituencies = constituencies.filter(county_id=county)
         total_chus = 0
         for const in constituencies:
-            chu_count = queryset.filter(
-                facility__ward__constituency=const).count()
+            chus = queryset.filter(
+                facility__ward__constituency=const)
+            chu_count = chus.count()
             total_chus += chu_count
+
+            total_chvs = 0
+            total_chews = 0
+            for chu in chus:
+                total_chews += chu.health_unit_workers.count()
+                total_chvs += chu.number_of_chvs
+
             data.append(
                 {
                     "constituency_name": const.name,
                     "constituency_id": const.id,
-                    "number_of_units": chu_count
+                    "number_of_units": chu_count,
+                    "chvs": total_chvs,
+                    "chews": total_chews
                 }
             )
         return data, total_chus
@@ -722,14 +852,25 @@ class CommunityHealthUnitReport(APIView):
             sub_county = sub_county.filter(county_id=county)
         total_chus = 0
         for sub in sub_county:
-            chu_count = queryset.filter(
-                facility__ward__sub_county=sub).count()
+            chus = queryset.filter(
+                facility__ward__sub_county=sub)
+            chu_count = chus.count()
             total_chus += chu_count
+
+            total_chvs = 0
+            total_chews = 0
+
+            for chu in chus:
+                total_chews += chu.health_unit_workers.count()
+                total_chvs += chu.number_of_chvs
+
             data.append(
                 {
                     "sub_county_name": sub.name,
                     "sub_county_id": sub.id,
-                    "number_of_units": chu_count
+                    "number_of_units": chu_count,
+                    "chvs": total_chvs,
+                    "chews": total_chews
                 }
             )
         return data, total_chus
@@ -742,14 +883,26 @@ class CommunityHealthUnitReport(APIView):
 
         total_chus = 0
         for ward in wards:
-            chu_count = queryset.filter(
-                facility__ward=ward).count()
+            chus = queryset.filter(
+                facility__ward=ward)
+            chu_count = chus.count()
             total_chus += chu_count
+
+            total_chvs = 0
+            total_chews = 0
+
+            for chu in chus:
+                total_chews += chu.health_unit_workers.count()
+                total_chvs += chu.number_of_chvs
+
             data.append(
                 {
                     "ward_name": ward.name,
                     "ward_id": ward.id,
-                    "number_of_units": chu_count
+                    "number_of_units": chu_count,
+                    "chvs": total_chvs,
+                    "chews": total_chews
+
                 }
             )
         return data, total_chus

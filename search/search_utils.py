@@ -7,7 +7,7 @@ import logging
 from django.conf import settings
 from django.dispatch import receiver
 from django.db.models.signals import post_save
-from django.db.models import get_app, get_models
+from django.apps import apps
 from common.models import ErrorQueue
 from celery import shared_task
 
@@ -150,8 +150,8 @@ def confirm_model_is_indexable(model):
         for app_model in non_indexable_models:
             app_name, cls_name = app_model.split('.')
             non_indexable_models_names.append(cls_name)
-            app = get_app(app_name)
-            app_models = get_models(app)
+            app = apps.get_app_config(app_name)
+            app_models = app.get_models()
 
             for model_cls in app_models:
                 if model_cls.__name__ in non_indexable_models_names:

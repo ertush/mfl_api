@@ -26,7 +26,7 @@ from .serializer_base import AbstractFieldsMixin
 class NotificationGroupSerializer(AbstractFieldsMixin, serializers.ModelSerializer):
     group_name = serializers.ReadOnlyField(source='group.name')
 
-    class Meta:
+    class Meta(AbstractFieldsMixin.Meta):
         model = NoficiationGroup
 
 
@@ -35,7 +35,7 @@ class NotificationSerializer(AbstractFieldsMixin, serializers.ModelSerializer):
     notification_groups = NotificationGroupSerializer(many=True, read_only=True)
     simple_groups = serializers.ReadOnlyField()
 
-    class Meta:
+    class Meta(AbstractFieldsMixin.Meta):
         model = Notification
 
     def create(self, validated_data):
@@ -77,14 +77,14 @@ class UserSubCountySerializer(
         validators=[], required=False, queryset=SubCounty.objects.all())
     sub_county_name = serializers.ReadOnlyField(source="sub_county.name")
 
-    class Meta(object):
+    class Meta(AbstractFieldsMixin.Meta):
         model = UserSubCounty
 
 
 class SubCountySerializer(AbstractFieldsMixin, serializers.ModelSerializer):
     county_name = serializers.ReadOnlyField(source="county.name")
 
-    class Meta(object):
+    class Meta(AbstractFieldsMixin.Meta):
         model = SubCounty
 
 
@@ -104,14 +104,14 @@ class UserContactSerializer(
     )
     contact_type = serializers.CharField(source='contact.contact_type.id')
 
-    class Meta(object):
+    class Meta(AbstractFieldsMixin.Meta):
         model = UserContact
 
 
 class ContactTypeSerializer(
         AbstractFieldsMixin, serializers.ModelSerializer):
 
-    class Meta(object):
+    class Meta(AbstractFieldsMixin.Meta):
         model = ContactType
 
 
@@ -119,7 +119,7 @@ class ContactSerializer(
         AbstractFieldsMixin, serializers.ModelSerializer):
     contact_type_name = serializers.ReadOnlyField(source='contact_type.name')
 
-    class Meta(object):
+    class Meta(AbstractFieldsMixin.Meta):
         model = Contact
 
 
@@ -127,13 +127,13 @@ class PhysicalAddressSerializer(
         AbstractFieldsMixin, serializers.ModelSerializer):
     town_name = serializers.ReadOnlyField(source='town.name')
 
-    class Meta(object):
+    class Meta(AbstractFieldsMixin.Meta):
         model = PhysicalAddress
 
 
 class CountySerializer(AbstractFieldsMixin, GeoModelSerializer):
 
-    class Meta(object):
+    class Meta(AbstractFieldsMixin.Meta):
         model = County
         read_only_fields = ('code',)
 
@@ -141,7 +141,7 @@ class CountySerializer(AbstractFieldsMixin, GeoModelSerializer):
 class CountyDetailSerializer(AbstractFieldsMixin, GeoModelSerializer):
     bound = serializers.ReadOnlyField(source="county_bound")
 
-    class Meta(object):
+    class Meta(AbstractFieldsMixin.Meta):
         model = County
         read_only_fields = ('code',)
 
@@ -149,7 +149,7 @@ class CountyDetailSerializer(AbstractFieldsMixin, GeoModelSerializer):
 class CountySlimDetailSerializer(
         AbstractFieldsMixin, serializers.ModelSerializer):
 
-    class Meta(object):
+    class Meta(AbstractFieldsMixin.Meta):
         model = County
         read_only_fields = ('code',)
 
@@ -157,7 +157,7 @@ class CountySlimDetailSerializer(
 class TownSerializer(
         AbstractFieldsMixin, serializers.ModelSerializer):
 
-    class Meta(object):
+    class Meta(AbstractFieldsMixin.Meta):
         model = Town
 
 
@@ -167,7 +167,7 @@ class WardSerializer(AbstractFieldsMixin, GeoModelSerializer):
     sub_county_name = serializers.ReadOnlyField(source="sub_county.name")
     sub_county = serializers.CharField(source='sub_county.id')
 
-    class Meta(object):
+    class Meta(AbstractFieldsMixin.Meta):
         model = Ward
         read_only_fields = ('code',)
 
@@ -183,7 +183,7 @@ class WardDetailSerializer(AbstractFieldsMixin, GeoModelSerializer):
     constituency_name = serializers.ReadOnlyField(source="constituency.name")
     sub_county_name = serializers.ReadOnlyField(source="sub_county.name")
 
-    class Meta(object):
+    class Meta(AbstractFieldsMixin.Meta):
         model = Ward
         read_only_fields = ('code',)
 
@@ -194,14 +194,14 @@ class WardSlimDetailSerializer(
     constituency_name = serializers.ReadOnlyField(source="constituency.name")
     sub_county_name = serializers.ReadOnlyField(source="sub_county.name")
 
-    class Meta(object):
+    class Meta(AbstractFieldsMixin.Meta):
         model = Ward
 
 
 class ConstituencySerializer(AbstractFieldsMixin, GeoModelSerializer):
     county_name = serializers.ReadOnlyField(source="county.name")
 
-    class Meta(object):
+    class Meta(AbstractFieldsMixin.Meta):
         model = Constituency
         read_only_fields = ('code',)
 
@@ -210,7 +210,7 @@ class ConstituencyDetailSerializer(AbstractFieldsMixin, GeoModelSerializer):
     bound = serializers.ReadOnlyField(source="constituency_bound")
     county_name = serializers.ReadOnlyField(source="county.name")
 
-    class Meta(object):
+    class Meta(AbstractFieldsMixin.Meta):
         model = Constituency
         read_only_fields = ('code',)
 
@@ -218,7 +218,7 @@ class ConstituencyDetailSerializer(AbstractFieldsMixin, GeoModelSerializer):
 class ConstituencySlimDetailSerializer(
         AbstractFieldsMixin, serializers.ModelSerializer):
 
-    class Meta(object):
+    class Meta(AbstractFieldsMixin.Meta):
         model = Constituency
 
 
@@ -239,7 +239,7 @@ class UserCountySerializer(
         validators=[], required=False,
         queryset=County.objects.all())
 
-    class Meta(object):
+    class Meta(AbstractFieldsMixin.Meta):
         model = UserCounty
 
 
@@ -269,14 +269,14 @@ class UserConstituencySerializer(
     constituency = serializers.PrimaryKeyRelatedField(
         validators=[], required=False, queryset=Constituency.objects.all())
 
-    class Meta(object):
+    class Meta(AbstractFieldsMixin.Meta):
         model = UserConstituency
 
 
 class DocumentUploadSerializer(
         AbstractFieldsMixin, serializers.ModelSerializer):
 
-    class Meta(object):
+    class Meta(AbstractFieldsMixin.Meta):
         model = DocumentUpload
         read_only_fields = (
             'created', 'created_by', 'updated', 'updated_by', 'deleted',
@@ -284,5 +284,5 @@ class DocumentUploadSerializer(
 
 
 class ErrorQueueSerializer(AbstractFieldsMixin, serializers.ModelSerializer):
-    class Meta(object):
+    class Meta(AbstractFieldsMixin.Meta):
         model = ErrorQueue

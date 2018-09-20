@@ -1,4 +1,4 @@
-from django.conf.urls import url, patterns
+from django.conf.urls import url
 from django.views.decorators.cache import cache_page
 from .views import (
     ContactView,
@@ -38,15 +38,13 @@ from .views import (
 )
 
 
-urlpatterns = patterns(
-    '',
+urlpatterns = (
     url(r'^notifications/$',
         NotificationListView.as_view(),
         name='notifications_list'),
     url(r'^notifications/(?P<pk>[^/]+)/$',
         NotificationDetailView.as_view(),
         name='notification_detail'),
-
 
     url(r'^errors/$',
         ErrorQueueListView.as_view(),

@@ -69,3 +69,7 @@ class AbstractFieldsMixin(PartialResponseMixin):
         origi_fields = super(AbstractFieldsMixin, self).get_fields()
         request = self.context.get('request', None)
         return self.strip_fields(request, origi_fields)
+
+
+    class Meta(object):
+        fields = '__all__'

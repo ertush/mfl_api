@@ -94,7 +94,10 @@ class Contact(AbstractBase):
         on_delete=models.PROTECT)
 
     def __str__(self):
-        return "{}: {}".format(self.contact_type.name, self.contact)
+        return "{}: {}".format(
+            self.contact_type.name.encode('ascii', 'ignore'),
+             self.contact.encode('ascii', 'ignore')
+        )
 
     class Meta(AbstractBase.Meta):
         unique_together = ('contact', 'contact_type')

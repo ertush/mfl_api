@@ -8,7 +8,7 @@ from django.utils import timezone, encoding
 from django.core.validators import (
     validate_email, RegexValidator, ValidationError
 )
-from django.contrib.auth.models import make_password
+from django.contrib.auth.hashers import make_password
 from django.contrib.postgres.fields import ArrayField
 from django.contrib.auth.models import (
     AbstractBaseUser, BaseUserManager, PermissionsMixin, Group, Permission
@@ -351,6 +351,8 @@ class MflUser(AbstractBaseUser, PermissionsMixin):
         ]
 
     def save(self, *args, **kwargs):
+        if self.deleted:
+            self.is_active = False
         super(MflUser, self).save(*args, **kwargs)
 
     class Meta(object):
@@ -394,6 +396,7 @@ class CustomGroup(models.Model):
         return "{}".format(self.group)
 
 
+@reversion.register
 @encoding.python_2_unicode_compatible
 class ProxyGroup(Group):
 

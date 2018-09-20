@@ -165,7 +165,7 @@ class GroupSerializer(PartialResponseMixin, serializers.ModelSerializer):
         sub_county_level = self.initial_data.pop(
             'is_sub_county_level', instance.is_sub_county_level)
         permissions = _lookup_permissions(
-            self.context['request'].DATA
+            self.context['request'].data
         )
         validated_data.pop('permissions', None)
 
@@ -202,6 +202,7 @@ class GroupSerializer(PartialResponseMixin, serializers.ModelSerializer):
 
     class Meta(object):
         model = ProxyGroup
+        fields = '__all__'
 
 
 class MflUserSerializer(PartialResponseMixin, serializers.ModelSerializer):
@@ -505,7 +506,6 @@ class MflUserSerializer(PartialResponseMixin, serializers.ModelSerializer):
 
     class Meta(object):
         model = MflUser
-        # exclude = ('password_history', 'user_permissions', )
         extra_kwargs = {'password': {'write_only': True}}
         fields = [
             "id",
@@ -556,6 +556,7 @@ class MFLOAuthApplicationSerializer(serializers.ModelSerializer):
 
     class Meta(object):
         model = MFLOAuthApplication
+        fields = '__all__'
 
 
 class MflPasswordChangeSerializer(PasswordChangeSerializer):
@@ -564,3 +565,8 @@ class MflPasswordChangeSerializer(PasswordChangeSerializer):
         super(MflPasswordChangeSerializer, self).validate(attrs)
         check_password_strength(attrs['new_password1'])
         return attrs
+
+
+    class Meta(object):
+        fields = '__all__'
+

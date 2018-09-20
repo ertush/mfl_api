@@ -11,6 +11,9 @@ class SequenceGenerator(object):
         self.sequence_name = app_label + "_" + model_name + "_code_seq"
 
     def next(self):
+        if self.code:
+            return self.code
+
         query = "SELECT nextval('%s')" % self.sequence_name
         with connection.cursor() as cur:
             cur.execute(query)
