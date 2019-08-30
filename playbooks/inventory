@@ -1,1 +1,1 @@
-ansible_ssh_host=35.226.60.135
+azure_test_server             ansible_ssh_host=198.199.125.166 ansible_ssh_user=moh

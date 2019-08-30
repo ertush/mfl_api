@@ -30,6 +30,7 @@ class ElasticAPI(object):
 
     @property
     def _is_on(self):
+        return False
         url = ELASTIC_URL
         try:
             requests.get(url)
@@ -227,7 +228,6 @@ def index_instance(app_label, model_name, instance_id, index_name=INDEX_NAME):
     return indexed
 
 
-@receiver(post_save)
 def index_on_save(sender, instance, **kwargs):
     """
     Listen for save signals and index the instances being created.

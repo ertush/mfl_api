@@ -1,0 +1,608 @@
+[
+    {
+        "category": "HIV/AIDS Prevention,Care and Treatment Services", 
+        "mode": "Yes/No", 
+        "name": "Condom Promotion and Distribution. ", 
+        "description": "Counseling on condom use and availability of condoms"
+    }, 
+    {
+        "category": "HIV Counseling and Testing ", 
+        "mode": "", 
+        "name": "VCT-Voluntary Counseling and Testing", 
+        "description": "Counseling and testing which is client initiated"
+    }, 
+    {
+        "category": "HIV Counseling and Testing ", 
+        "mode": "Yes/No", 
+        "name": "PITC-Provider-Initiated Counseling and Testing", 
+        "description": "Counseling and testing as a result of encouragement by the providers"
+    }, 
+    {
+        "category": "HIV Counseling and Testing ", 
+        "mode": "Yes/No", 
+        "name": "DCT-Diagnostic Counseling and Testing", 
+        "description": "Testing of suspected disease in order to make a diagnosis"
+    }, 
+    {
+        "category": "HIV Counseling and Testing ", 
+        "mode": "Yes/No", 
+        "name": "HEI - HIV exposed infants ", 
+        "description": "Availability of Dry Blood Spot kits"
+    }, 
+    {
+        "category": "PMTCT-Prevention of Mother to Child  Transmission of HIV", 
+        "mode": "Yes/No", 
+        "name": "Counselling on  best  breastfeeding and complementary feeding practices  in HIV, Highly Active Anti retroviral Therapy, Cotrimoxazole prophylaxis, ARV prophylaxis for children born of HIV+ mothers", 
+        "description": " Provision for HIV counseling and testing for pregnant mothers at either ANC or within the Maternity and post natal clinics"
+    }, 
+    {
+        "category": "HIV/AIDS Prevention,Care and Treatment Services", 
+        "mode": "Yes/No", 
+        "name": "VMMC-Voluntary Medical Male Circumcision Services", 
+        "description": "A programme of circumcising adult males in order to reduce HIV transmission"
+    }, 
+    {
+        "category": "HIV/AIDS Prevention,Care and Treatment Services", 
+        "mode": "Yes/No", 
+        "name": "Post-Exposure Prophylaxis (PEP)", 
+        "description": "Counseling, testing, and administration of PEP drugs."
+    }, 
+    {
+        "category": "HIV and STI prevention", 
+        "mode": "Yes/No", 
+        "name": "Management of Sexually Transmitted Illness (STI)", 
+        "description": "Availability of Information, Education and Communication (IEC) materials, diagnosis facilities, treatment guidelines, and drugsManagement of sexually transmitted Infections, Pelvic Inflammatory Disease management, Post Exposure Prophylaxis, Condom distribution/ provision, HIV Testing and Counselling (HTC)"
+    }, 
+    {
+        "category": "HIV prevention and treatment of malnutrition", 
+        "mode": "Yes/No", 
+        "name": "Nutrition assessment ,councelling and support ( The NACS process) for PLHIVs", 
+        "description": "Availability of anthropometric equipment, IEC materials, Councelling cards  Nutrition and HIV guidelines, tool kit for service providers,  caretaker booklet, drug nutrient interaction charts,( Chart A and B ) and therapeutic and supplemental feeds  for provision of nutrition services via the NACS process."
+    }, 
+    {
+        "category": "Maternity Services", 
+        "mode": "Yes/No", 
+        "name": "Basic  Maternity Obstetric Care (BMOC)", 
+        "description": "Basic Maternity obstetric (and newborn care), provided in Health facilities"
+    }, 
+    {
+        "category": "Maternity Services", 
+        "mode": "Yes/No", 
+        "name": "Comprehensive Maternity Obstetric Care (CMOC)", 
+        "description": "Comprehensive Maternity obstetric (and newborn) care, for the management of life-threatening obstetric complications"
+    }, 
+    {
+        "category": "Family Planning (FP)", 
+        "mode": "Yes/No", 
+        "name": "Short Term:", 
+        "description": " Pills, injectables, condoms, and  "
+    }, 
+    {
+        "category": "Family Planning (FP)", 
+        "mode": "Yes/No", 
+        "name": "Long term: ", 
+        "description": "Intra-Uterine Contraceptive Device (IUCD), implants"
+    }, 
+    {
+        "category": "Family Planning (FP)", 
+        "mode": "Yes/No", 
+        "name": "Natural ", 
+        "description": "Counseling, cycle beads"
+    }, 
+    {
+        "category": "Family Planning (FP)", 
+        "mode": "", 
+        "name": "Permanent: ", 
+        "description": "Vasectomy, bilateral tubal ligation (BTL)"
+    }, 
+    {
+        "category": "Antenatal Care (ANC)", 
+        "mode": "Yes/No", 
+        "name": "Focused Antenatal Care (FANC)", 
+        "description": "care given to pregnant mothers with at least four ANC visits within the same pregnancy."
+    }, 
+    {
+        "category": "Antenatal Care (ANC)", 
+        "mode": "Yes/No", 
+        "name": "Specialised ANC ", 
+        "description": "care given to pregnant mothers  within the same pregnancy and must have a medical doctor. This is care given to pregnant women with high risk pregnancy"
+    }, 
+    {
+        "category": "Postnatal care services", 
+        "mode": "Yes/No", 
+        "name": "Postnatal care services", 
+        "description": ""
+    }, 
+    {
+        "category": "Services for Gender- Based- Violence Survivors", 
+        "mode": "Yes/No", 
+        "name": "Basic Services for Gender- Based- Violence Survivors", 
+        "description": "Treatment of physical injuries, sexually transmitted diseases prophylaxis, three days of PEP with ARVs, emergency contraception, testing for HIV and counseling and psychological counseling. Availability of Post-Rape Care forms/ P3 forms"
+    }, 
+    {
+        "category": "Services for Gender- Based- Violence Survivors", 
+        "mode": "Yes/No", 
+        "name": "Comprehensive Services for Gender- Based- Violence Survivors", 
+        "description": "Basic  Services for Gender- Based- Violence Survivors  plus forensic services specimen analysis. High vaginal swab, HIV testing and DNA testing, theatre services"
+    }, 
+    {
+        "category": "Comprehensive Youth- Friendly Services (YFS)", 
+        "mode": "Yes/No", 
+        "name": "Integrated Services", 
+        "description": "Services to the youth offered alongside other services"
+    }, 
+    {
+        "category": "Comprehensive Youth- Friendly Services (YFS)", 
+        "mode": "Yes/No", 
+        "name": "Stand-alone Services", 
+        "description": "Separate building (Youth Centre) with provision of outpatient services, comprehensive Reproductive Health package, and should have recreational facilities, e.g. games etc."
+    }, 
+    {
+        "category": "Immunisation", 
+        "mode": "Yes/No-      ", 
+        "name": "Basic Immunisation: ", 
+        "description": "Children less than two  years vaccinated with WHO prequlified  immunization  vaccines  as per Kenya EPI immunization schedule (BCG, OPV bith dose, OPV1,2,3/IPV, DPT+ HIB+Hep B, 1,2,3 ,PCV 1,2,3, Rota 1,2 and Measles 1,2 and Yellow fever in selected sub county"
+    }, 
+    {
+        "category": "Immunisation", 
+        "mode": "Yes/No-      ", 
+        "name": "Basic Immunisation: for Pregnant women ", 
+        "description": "Pregnant women receiving  2 doses of TT vaccines   during first pregnancy followed by  additional 3rd to 5th doses of TT during subsequent pregnancies.                 (Please note that TT trauma doses are  captured under workload report and TT cards  as doses used to boost immunne system the use of TT card is however very low)"
+    }, 
+    {
+        "category": "Port immunisation services: ", 
+        "mode": "Yes/No", 
+        "name": "Basic", 
+        "description": "Vaccination services given to travellers; vaccines include yellow fever, meningococcal meningitis vaccine, etc."
+    }, 
+    {
+        "category": "", 
+        "mode": "Yes/No", 
+        "name": "Comprehensive", 
+        "description": "\nBasic services and Monitoring of people movement in relation to International Health Regulations\nMonitoring of imported and exported commodities affecting public health\n"
+    }, 
+    {
+        "category": "Integrated Management of Childhood Illnesses (IMCI)", 
+        "mode": "Yes/No", 
+        "name": "Basic IMCI", 
+        "description": "management of acute respiratory infections (ARI), diarrhoea, pneumonia, measles, malaria  malnutrition and Deworming among others"
+    }, 
+    {
+        "category": "Integrated Management of Childhood Illnesses (IMCI)", 
+        "mode": "Yes/No", 
+        "name": "Comprehensive IMCI", 
+        "description": "Basic IMCI plus ETAT (emergency assessment and triaging) inpatient services with resuscitation services and inpatient services"
+    }, 
+    {
+        "category": "Newborn Care", 
+        "mode": "Yes/No", 
+        "name": "Basic  new born care Care ", 
+        "description": "Basic new born care  provided in Health facilities"
+    }, 
+    {
+        "category": "Newborn Care", 
+        "mode": "Yes/No", 
+        "name": "Comprehensive emergency new born care Care ", 
+        "description": "Comprehensive  newborn care, for the management of life-threatening new born complications"
+    }, 
+    {
+        "category": "Tuberculosis Diagnosis", 
+        "mode": "Yes/No", 
+        "name": "Smear Microscopy: ", 
+        "description": "Availability of a laboratory doing AFB smear and microscopy"
+    }, 
+    {
+        "category": "Tuberculosis Diagnosis", 
+        "mode": "", 
+        "name": "Gene expert", 
+        "description": ""
+    }, 
+    {
+        "category": "Tuberculosis Diagnosis", 
+        "mode": "Yes /No", 
+        "name": "Tuberculosis Culture:", 
+        "description": " Facility has a laboratory that does culture for TB diagnosis and may also diagnose Multi Drug Resistant TB (MDRTB) through Drug Susceptibility Test (DST)"
+    }, 
+    {
+        "category": "Tuberculosis Diagnosis", 
+        "mode": "Yes /No", 
+        "name": "Xray", 
+        "description": ""
+    }, 
+    {
+        "category": "Leprosy Diagnosis", 
+        "mode": "Yes /No", 
+        "name": "Slit Skin Smears Microscopy", 
+        "description": ""
+    }, 
+    {
+        "category": "Leprosy Diagnosis", 
+        "mode": "Yes /No", 
+        "name": "Slit Skin Smears Culture", 
+        "description": ""
+    }, 
+    {
+        "category": "Tuberculosis Treatments", 
+        "mode": "Yes/No", 
+        "name": "Tuberculosis Treatment: ", 
+        "description": "Availability of medicines for treating new and re-treatment cases (Rifampicin, Isoniazid, Pyrazinamide, Ethambutol, and Streptomycin) in the facility"
+    }, 
+    {
+        "category": "Tuberculosis Treatments", 
+        "mode": "Yes/No", 
+        "name": "Multi-Drug Resistant Tuberculosis Treatment:", 
+        "description": " Availability of second-line drugs (as per national MDRTB guidelines) in the facility with staff are trained on MDRTB management"
+    }, 
+    {
+        "category": "Leprosy Treatment", 
+        "mode": "", 
+        "name": "Leprosy Treatment", 
+        "description": ""
+    }, 
+    {
+        "category": "Blood Transfusion Services", 
+        "mode": "Yes/No", 
+        "name": "Satellite Blood Transfusion service", 
+        "description": "Collect, storageand distribution of blood within their catchment area"
+    }, 
+    {
+        "category": "Blood Transfusion Services", 
+        "mode": "Yes/No", 
+        "name": "Facility offering Blood Transfusion Service", 
+        "description": "Safe administration of blood and blood products to patients and record keeping."
+    }, 
+    {
+        "category": "Radiography  Services ", 
+        "mode": "Basic", 
+        "name": "General  Radiography Services ", 
+        "description": "Emergency x-rays, skull x-rays, spine x rays, chest x-ray, abdominal x-ray, pelvic x ray, extremity x-rays (musculo-skeletal)"
+    }, 
+    {
+        "category": "Radiography  Services ", 
+        "mode": "Comprehensive", 
+        "name": "Specialised  Radiography Services ", 
+        "description": "Barium swallow, Barium meal, IVU, HSG, CT."
+    }, 
+    {
+        "category": "Ultrasound Services", 
+        "mode": "Basic", 
+        "name": "Obstetric ultrasound", 
+        "description": "General obstetric scans, Advanced obstetric scans"
+    }, 
+    {
+        "category": "Ultrasound Services", 
+        "mode": "Comprehensive", 
+        "name": "General Abdominal scans", 
+        "description": "Liver, Spleen,Kidneys, Pancrease, Gastrointestinal tract, Retroperitoneum, Suprarenal glands, urinary bladder, gall bladder"
+    }, 
+    {
+        "category": "Ultrasound Services", 
+        "mode": "Basic", 
+        "name": "Small parts", 
+        "description": "Scrotum, Thyroid gland, breast"
+    }, 
+    {
+        "category": "Ultrasound Services", 
+        "mode": "Comprehensive", 
+        "name": "Gynaecological scans", 
+        "description": "Pelvic scan to demonstrate \u2022Abnormal periods or bleeding\n\u2022Pelvic pain\n\u2022To assess a lump that has been found such fibroids or ovarian cysts\n\u2022Polycystic ovaries\n\u2022Infertility\n\u2022Post-menopausal bleeding\n\u2022To check for coil position\n"
+    }, 
+    {
+        "category": "Echocardiography", 
+        "mode": "Comprehensive", 
+        "name": "Cardiac ultrasound (1)-Structural", 
+        "description": "\nStructural imaging of the pericardium (eg, to exclude pericardial effusion)\n\u2022 Structural imaging of the left or right ventricle and their cavities (eg, to evaluate ventricular hypertrophy, dilatation, or wall motion abnormality; to visualize thrombi) \n\u2022 Structural imaging of the valve for mitral stenosis, aortic stenosis, mitral valve prolapse; \n\u2022 Structural imaging of the great vessels (eg, aortic dissection) \n\u2022 Structural imaging of atria and septa between cardiac chambers (eg, congenital heart disease, traumatic heart disease; see the second image below)"
+    }, 
+    {
+        "category": "Echocardiography", 
+        "mode": "Comprehensive", 
+        "name": "Cardiac ultrasound (2) Haemodynamic", 
+        "description": "\nImaging of blood flow through heart valves (eg, valvular stenosis and regurgitation; see the image below) \n\u2022 Imaging of blood flow through the cardiac chambers (eg, cardiac output calculation, assessment of diastolic and systolic function of the heart) \n\u2022 Tissue Doppler imaging of heart structures.\n\n"
+    }, 
+    {
+        "category": "MRI", 
+        "mode": "Comprehensive", 
+        "name": "Head", 
+        "description": "Brain tumour, orbital tumour, inflammation of brain meninges, aneurysm, haemorrages."
+    }, 
+    {
+        "category": "MRI", 
+        "mode": "Comprehensive", 
+        "name": "Spine", 
+        "description": "Reduced sensation, reduced reflexes, Muscle wasting, CNS tumour or inflammation, cord compression, myelopathy, post-surgical monitoring, trauma monitoring, "
+    }, 
+    {
+        "category": "MRI", 
+        "mode": "Comprehensive", 
+        "name": "Abdomen", 
+        "description": "Liver lesions, placenta accreta/pacreta, planning for artery embolisation for fibroids, pre-operative evaluation of assessement  for inferior vena cava for known solid renal tumourrenal, perineal abcess/fistula, evaluation of MR urography, adrenal mass evaluation."
+    }, 
+    {
+        "category": "MRI", 
+        "mode": "Comprehensive", 
+        "name": "Musculoskeletal", 
+        "description": "Bone tumour. Bone infection . Spondylitis of sacroiliac joint. Osteonecrosis. Juvenile dermatomyositis. Gaucher's disease"
+    }, 
+    {
+        "category": "MRI", 
+        "mode": "Comprehensive", 
+        "name": "Cardiovascular", 
+        "description": "Heart disease, carotid artery dse, vertabral artery dse, paediatric congenital anomalies"
+    }, 
+    {
+        "category": "MRI", 
+        "mode": "Comprehensive", 
+        "name": "Breast", 
+        "description": "Breast cancer, invasive lobular carcinoma, rule out intracapsular implant rapture,"
+    }, 
+    {
+        "category": "MRI", 
+        "mode": "Comprehensive", 
+        "name": "Body", 
+        "description": "Staging for cancer"
+    }, 
+    {
+        "category": "MRI", 
+        "mode": "Comprehensive", 
+        "name": "Contrast enhanced", 
+        "description": "Procedures for conditions that require contrast enhancement"
+    }, 
+    {
+        "category": "Radiology services", 
+        "mode": "Comprehensive", 
+        "name": "General x-ray examination", 
+        "description": "Reporting"
+    }, 
+    {
+        "category": "Radiology services", 
+        "mode": "Comprehensive", 
+        "name": "Specialised x-ray examinations", 
+        "description": "Reporting /contrast enhanced"
+    }, 
+    {
+        "category": "Radiology services", 
+        "mode": "Comprehensive", 
+        "name": "CT scans ", 
+        "description": "Reporting /cotrast enhanced"
+    }, 
+    {
+        "category": "Radiology services", 
+        "mode": "Comprehensive", 
+        "name": "MRI", 
+        "description": "Reporting /contrast enhanced"
+    }, 
+    {
+        "category": "Radiology services", 
+        "mode": "Comprehensive", 
+        "name": "Fluoroscopy", 
+        "description": "Screening/reporting"
+    }, 
+    {
+        "category": "Radiology services", 
+        "mode": "Comprehensive", 
+        "name": "Ultrasound", 
+        "description": "Scanning /reporting/Biopsy guiding/ contrast enhanced exams"
+    }, 
+    {
+        "category": "Radiology services", 
+        "mode": "Comprehensive", 
+        "name": "Interventional Radiology", 
+        "description": "Interventional Procedures performed"
+    }, 
+    {
+        "category": "Curative Services", 
+        "mode": "Yes/No", 
+        "name": "Outpatient", 
+        "description": ""
+    }, 
+    {
+        "category": "Curative Services", 
+        "mode": "Yes/No", 
+        "name": "Inpatient", 
+        "description": ""
+    }, 
+    {
+        "category": "Theatre Services", 
+        "mode": "Yes/No", 
+        "name": "Minor Theatre Services", 
+        "description": ""
+    }, 
+    {
+        "category": "Theatre Services", 
+        "mode": "Yes/No", 
+        "name": "Major Theatre Services", 
+        "description": ""
+    }, 
+    {
+        "category": "Ambulatory Services ", 
+        "mode": "Yes/No", 
+        "name": "Ambulatory Services ", 
+        "description": ""
+    }, 
+    {
+        "category": "Ear, Nose and Throat (ENT) Services", 
+        "mode": "Yes/No", 
+        "name": "Ear, Nose and Throat (ENT) Services", 
+        "description": ""
+    }, 
+    {
+        "category": "Forensic Services", 
+        "mode": "Yes/No", 
+        "name": "Basic Forensic Services", 
+        "description": ""
+    }, 
+    {
+        "category": "Forensic Services", 
+        "mode": "Yes/No", 
+        "name": "ComprehensiveForensic Services", 
+        "description": ""
+    }, 
+    {
+        "category": "Mortuary Services", 
+        "mode": "Yes/No", 
+        "name": "Basic Mortuary Services", 
+        "description": ""
+    }, 
+    {
+        "category": "Mortuary Services", 
+        "mode": "Yes/No", 
+        "name": "Comprehensive Mortuary Services", 
+        "description": ""
+    }, 
+    {
+        "category": "Emergency Preparedness", 
+        "mode": "yes/no", 
+        "name": "Basic Emergency Preparedness", 
+        "description": "Basic Life Support (BLS), Advanced Cardiac Life Support (ACLS), Trauma Life Support (ATLS), and Paediatrics Life Support (PALS) and Acute Psychological Support and Counseling"
+    }, 
+    {
+        "category": "Emergency Preparedness", 
+        "mode": "Yes/No", 
+        "name": "Comprehensive Emergency Preparedness", 
+        "description": "BLS, ACLS, ATLS and PALS and Acute Psychological Support and Counseling"
+    }, 
+    {
+        "category": "Occupational Therapy", 
+        "mode": "Yes", 
+        "name": "Specialised Occupational Therapy", 
+        "description": "Pediatric Occupational Therapy"
+    }, 
+    {
+        "category": "Occupational Therapy", 
+        "mode": "Yes", 
+        "name": "Basic Occupational Therapy", 
+        "description": " Physical Rehabilitation"
+    }, 
+    {
+        "category": "Occupational Therapy", 
+        "mode": "Yes", 
+        "name": "Basic Occupational Therapy", 
+        "description": " Mental Health"
+    }, 
+    {
+        "category": "Occupational Therapy", 
+        "mode": "Yes", 
+        "name": "Basic Occupational Therapy", 
+        "description": " Occupational Health and Ergonomics"
+    }, 
+    {
+        "category": "Occupational Therapy", 
+        "mode": "Yes", 
+        "name": "Basic Occupational Therapy", 
+        "description": " Geriatric Occupational Therapy"
+    }, 
+    {
+        "category": "Occupational Therapy", 
+        "mode": "No", 
+        "name": "Basic Occupational Therapy", 
+        "description": "Low Vision Therapy"
+    }, 
+    {
+        "category": "Occupational Therapy", 
+        "mode": "Yes", 
+        "name": "Basic Occupational Therapy", 
+        "description": " Hand Therapy"
+    }, 
+    {
+        "category": "Occupational Therapy", 
+        "mode": "Yes/No", 
+        "name": "Basic Occupational Therapy", 
+        "description": " Driving and Community Mobility"
+    }, 
+    {
+        "category": "Occupational Therapy", 
+        "mode": "Yes", 
+        "name": "Basic Occupational Therapy", 
+        "description": " Sensory Integration Therapy"
+    }, 
+    {
+        "category": "Occupational Therapy", 
+        "mode": "Yes/No", 
+        "name": "Basic Occupational Therapy", 
+        "description": " Speech Therapy"
+    }, 
+    {
+        "category": "Occupational Therapy", 
+        "mode": "Yes", 
+        "name": "Basic Occupational Therapy", 
+        "description": "Recreational Therapy"
+    }, 
+    {
+        "category": "Occupational Therapy", 
+        "mode": "Yes", 
+        "name": "Basic Occupational Therapy", 
+        "description": "Burns and Plastic Surgery Rehabilitation"
+    }, 
+    {
+        "category": "Occupational Therapy", 
+        "mode": "Yes", 
+        "name": "Basic Occupational Therapy", 
+        "description": "Club foot care"
+    }, 
+    {
+        "category": "Physiotherapy", 
+        "mode": "Yes/No", 
+        "name": "Basic Physiotherapy", 
+        "description": ""
+    }, 
+    {
+        "category": "Orthopaedic Technology services", 
+        "mode": "Yes/No", 
+        "name": "Basic Orthopaedic Technology services", 
+        "description": ""
+    }, 
+    {
+        "category": "Orthopaedic Technology services", 
+        "mode": "Yes/No", 
+        "name": "Specialised Orthopaedic Technology services", 
+        "description": ""
+    }, 
+    {
+        "category": "Ophthalmic Services", 
+        "mode": "Yes/No", 
+        "name": "Ophthalmic services", 
+        "description": ""
+    }, 
+    {
+        "category": "Mental Health Services", 
+        "mode": "Yes/No", 
+        "name": "Basic Mental Health Services", 
+        "description": ""
+    }, 
+    {
+        "category": "Mental Health Services", 
+        "mode": "Yes/No", 
+        "name": "Specialised Mental Health Services", 
+        "description": ""
+    }, 
+    {
+        "category": "Dental Services", 
+        "mode": "Yes/No", 
+        "name": "Basic dental services", 
+        "description": ""
+    }, 
+    {
+        "category": "Dental Services", 
+        "mode": "Yes/No", 
+        "name": "Specialised Dental services", 
+        "description": ""
+    }, 
+    {
+        "category": "Laboratory Services", 
+        "mode": "Yes/No", 
+        "name": "Basic laboratory", 
+        "description": ""
+    }, 
+    {
+        "category": "Laboratory Services", 
+        "mode": "Yes/No", 
+        "name": "Specialized laboratory", 
+        "description": ""
+    }, 
+    {
+        "category": "Pharmacy services", 
+        "mode": "Yes/No", 
+        "name": "Pharmacy services", 
+        "description": ""
+    }
+]

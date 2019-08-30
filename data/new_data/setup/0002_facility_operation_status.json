@@ -1,0 +1,22 @@
+[
+    {
+        "records": [
+            {
+                "name": "Operational"
+            }, 
+            {
+                "name": "Not-Operational"
+            }, 
+            {
+                "name": "Pending Opening"
+            }, 
+            {
+                "name": "Unknown"
+            }
+        ], 
+        "model": "facilities.FacilityStatus", 
+        "unique_fields": [
+            "name"
+        ]
+    }
+]

@@ -1,5 +1,4 @@
-"""
-Custom search filters.
+""" custom search filters.
 
 Add a custom django_filters field that interacts with Elasticsearch
 """
@@ -153,6 +152,7 @@ class ClassicSearchFilter(django_filters.filters.Filter):
         q_filter = q_filter_reverse[3:len(q_filter_reverse) + 1]
         q_filter = q_filter[::-1]
         return qs.filter(eval(q_filter))
+
 
 
 

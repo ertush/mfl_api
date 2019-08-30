@@ -1,7 +1,4 @@
 # MAGIC HACK: without this, a recent Homebrew update broke GDAL!
-GDAL_LIBRARY_PATH = "/usr/local/lib/libgdal.dylib"
-import ctypes
-ctypes.CDLL(GDAL_LIBRARY_PATH)
 
 import os
 import environ
@@ -12,7 +9,7 @@ BASE_DIR = os.path.dirname(
 # Override in production via env
 
 env = environ.Env(
-    DATABASE_URL=(str, 'postgres://mfl:mfl@localhost:5432/mfl_live'),
+    DATABASE_URL=(str, 'postgres://mfl:mfl@localhost:5432/mfl'),
     DEBUG=(bool, True),
     FRONTEND_URL=(str, "http://localhost:8062"),
     REALTIME_INDEX=(bool, False),
@@ -27,7 +24,7 @@ env = environ.Env(
     STORAGE_BACKEND=(str, ''),
     ADMINS=(str, "admin:admin@example.com,"),
     SERVER_EMAIL=(str, "root@localhost"),
-    ALLOWED_HOSTS=(str, ".localhost, .health.go.ke")
+    ALLOWED_HOSTS=(str, "localhost")
 
 
 )
@@ -73,11 +70,10 @@ EMAIL_HOST_USER = env('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD')
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-
-EMAIL_SUBJECT_PREFIX = '[Kenya Master Health Facility List] '
+EMAIL_SUBJECT_PREFIX = '[Master Facility List] '
 
 ALLOWED_HOSTS = env('ALLOWED_HOSTS').split(',') + ['localhost', '127.0.0.1', '0.0.0.0']
-#ALLOWED_HOSTS = ['.locahost', '.health.go.ke', '198.199.125.166', 'api.kmhfltest.health.go.ke']
+# ALLOWED_HOSTS = ['.locahost', ' .health.go.ke', '198.199.125.166', 'api.kmhfltest.health.go.ke']
 
 INSTALLED_APPS = (
     'django.contrib.sites',
@@ -119,6 +115,7 @@ INSTALLED_APPS = (
 # This was forced by the need to override rest_framework templates in common
 # It is a list because order matters
 
+print INSTALLED_APPS
 
 LOCAL_APPS = [
     'users',
@@ -496,10 +493,8 @@ SITE_ID = 1
 
 EXCEL_EXCEPT_FIELDS = [
     'id', 'updated', 'created', 'created_by', 'updated_by', 'active',
-    'deleted', 'search', 'services', 'categories', 'is_published',
+    'deleted', 'search', 'services', 'categories', 'is_published','lat', 'long',
 ]
-
-EXCEL_EXCEPT_FIELDS_FOR_PUBLIC_USERS = EXCEL_EXCEPT_FIELDS + ['lat', 'long']
 
 FRONTEND_URL = env("FRONTEND_URL")
 PASSWORD_RESET_URL = "%s/#/reset_pwd_confirm/{uid}/{token}" % FRONTEND_URL
@@ -518,16 +513,8 @@ SESSION_COOKIE_DOMAIN = None
 SESSION_COOKIE_AGE = (7 * 24 * 60 * 60)
 SECURE_BROWSER_XSS_FILTER = True
 
-if env('STORAGE_BACKEND'):
-    # storage settings (uses amazon S3 for now)
-    DEFAULT_FILE_STORAGE = env('STORAGE_BACKEND')
-    AWS_ACCESS_KEY_ID = env('AWS_ACCESS_KEY_ID')
-    AWS_SECRET_ACCESS_KEY = env('AWS_SECRET_ACCESS_KEY')
-    AWS_STORAGE_BUCKET_NAME = env('AWS_STORAGE_BUCKET_NAME')
-    AWS_QUERYSTRING_AUTH = False
-else:
-    MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
-    MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+MEDIA_URL = '/media/'
 
 
 # CELERY STUFF
@@ -537,3 +524,4 @@ CELERY_ACCEPT_CONTENT = ['application/json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = TIME_ZONE
+EXCEL_EXCEPT_FIELDS_FOR_PUBLIC_USERS = EXCEL_EXCEPT_FIELDS + ['lat', 'long']

@@ -1,0 +1,7 @@
+[
+    {   "unique_fields": ["username"],
+        "model": "users.MflUser",
+        "records": [{"group": "National Administrators", "user": "ekaduki"}, {"group": "National Administrators", "user": "sysadmin"}, {"group": "National Administrators", "user": "2003032894"}, {"group": "National Administrators", "user": "1978099879"}, {"group": "National Administrators", "user": "1984059895"}, {"group": "National Administrators", "user": "1989079549"}, {"group": "National Administrators", "user": "1995041994"}, {"group": "National Administrators", "user": "2003032933"}, {"group": "National Administrators", "user": "11258716"}, {"group": "National Administrators", "user": "Francis"}, {"group": "National Administrators", "user": "98005002"}, {"group": "National Administrators", "user": "1996116962"}, {"group": "National Administrators", "user": "mariak"}, {"group": "National Administrators", "user": "rpundo"}, {"group": "National Administrators", "user": "1994031920"}, {"group": "National Administrators", "user": "25012931"}, {"group": "National Administrators", "user": "25012931"}, {"group": "National Administrators", "user": "dmuturi"}, {"group": "National Administrators", "user": "26183254"}, {"group": "National Administrators", "user": "1982055308"}]
+
+    }
+]

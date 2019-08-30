@@ -1,0 +1,7 @@
+[
+    {   "unique_fields": ["username"],
+        "model": "users.MflUser",
+        "records": [{"group": "Superusers", "user": "11258716"}, {"group": "Superusers", "user": "ekaduki"}, {"group": "Superusers", "user": "1992031487"}, {"group": "Superusers", "user": "98005002"}, {"group": "Superusers", "user": "dmuturi"}, {"group": "Superusers", "user": "sysadmin"}, {"group": "Superusers", "user": "rpundo"}, {"group": "Superusers", "user": "1994031920"}]
+
+    }
+]
