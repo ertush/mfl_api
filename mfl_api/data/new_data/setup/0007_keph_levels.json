@@ -1,0 +1,25 @@
+[
+    {
+        "records": [
+            {
+                "name": "Level 2"
+            }, 
+            {
+                "name": "Level 3"
+            }, 
+            {
+                "name": "Level 4"
+            }, 
+            {
+                "name": "Level 5"
+            }, 
+            {
+                "name": "Level 6"
+            }
+        ], 
+        "model": "facilities.KephLevel", 
+        "unique_fields": [
+            "name"
+        ]
+    }
+]

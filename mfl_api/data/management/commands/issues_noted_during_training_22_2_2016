@@ -1,0 +1,39 @@
+# Issues noted
+================
+1. Deactivate the export_excel button when a person clicks on it
+2. Update the copyright to 2016
+3. View 0 facilities in embakasi west county
+4. Fix quick help in drill-down
+5. Fix browser caching
+6. Fix the gis disparity
+7. Boundaries
+8. On clicking linked facility chu should be opened.
+9. Remove None in community health workers
+10. The contacts should not be shown if they have not been filled in.
+11. Put progress on printing
+12. Fix the dates in CHUs
+
+
+cont .. on 23rd
+13. Dispensary not in facility types
+14. Make drop downs be alphabetically
+15. Make the number of cots and beds to be zero
+16. Fix pop up errors in the facility geo-location details
+17. Add service category under services already picked
+18. Fix submitting issues
+19. Change case of CHUs in the dashboard
+20. Allow reversing facility rejection reversal
+21. Difference between facility service removal
+22. Remove back button in facility detail view and chu detail view in the public side
+23. Fix the location details in the facility details print out
+24. Remove un-publish in the facility pending approval
+25. Fix repetition of service in facility-approval
+26. The facility edits are being updated on the facility on declining the updates
+27. Reasons for upgrade should be predefined
+28. Facility upgrade is not working
+19. Upgrade from facility edit does not have the facility id
+20. Feedback on facility should be filtered per county
+21. Check the perms for the facilities grid to be regulated by regulators
+22. Fix the regulatory sync filter
+23. Add test data for regulator sync
+24.

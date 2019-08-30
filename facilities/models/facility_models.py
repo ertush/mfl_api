@@ -1146,7 +1146,7 @@ class Facility(SequenceMixin, AbstractBase):
     def clean(self, *args, **kwargs):
         self.validate_closing_date_supplied_on_close()
         #self.validate_ward_and_sub_county()
-        self.validate_facility_name()
+        # self.validate_facility_name()
 
         if self.closed:
             self.ensure_closed_facility_operation_status_is_closed()
@@ -1193,7 +1193,7 @@ class Facility(SequenceMixin, AbstractBase):
     def _dump_updates(self, origi_model):
         fields = [field.name for field in self._meta.fields]
         forbidden_fields = [
-            'closed', 'closing_reason', 'closed_date', 'code']
+            'closed', 'closing_reason', 'closed_date']
         data = []
         for field in fields:
             if (getattr(self, field) != getattr(origi_model, field) and
