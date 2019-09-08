@@ -1,10 +1,9 @@
-from django.conf.urls import url, patterns
+from django.conf.urls import url
 
 from . import views
 
 
-urlpatterns = patterns(
-    '',
+urlpatterns = (
 
     url(r'^updates/$', views.ChuUpdateBufferListView.as_view(),
         name='chu_updatebufers_list'),

@@ -89,10 +89,12 @@ def load_missed_facilities():
 
             for fac_ward in facility_wards_data:
                 if int(facility_data.get('code')) == int(fac_ward.get('faciilty_code')):
+                
                     prob_ward = Ward.objects.filter(constituency__county=county)
                     try:
                         ward = prob_ward.filter(name__icontains=fac_ward.get('ward'))[0]
                     except:
+                        import pdb;pdb.set_trace()
                     facility_data['ward'] = ward
                     try:
                         Facility.objects.get(code=int(record.get('code')))
@@ -100,11 +102,12 @@ def load_missed_facilities():
                     except Facility.DoesNotExist:
 
                         try:
-                            Facility(**facility_data).save()
+                            facility= Facility(**facility_data).save()
                             facs_created.append(facility)
                             print facility
                         except:
                             pass
+                            
                             # import pdb; pdb.set_trace()
                     break
 
@@ -160,43 +163,42 @@ def get_facilities_not_loaded_report():
 
 
 from facilities.models import Facility, FacilityType
-
 def map_facility_types():
     facility_types_map = {
-        "Stand Alone": None,
-        "VCT Centre (Stand-Alone)": "VCT",
-        "Training Institution in Health (Stand-alone)": None,
-        "Sub-District Hospital": "Primary care hospitals",
-        "Rural Health Training Centre": "Comprehensive primary health care facility",
-        "Rural Health Demonstration Centre": "Comprehensive primary health care facility",
-        "Regional Blood Transfusion Centre": "Regional Blood Transfusion Centre",
-        "Radiology Unit": "Radiology Clinic",
-        "County Referral Hospitals": "Comprehensive Teaching &Referral",
-        "Other Hospital": "Primary care hospitals",
-        "Other": None,
-        "Nursing Home": "Basic primary health care facility",
-        "Not in List": "Basic primary health care facility",
-        "National Teaching & Tertiary Referral Hospitals": "Comprehensive Teaching &Referral",
-        "Medical Clinic": "Dispensaries and clinic-out patient only",
-        "Medical Centre": "Dispensaries and clinic-out patient only",
-        "Maternity Home": "Basic primary health care facility",
-        "Maternity and Nursing Home": "Basic primary health care facility",
-        "Laboratory (Stand-alone)": "Laboratory",
-        "Hospital": None,
-        "Funeral Home (Stand-alone)": "Farewell Home",
-        "Eye Clinic": "Dispensaries and clinic-out patient only",
-        "Eye Centre": "Basic primary health care facility",
-        "Eye": "Basic primary health care facility",
-        "District Hospital": "Secondary care hospitals",
-        "Dispensary": "Dispensaries and clinic-out patient only",
-        "Dental Clinic": "Dispensaries and clinic-out patient only",
-        "Blood Bank": "Blood Bank",
-        "Health Centre": "Basic primary health care facility",
-        "Not In List": "Dispensaries and Clinics",
-        "Health Project": "Administrative Offices",
-        "Health Programme": "Administrative Offices",
-        "Training Institution in Health (Stand-alone)": "Administrative Offices",
-        "District Health Office": "Administrative Offices"
+	    "Stand Alone": None,
+	    "VCT Centre (Stand-Alone)": "VCT",
+	    "Training Institution in Health (Stand-alone)": None,
+	    "Sub-District Hospital": "Primary care hospitals",
+	    "Rural Health Training Centre": "Comprehensive primary health care facility",
+	    "Rural Health Demonstration Centre": "Comprehensive primary health care facility",
+	    "Regional Blood Transfusion Centre": "Regional Blood Transfusion Centre",
+	    "Radiology Unit": "Radiology Clinic",
+	    "County Referral Hospitals": "Comprehensive Teaching &Referral",
+	    "Other Hospital": "Primary care hospitals",
+	    "Other": None,
+	    "Nursing Home": "Basic primary health care facility",
+	    "Not in List": "Basic primary health care facility",
+	    "National Teaching & Tertiary Referral Hospitals": "Comprehensive Teaching &Referral",
+	    "Medical Clinic": "Dispensaries and clinic-out patient only",
+	    "Medical Centre": "Dispensaries and clinic-out patient only",
+	    "Maternity Home": "Basic primary health care facility",
+	    "Maternity and Nursing Home": "Basic primary health care facility",
+	    "Laboratory (Stand-alone)": "Laboratory",
+	    "Hospital": None,
+	    "Funeral Home (Stand-alone)": "Farewell Home",
+	    "Eye Clinic": "Dispensaries and clinic-out patient only",
+	    "Eye Centre": "Basic primary health care facility",
+	    "Eye": "Basic primary health care facility",
+	    "District Hospital": "Secondary care hospitals",
+	    "Dispensary": "Dispensaries and clinic-out patient only",
+	    "Dental Clinic": "Dispensaries and clinic-out patient only",
+	    "Blood Bank": "Blood Bank",
+	    "Health Centre": "Basic primary health care facility",
+	    "Not In List": "Dispensaries and Clinics",
+	    "Health Project": "Administrative Offices",
+	    "Health Programme": "Administrative Offices",
+	    "Training Institution in Health (Stand-alone)": "Administrative Offices",
+	    "District Health Office": "Administrative Offices"
     }
     for facility in Facility.objects.all():
         new_type = facility_types_map.get(facility.facility_type.name)
@@ -207,7 +209,11 @@ def map_facility_types():
                 import pdb
                 pdb.set_trace()
             facility.facility_type = facility_type_obj
-            facility.save(allow_save=True)
+            try:
+                facility.save(allow_save=True)
+            except:
+                import pdb;pdb.set_trace()
+
 
 
 """
@@ -269,7 +275,7 @@ def undelete_facility_types():
         try:
             facility_type.save()
         except:
-            pass
+            raise
 
 def delete_facility_types():
     from facilities.models import FacilityType, Facility
@@ -285,7 +291,7 @@ def remove_invalid_and_unknown_status():
     from facilities.models import Facility, FacilityStatus
     from django.utils import timezone
     closed = FacilityStatus.objects.get(name='Closed')
-    for facility in Facility.objects.filter(closed=False, operation_status=closed):
+    for facility in Facility.objects.filter(closed=True):
             facility.operation_status = closed
             facility.save(allow_save=True)
             print facility
@@ -293,17 +299,9 @@ def remove_invalid_and_unknown_status():
 
 def fix_closed_approved_facilities():
     from facilities.models import Facility, FacilityStatus
-    closed_facilities = Facility.objects.filter(closed=False, operation_status__name=)
     closed_facilities = Facility.objects.filter(closed=False, has_edits=False, approved=False, rejected=True)
     # for fac in closed_facilities:
         # fac.approved = True
         # fac.has_edits = False
         # fac.save(allow_save=True)
     return [fac.name for fac in closed_facilities]
-
-from facilities.models import Facility, FacilityApproval
-def approve_facilities():
-    for fac in Facility.objects.filter(approved=False, rejected=False):
-        fac.approved = True
-        FacilityApproval.objects.create(facility=fac, created_by=user, updated_by=user)
-        fac.save(allow_save=True)

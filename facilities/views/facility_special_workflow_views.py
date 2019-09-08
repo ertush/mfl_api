@@ -209,7 +209,7 @@ class FacilityPDFDownloadView(DownloadPDFMixin, generics.RetrieveAPIView):
             facility.name.lower(), self.filename_padding
         )
         return self.download_file(
-            template.render(Context(ctx_data)), file_name
+            template.render(ctx_data), file_name
         )
 
 

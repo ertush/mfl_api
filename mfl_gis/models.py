@@ -38,13 +38,16 @@ class CoordinatesValidatorMixin(object):
         try:
             boundary = boundary_model.objects.get(area=area)
             if not boundary.mpoly.contains(self.coordinates):
-                raise ValidationError({
-                    "coordinates": [
-                        '({0}, {1}) not contained in boundary of {2}'.format(
-                            self.coordinates.x, self.coordinates.y, area
-                        )
-                    ]
-                })
+                # raise ValidationError({
+                #     "coordinates": [
+                #         '({0}, {1}) not contained in boundary of {2}'.format(
+                #             self.coordinates.x, self.coordinates.y, area
+                #         )
+                #     ]
+                # })
+                pass
+            else:
+                return True
         except boundary_model.DoesNotExist:
             LOGGER.error('{0} does not have boundary info'.format(area))
             if raise_not_found:
@@ -55,13 +58,13 @@ class CoordinatesValidatorMixin(object):
                 })
 
     def validate_long_and_lat_within_constituency(self, constituency):
-        self._validate_within_boundaries(ConstituencyBoundary, constituency)
+        return self._validate_within_boundaries(ConstituencyBoundary, constituency)
 
     def validate_long_and_lat_within_county(self, county):
-        self._validate_within_boundaries(CountyBoundary, county)
+        return self._validate_within_boundaries(CountyBoundary, county)
 
     def validate_long_and_lat_within_ward(self, ward):
-        self._validate_within_boundaries(WardBoundary, ward, False)
+        return self._validate_within_boundaries(WardBoundary, ward, False)
 
 
 class CustomGeoManager(gis_models.GeoManager):
@@ -198,12 +201,28 @@ class FacilityCoordinates(CoordinatesValidatorMixin, GISAbstractBase):
     def clean(self):
         self.validate_coordinates_decimal_places_at_least_six()
         self.validate_long_and_lat_within_kenya()
-        self.validate_long_and_lat_within_county(
-            self.facility.ward.constituency.county)
-        self.validate_long_and_lat_within_constituency(
-            self.facility.ward.constituency)
-        self.validate_long_and_lat_within_ward(
-            self.facility.ward)
+
+        areas_passed = 0
+        if self.validate_long_and_lat_within_county(
+            self.facility.ward.constituency.county):
+            areas_passed += 1
+
+
+        if self.validate_long_and_lat_within_constituency(
+            self.facility.ward.constituency):
+            areas_passed += 1
+
+        if self.validate_long_and_lat_within_ward(
+            self.facility.ward):
+            areas_passed += 1
+
+        if areas_passed < 2:
+            raise ValidationError({
+                    "coordinates": [
+                        "The coordinates did not validate"
+                    ]
+                })
+
         super(FacilityCoordinates, self).clean()
 
     def __str__(self):

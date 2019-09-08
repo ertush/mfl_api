@@ -1,13 +1,17 @@
 import django_filters
 import uuid
 
+from distutils.util import strtobool
+
 from django import forms
 from django.utils.encoding import force_str
 from django.utils.dateparse import parse_datetime
 
 from rest_framework import ISO_8601
 
-from search.filters import SearchFilter, AutoCompleteSearchFilter
+from search.filters import ClassicSearchFilter, AutoCompleteSearchFilter
+
+from ..constants import BOOLEAN_CHOICES
 
 
 class NullFilter(django_filters.Filter):
@@ -63,7 +67,7 @@ class ListFilterMixin(object):
     def _format_value(self, value):
         return value
 
-    _lookup_type = 'in'
+    _lookup_expr = 'in'
     _customize_fxn = _format_value
 
     def sanitize(self, value_list):
@@ -80,7 +84,7 @@ class ListFilterMixin(object):
         multiple_vals = self.sanitize(multiple_vals)
         multiple_vals = map(self.customize, multiple_vals)
         actual_filter = django_filters.fields.Lookup(
-            multiple_vals, self._lookup_type
+            multiple_vals, self._lookup_expr
         )
         return super(ListFilterMixin, self).filter(qs, actual_filter)
 
@@ -97,7 +101,7 @@ class ListUUIDFilter(ListFilterMixin, django_filters.CharFilter):
     """
     Enable filtering a list of UUUIDs in an array field
     """
-    _lookup_type = 'contains'
+    _lookup_expr = 'contains'
     _customize_fxn = uuid.UUID
 
 
@@ -123,31 +127,37 @@ class CommonFieldsFilterset(django_filters.FilterSet):
     filter fields ( every model field gets one ) stay in place.
     """
     updated_before = IsoDateTimeFilter(
-        name='updated', lookup_type='lte',
+        name='updated', lookup_expr='lte',
         input_formats=(ISO_8601, '%m/%d/%Y %H:%M:%S'))
     created_before = IsoDateTimeFilter(
-        name='created', lookup_type='lte',
+        name='created', lookup_expr='lte',
         input_formats=(ISO_8601, '%m/%d/%Y %H:%M:%S'))
 
     updated_after = IsoDateTimeFilter(
-        name='updated', lookup_type='gte',
+        name='updated', lookup_expr='gte',
         input_formats=(ISO_8601, '%m/%d/%Y %H:%M:%S'))
     created_after = IsoDateTimeFilter(
-        name='created', lookup_type='gte',
+        name='created', lookup_expr='gte',
         input_formats=(ISO_8601, '%m/%d/%Y %H:%M:%S'))
 
     updated_on = IsoDateTimeFilter(
-        name='updated', lookup_type='exact',
+        name='updated', lookup_expr='exact',
         input_formats=(ISO_8601, '%m/%d/%Y %H:%M:%S'))
     created_on = IsoDateTimeFilter(
-        name='created', lookup_type='exact',
+        name='created', lookup_expr='exact',
         input_formats=(ISO_8601, '%m/%d/%Y %H:%M:%S'))
 
-    is_deleted = django_filters.BooleanFilter(
-        name='deleted', lookup_type='exact')
-    is_active = django_filters.BooleanFilter(
-        name='active', lookup_type='exact')
-    search = SearchFilter(name='search')
-    q = SearchFilter(name='search')
-    search_auto = AutoCompleteSearchFilter(name='search')
-    q_auto = AutoCompleteSearchFilter(name='search')
+    is_deleted = django_filters.TypedChoiceFilter(
+        name='deleted', choices=BOOLEAN_CHOICES, coerce=strtobool)
+
+    is_active = django_filters.TypedChoiceFilter(
+        name='active', choices=BOOLEAN_CHOICES, coerce=strtobool)
+
+    search = ClassicSearchFilter(name='name')
+
+    q = ClassicSearchFilter(name='name')
+    search_auto = AutoCompleteSearchFilter(name='name')
+    q_auto = AutoCompleteSearchFilter(name='name')
+
+    class Meta:
+        fields = '__all__'

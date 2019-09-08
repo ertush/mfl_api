@@ -148,14 +148,18 @@ class UserDetailView(CustomRetrieveUpdateDestroyView):
 
     def delete(self, request, pk, format=None):
         user = get_object_or_404(MflUser, id=pk)
-        user_contacts = UserContact.objects.filter(user=user)
-        [uc.contact.delete() for uc in user_contacts]
-        user_contacts.delete()
-        UserCounty.objects.filter(user=user).delete()
-        UserConstituency.objects.filter(user=user).delete()
-        UserSubCounty.objects.filter(user=user).delete()
-        user.deleted = True
-        user.save()
+        try:
+            user_contacts = UserContact.objects.filter(user=user)
+            [uc.contact.delete() for uc in user_contacts]
+            user_contacts.delete()
+            UserCounty.objects.filter(user=user).delete()
+            UserConstituency.objects.filter(user=user).delete()
+            UserSubCounty.objects.filter(user=user).delete()
+        except:
+            pass
+        finally:
+            user.is_active = False
+            user.save()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 

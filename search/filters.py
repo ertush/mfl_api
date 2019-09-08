@@ -1,8 +1,8 @@
-"""
-Custom search filters.
+""" custom search filters.
 
 Add a custom django_filters field that interacts with Elasticsearch
 """
+import json
 
 from django.conf import settings
 from django.db.models import Q  # NOQA
@@ -13,7 +13,7 @@ from search.search_utils import ElasticAPI
 
 
 FIELD_TYPES = [
-    'SequenceField', 'CharField', 'TextField'
+    'SequenceField', 'CharField', 'EmailField'
 ]
 
 
@@ -104,3 +104,57 @@ class AutoCompleteSearchFilter(SearchFilter):
     """Autocomplete search filter."""
 
     search_type = "auto_complete"
+
+
+class ClassicSearchFilter(django_filters.filters.Filter):
+
+    def filter(self, qs, value):
+        """
+        {"query":{"query_string":{"default_field":"name","query":"olympus"}}}
+        """
+        try:
+            result = json.loads(value)
+            value =  result.get('query').get('query_string').get('query')
+
+        except (ValueError, AttributeError):
+            pass
+
+        model = qs.model
+        if model.__name__ in [
+            'Facility', 'CommunityHealthUnit', 'FacilityExportExcelMaterialView']:
+            if value.isdigit():
+                return model.objects.filter(code=value)
+            else:
+                return model.objects.filter(name__search=value)
+
+
+        fields = [field.name for field in model._meta.get_fields()if field.concrete and field.get_internal_type() in FIELD_TYPES]
+
+        filter_params = {}
+
+        for field in fields:
+            field_type = model._meta.get_field(field).get_internal_type()
+            if field_type == 'SequenceField' and value.isdigit():
+                filter_params[field + '__exact'] = value
+                break
+            elif field_type == 'SequenceField' and not value.isdigit():
+                break
+            else:
+                filter_params[field + '__search'] = value
+
+        q_filter = ""
+        for key, value in filter_params.items():
+            q_filter += "Q({0}='{1}') | ".format(key, value)
+
+    
+        # remove the pipe character at the end of the string
+        q_filter_reverse = q_filter[::-1]
+        q_filter = q_filter_reverse[3:len(q_filter_reverse) + 1]
+        q_filter = q_filter[::-1]
+        return qs.filter(eval(q_filter))
+
+
+
+
+
+

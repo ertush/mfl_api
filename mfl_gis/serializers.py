@@ -87,14 +87,15 @@ class BufferCooridinatesMixin(object):
 class GeoCodeSourceSerializer(
         AbstractFieldsMixin, serializers.ModelSerializer):
 
-    class Meta(object):
+    class Meta(AbstractFieldsMixin.Meta):
         model = GeoCodeSource
+
 
 
 class GeoCodeMethodSerializer(
         AbstractFieldsMixin, serializers.ModelSerializer):
 
-    class Meta(object):
+    class Meta(AbstractFieldsMixin.Meta):
         model = GeoCodeMethod
 
 
@@ -112,7 +113,7 @@ class FacilityCoordinatesListSerializer(
     )
     geometry = serializers.ReadOnlyField(source='simplify_coordinates')
 
-    class Meta(object):
+    class Meta(AbstractFieldsMixin.Meta):
         model = FacilityCoordinates
         geo_field = "geometry"
         exclude = (
@@ -134,7 +135,7 @@ class FacilityCoordinatesDetailSerializer(
         source="facility.ward.constituency.county.id"
     )
 
-    class Meta(object):
+    class Meta(AbstractFieldsMixin.Meta):
         model = FacilityCoordinates
         geo_field = "geometry"
 
@@ -166,7 +167,7 @@ class AbstractBoundarySerializer(
     density = serializers.ReadOnlyField()
     bound = serializers.ReadOnlyField()
 
-    class Meta(object):
+    class Meta(AbstractFieldsMixin.Meta):
         geo_field = 'mpoly'
 
 
@@ -189,6 +190,10 @@ class WorldBorderDetailSerializer(AbstractBoundarySerializer):
 
     class Meta(AbstractBoundarySerializer.Meta):
         model = WorldBorder
+        exclude = (
+            'active', 'deleted', 'search', 'created', 'updated', 'created_by',
+            'updated_by', 'area', 'mpoly',
+        )
 
 
 class CountyBoundarySerializer(AbstractBoundarySerializer):
@@ -211,6 +216,10 @@ class CountyBoundaryDetailSerializer(AbstractBoundarySerializer):
 
     class Meta(AbstractBoundarySerializer.Meta):
         model = CountyBoundary
+        exclude = (
+            'active', 'deleted', 'search', 'created', 'updated', 'created_by',
+            'updated_by', 'area', 'mpoly',
+        )
 
 
 class CountyBoundSerializer(
@@ -242,6 +251,10 @@ class ConstituencyBoundaryDetailSerializer(AbstractBoundarySerializer):
 
     class Meta(AbstractBoundarySerializer.Meta):
         model = ConstituencyBoundary
+        exclude = (
+            'active', 'deleted', 'search', 'created', 'updated', 'created_by',
+            'updated_by', 'area', 'mpoly',
+        )
 
 
 class ConstituencyBoundSerializer(
@@ -272,6 +285,10 @@ class WardBoundaryDetailSerializer(AbstractBoundarySerializer):
 
     class Meta(AbstractBoundarySerializer.Meta):
         model = WardBoundary
+        exclude = (
+            'active', 'deleted', 'search', 'created', 'updated', 'created_by',
+            'updated_by', 'area', 'mpoly',
+        )
 
 
 class DrillBoundarySerializer(GeoFeatureModelSerializer):

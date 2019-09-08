@@ -94,7 +94,10 @@ class Contact(AbstractBase):
         on_delete=models.PROTECT)
 
     def __str__(self):
-        return "{}: {}".format(self.contact_type.name, self.contact)
+        return "{}: {}".format(
+            self.contact_type.name.encode('ascii', 'ignore'),
+             self.contact.encode('ascii', 'ignore')
+        )
 
     class Meta(AbstractBase.Meta):
         unique_together = ('contact', 'contact_type')
@@ -425,6 +428,8 @@ class DocumentUpload(AbstractBase):
     name = models.CharField(max_length=255, unique=True)
     description = models.TextField(null=True, blank=True)
     fyl = models.FileField(null=True, blank=True)
+    document_type = models.CharField(max_length=255, default='NORMAL')
+    facility_name = models.CharField(max_length=255, null=True, blank=True)
 
     def __str__(self):
         return self.name

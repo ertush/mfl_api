@@ -1,5 +1,6 @@
 import logging
 import reversion
+import json
 
 from django.core.exceptions import FieldDoesNotExist
 from django.db.models.fields.files import FileField, FieldFile
@@ -9,6 +10,7 @@ from django.shortcuts import redirect
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.mixins import RetrieveModelMixin
+from reversion.models import Version
 
 from facilities.filters import facility_filters
 
@@ -20,7 +22,12 @@ class AuditableDetailViewMixin(RetrieveModelMixin):
 
     def _resolve_field(self, field, version):
         model_class = version.object.__class__
-        fallback = version.field_dict.get(field, None)
+        try:
+            fallback = version.field_dict.get(field, None)
+        except:
+            data = json.loads(version.serialized_data)
+            fallback= data[0].get('fields', {}).get(field)
+
         try:
             model_field = model_class._meta.get_field(field)
         except FieldDoesNotExist:
@@ -47,8 +54,17 @@ class AuditableDetailViewMixin(RetrieveModelMixin):
         output = []
 
         for fld in fields:
-            old_val = old.field_dict.get(fld, '')
-            new_val = new.field_dict.get(fld, '')
+            try:
+                old_val = old.field_dict.get(fld, '')
+            except:
+                data = json.loads(old.serialized_data)
+                old_val = data[0].get('fields', {}).get(fld)
+
+            try:
+                new_val = new.field_dict.get(fld, '')
+            except:
+                data = json.loads(new.serialized_data)
+                new_val = data[0].get('fields', {}).get(fld)
 
             if old_val != new_val:
                 output.append({
@@ -57,10 +73,12 @@ class AuditableDetailViewMixin(RetrieveModelMixin):
                     "new": self._resolve_field(fld, new)
                 })
 
+        print output
+
         return output
 
     def generate_diffs(self, instance, exclude=[]):
-        versions = reversion.get_for_object(instance)
+        versions = Version.objects.get_for_object(instance)
         fieldnames = [
             f.name for f in instance._meta.fields
             if f.name not in exclude
@@ -72,18 +90,18 @@ class AuditableDetailViewMixin(RetrieveModelMixin):
             diff = self._compare_objs(fieldnames, old, new)
             if diff:
                 if  hasattr(new.revision.user, 'get_full_name'):
-                    
+
                     ans.append({
                         "updates": diff,
                         "updated_by": new.revision.user.get_full_name,
                         "updated_on": new.revision.date_created
                     })
-                # else:
-                #    ans.append({
-                #        "updates": diff,
-                #        "updated_by": "System Manager",
-                #        "updated_on": new.revision.date_created
-                #    })
+                else:
+                   ans.append({
+                       "updates": diff,
+                       "updated_by": "System Manager",
+                       "updated_on": new.revision.date_created
+                   })
 
         return ans
 
@@ -157,7 +175,7 @@ class APIRoot(APIView):
 
 
 def root_redirect_view(request):
-    return redirect('api:root_listing', permanent=True)
+    return redirect('root_listing', permanent=True)
 
 
 class DownloadPDFMixin(object):

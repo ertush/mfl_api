@@ -1,5 +1,5 @@
 from __future__ import unicode_literals
-from django.conf.urls import url, patterns
+from django.conf.urls import url
 
 from .views import (
     UserList,
@@ -12,8 +12,7 @@ from .views import (
 )
 
 
-urlpatterns = patterns(
-    '',
+urlpatterns = (
 
     url(r'^applications/$', MFLOauthApplicationListView.as_view(),
         name='mfl_oauth_applications_list'),

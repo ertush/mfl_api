@@ -32,20 +32,20 @@ class CHUServiceLinkSerializer(
     health_unit_name = serializers.CharField(
         source='health_unit.name', required=False)
 
-    class Meta(object):
+    class Meta(AbstractFieldsMixin.Meta):
         model = CHUServiceLink
 
 
 class ChuUpdateBufferSerializer(
         AbstractFieldsMixin, serializers.ModelSerializer):
 
-    class Meta(object):
+    class Meta(AbstractFieldsMixin.Meta):
         model = ChuUpdateBuffer
 
 
 class CHUServiceSerializer(AbstractFieldsMixin, serializers.ModelSerializer):
 
-    class Meta(object):
+    class Meta(AbstractFieldsMixin.Meta):
         model = CHUService
 
 
@@ -53,7 +53,7 @@ class CommunityHealthWorkerSerializer(
         AbstractFieldsMixin, serializers.ModelSerializer):
     name = serializers.CharField(read_only=True)
 
-    class Meta(object):
+    class Meta(AbstractFieldsMixin.Meta):
         model = CommunityHealthWorker
         read_only_fields = ('health_unit_approvals',)
 
@@ -92,7 +92,7 @@ class CommunityHealthUnitSerializer(
         many=True, required=False, validators=[])
     inlined_errors = {}
 
-    class Meta(object):
+    class Meta(AbstractFieldsMixin.Meta):
         model = CommunityHealthUnit
         read_only_fields = ('code', )
 
@@ -315,20 +315,20 @@ class CommunityHealthUnitSerializer(
 class CommunityHealthWorkerContactSerializer(
         AbstractFieldsMixin, serializers.ModelSerializer):
 
-    class Meta(object):
+    class Meta(AbstractFieldsMixin.Meta):
         model = CommunityHealthWorkerContact
 
 
 class StatusSerializer(AbstractFieldsMixin, serializers.ModelSerializer):
 
-    class Meta(object):
+    class Meta(AbstractFieldsMixin.Meta):
         model = Status
 
 
 class CommunityHealthUnitContactSerializer(
         AbstractFieldsMixin, serializers.ModelSerializer):
 
-    class Meta(object):
+    class Meta(AbstractFieldsMixin.Meta):
         model = CommunityHealthUnitContact
 
 
@@ -338,5 +338,5 @@ class CHURatingSerializer(AbstractFieldsMixin, serializers.ModelSerializer):
     facility_id = serializers.ReadOnlyField(source='chu.facility.id')
     chu_name = serializers.ReadOnlyField(source='chu.name')
 
-    class Meta(object):
+    class Meta(AbstractFieldsMixin.Meta):
         model = CHURating
