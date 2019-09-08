@@ -471,6 +471,7 @@ class FacilitySerializer(
     facility_checklist_document = serializers.ReadOnlyField()
     facility_license_document = serializers.ReadOnlyField()
 
+
     class Meta(AbstractFieldsMixin.Meta):
         model = Facility
 

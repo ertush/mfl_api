@@ -1,0 +1,102 @@
+[
+    {
+        "model": "facilities.RegulatingBody",
+        "records": [
+            {
+                "default_status": {
+                    "name": "Pending License"
+                },
+                "name": "Kenya Physiotherapy Board",
+                "regulation_verb": "License"
+            },
+            {
+                "default_status": {
+                    "name": "Pending License"
+                },
+                "name": "Public Health Officers and Technicians",
+                "regulation_verb": "License"
+            },
+            {
+                "default_status": {
+                    "name": "Pending License"
+                },
+                "name": "Kenya National Dieticians and Nutritionists Board",
+                "regulation_verb": "License"
+            },
+            {
+                "default_status": {
+                    "name": "Pending License"
+                },
+                "name": "Radiation Protection Board",
+                "regulation_verb": "License"
+            },
+            {
+                "abbreviation": "MOH-DMS",
+                "default_status": {
+                    "name": "Pending Gazettement"
+                },
+                "name": "Ministry of Health",
+                "regulation_verb": "Gazette"
+            },
+            {
+                "abbreviation": "KMPDB - Institution",
+                "default_status": {
+                    "name": "Pending Registration"
+                },
+                "name": "Kenya MPDB - Institution",
+                "regulation_verb": "Register"
+            },
+            {
+                "abbreviation": "KMPDB - Private Practice",
+                "default_status": {
+                    "name": "Pending License"
+                },
+                "name": "Kenya MPDB - Private Practice",
+                "regulation_verb": "License"
+            },
+            {
+                "abbreviation": "COC",
+                "default_status": {
+                    "name": "Pending License"
+                },
+                "name": "Clinical Officers Council",
+                "regulation_verb": "License"
+            },
+            {
+                "abbreviation": "KMLTTB",
+                "default_status": {
+                    "name": "Pending Registration"
+                },
+                "name": "Kenya Medical Laboratory, Tech & Technologists Board",
+                "regulation_verb": "Register"
+            },
+            {
+                "abbreviation": "Pharmacy & Poisons Board",
+                "default_status": {
+                    "name": "Pending License"
+                },
+                "name": "Pharmacy & Poisons Board",
+                "regulation_verb": "License"
+            },
+            {
+                "abbreviation": "NCK",
+                "default_status": {
+                    "name": "Pending License"
+                },
+                "name": "Nursing Council of Kenya (Private Practice)",
+                "regulation_verb": "License"
+            },
+            {
+                "abbreviation": "Other",
+                "default_status": {
+                    "name": "Pending Registration"
+                },
+                "name": "Other",
+                "regulation_verb": "Register"
+            }
+        ],
+        "unique_fields": [
+            "name"
+        ]
+    }
+]

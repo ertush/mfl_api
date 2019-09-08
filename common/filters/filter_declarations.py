@@ -57,7 +57,6 @@ class UserConstituencyFilter(CommonFieldsFilterset):
         lookup_expr='exact', name='constituency__county')
     constituency = ListCharFilter(lookup_expr='exact')
 
-
     class Meta(CommonFieldsFilterset.Meta):
         model = UserConstituency
 
