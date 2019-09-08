@@ -75,11 +75,7 @@ setup(
         "model_mommy>=1.2.4,<1.3.0",
         "Fabric>=1.10,<1.11.0",
         "coverage>=3.7,<3.8.0",
-<<<<<<< HEAD
         "psycopg2==2.7",
-=======
-        "psycopg2>=2.5,<2.6.0",
->>>>>>> d87e0392cda9d6b792435c641003017b7a26f392
         "djangorestframework==3.6.3",
         "django-filter==1.0.4",
         'dj_database_url>=0.3.0,<=0.4.0',
