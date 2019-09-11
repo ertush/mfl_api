@@ -86,6 +86,9 @@ class FacilityExportExcelMaterialViewFilter(django_filters.FilterSet):
     service = ListUUIDFilter(lookup_expr='exact', name='services')
     service_category = ListUUIDFilter(lookup_expr='exact', name='categories')
     service_name = ClassicSearchFilter(name='service_names')
+    approved_national_level =  django_filters.TypedChoiceFilter(
+        choices=BOOLEAN_CHOICES,
+        coerce=strtobool)
 
     class Meta(CommonFieldsFilterset.Meta):
         model = FacilityExportExcelMaterialView
@@ -460,6 +463,9 @@ class FacilityFilter(CommonFieldsFilterset):
     search = ClassicSearchFilter(name='name')
     incomplete = django_filters.CharFilter(
         method='filter_incomplete_facilities')
+    approved_national_level =  django_filters.TypedChoiceFilter(
+        choices=BOOLEAN_CHOICES,
+        coerce=strtobool)
 
     class Meta(CommonFieldsFilterset.Meta):
         model = Facility

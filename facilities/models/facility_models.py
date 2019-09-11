@@ -687,6 +687,7 @@ class FacilityExportExcelMaterialView(models.Model):
     is_published = models.BooleanField(default=False)
     long = models.CharField(max_length=30, null=True, blank=True)
     lat = models.CharField(max_length=30, null=True, blank=True)
+    approved_national_level = models.BooleanField(default=False)
 
     class Meta(object):
         managed = False
@@ -851,6 +852,8 @@ class Facility(SequenceMixin, AbstractBase):
         RegulationStatus, null=True, blank=True,
         on_delete=models.PROTECT,
         help_text='The regulatory status of the hospital')
+    approved_national_level = models.BooleanField(
+        default=False, help_text='Has the facility been approved at the national level')
 
     def validate_facility_name(self):
         if self.pk:
@@ -1358,7 +1361,7 @@ class Facility(SequenceMixin, AbstractBase):
                     changed_older_fields = []
                     for record in json_updates:
                         for k, v in record.items():
-                            if k=='field_name':
+                            if k == 'field_name':
                                 if v not in changed_older_fields:
                                     changed_older_fields.append(v)
                                 break
