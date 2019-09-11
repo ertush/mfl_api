@@ -135,13 +135,14 @@ class DhisAuth(ApiAuthentication):
             )
 
     def get_parent_id(self, facility_name):
+        headers={
+            "Authorization": "Bearer " + json.loads(self.session_store[self.oauth2_token_variable_name].replace("u", "")
+                .replace("'", '"'))["access_token"],
+            "Accept": "application/json"
+        }
         r = requests.get(
             self.server+"api/organisationUnits.json",
-            headers={
-                "Authorization": "Bearer " + json.loads(self.session_store[self.oauth2_token_variable_name].replace("u", "")
-                    .replace("'", '"'))["access_token"],
-                "Accept": "application/json"
-            },
+            headers=headers,
             params={
                 "query": facility_name,
                 "fields": "[id,name]",
@@ -1461,7 +1462,7 @@ class Facility(SequenceMixin, AbstractBase):
         approved.
         """
         from facilities.serializers import FacilityDetailSerializer
-        if not self.code and self.is_complete:
+        if not self.code and self.is_complete and self.approved_national_level:
             self.code = self.generate_next_code_sequence()
 
         if not self.official_name:
@@ -1619,6 +1620,8 @@ class FacilityUpdates(AbstractBase):
     units = models.TextField(null=True, blank=True)
     geo_codes = models.TextField(null=True, blank=True)
     is_new = models.BooleanField(default=False)
+    is_national_approval = models.BooleanField(default=False,
+        help_text='Approval of the facility at the national level')
     dhis2_api_auth = DhisAuth()
 
     def facility_updated_json(self):
@@ -1846,6 +1849,8 @@ class FacilityUpdates(AbstractBase):
             self.approve_upgrades()
             self.facility.has_edits = False
             self.facility.updated = timezone.now()
+            if self.is_national_approval:
+                import pdb; pdb.set_trace()
             self.facility.save(allow_save=True)
         if self.cancelled:
             self.reject_upgrades()
@@ -1986,6 +1991,8 @@ class FacilityApproval(AbstractBase):
     is_cancelled = models.BooleanField(
         default=False, help_text='Cancel a facility approval'
     )
+    is_national_approval = models.BooleanField(default=False,
+        help_text='Approval of the facility at the national level')
 
     def validate_rejection_comment(self):
         if self.is_cancelled and not self.comment:
@@ -2003,6 +2010,8 @@ class FacilityApproval(AbstractBase):
             self.facility.rejected = False
             self.facility.approved = True
             self.facility.is_published = True
+            if self.is_national_approval:
+                self.facility.approved_national_level = True
         self.facility.save(allow_save=True)
 
     def clean(self, *args, **kwargs):

@@ -612,7 +612,6 @@ class FacilityDetailSerializer(FacilitySerializer):
 
     @transaction.atomic
     def update(self, instance, validated_data):
-
         self.inlining_errors = {}
         contacts = self.initial_data.pop('contacts', [])
         units = self.initial_data.pop('units', [])

@@ -358,6 +358,20 @@ class FacilityFilter(CommonFieldsFilterset):
         else:
             return qs.filter(rejected=False, approved=False)
 
+    def filter_unpublished_facilities_national_level(self, qs, name, value):
+        """
+        This is in order to allow the facilities to be seen
+        so that they can be approved at the national level and assigned an MFL code.
+        """
+        return qs
+
+    def filter_unpublished_facilities_for_all(self, qs, name, value):
+        """
+        This is in order to allow the facilities to be seen
+        so that they can be approved at the county level.
+        """
+        return qs
+
     def filter_incomplete_facilities(self, qs, name, value):
         """
         Filter the incomplete/complete facilities

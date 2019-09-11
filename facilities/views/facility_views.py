@@ -617,7 +617,6 @@ class FacilityDetailView(
             officer_in_charge['facility_id'] = str(instance.id)
 
         self. _validate_payload(services, contacts, units, officer_in_charge)
-
         if any(self.validation_errors):
             return Response(
                 data=self.validation_errors,
