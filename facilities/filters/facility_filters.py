@@ -368,13 +368,6 @@ class FacilityFilter(CommonFieldsFilterset):
             closed=False
         )
 
-    def filter_unpublished_facilities_for_all(self, qs, name, value):
-        """
-        This is in order to allow the facilities to be seen
-        so that they can be approved at the county level.
-        """
-        return qs
-
     def filter_incomplete_facilities(self, qs, name, value):
         """
         Filter the incomplete/complete facilities
