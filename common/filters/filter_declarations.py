@@ -17,6 +17,8 @@ from ..models import (
     UserSubCounty,
     Notification
 )
+
+from common.fields import SequenceField
 from .filter_shared import (
     CommonFieldsFilterset,
     ListCharFilter,
@@ -54,7 +56,6 @@ class UserConstituencyFilter(CommonFieldsFilterset):
     county = django_filters.CharFilter(
         lookup_expr='exact', name='constituency__county')
     constituency = ListCharFilter(lookup_expr='exact')
-
 
     class Meta(CommonFieldsFilterset.Meta):
         model = UserConstituency

@@ -468,6 +468,9 @@ class FacilitySerializer(
     lat_long = serializers.ReadOnlyField()
     is_complete = serializers.ReadOnlyField()
     in_complete_details = serializers.ReadOnlyField()
+    facility_checklist_document = serializers.ReadOnlyField()
+    facility_license_document = serializers.ReadOnlyField()
+
 
     class Meta(AbstractFieldsMixin.Meta):
         model = Facility
@@ -609,7 +612,6 @@ class FacilityDetailSerializer(FacilitySerializer):
 
     @transaction.atomic
     def update(self, instance, validated_data):
-
         self.inlining_errors = {}
         contacts = self.initial_data.pop('contacts', [])
         units = self.initial_data.pop('units', [])

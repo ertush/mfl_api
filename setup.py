@@ -75,7 +75,7 @@ setup(
         "model_mommy>=1.2.4,<1.3.0",
         "Fabric>=1.10,<1.11.0",
         "coverage>=3.7,<3.8.0",
-        "psycopg2>=2.5,<2.6.0",
+        "psycopg2==2.7",
         "djangorestframework==3.6.3",
         "django-filter==1.0.4",
         'dj_database_url>=0.3.0,<=0.4.0',
@@ -119,6 +119,7 @@ setup(
         "boto==2.38.0",
         "celery==3.1.19",
         "filechunkio==1.6",
-        "python-dateutil"
+        "python-dateutil",
+        "html5lib==0.9999999"
     ],
 )

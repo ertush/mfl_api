@@ -86,6 +86,9 @@ class FacilityExportExcelMaterialViewFilter(django_filters.FilterSet):
     service = ListUUIDFilter(lookup_expr='exact', name='services')
     service_category = ListUUIDFilter(lookup_expr='exact', name='categories')
     service_name = ClassicSearchFilter(name='service_names')
+    approved_national_level =  django_filters.TypedChoiceFilter(
+        choices=BOOLEAN_CHOICES,
+        coerce=strtobool)
 
     class Meta(CommonFieldsFilterset.Meta):
         model = FacilityExportExcelMaterialView
@@ -355,6 +358,16 @@ class FacilityFilter(CommonFieldsFilterset):
         else:
             return qs.filter(rejected=False, approved=False)
 
+    def filter_unpublished_facilities_national_level(self, qs, name, value):
+        """
+        This is in order to allow the facilities to be seen
+        so that they can be approved at the national level and assigned an MFL code.
+        """
+        return qs.filter(
+            approved_national_level=False, code=None, approved=True, has_edits=False,
+            closed=False
+        )
+
     def filter_incomplete_facilities(self, qs, name, value):
         """
         Filter the incomplete/complete facilities
@@ -460,6 +473,11 @@ class FacilityFilter(CommonFieldsFilterset):
     search = ClassicSearchFilter(name='name')
     incomplete = django_filters.CharFilter(
         method='filter_incomplete_facilities')
+    to_publish =  django_filters.CharFilter(
+        method='filter_unpublished_facilities_national_level')
+    approved_national_level =  django_filters.TypedChoiceFilter(
+        choices=BOOLEAN_CHOICES,
+        coerce=strtobool)
 
     class Meta(CommonFieldsFilterset.Meta):
         model = Facility

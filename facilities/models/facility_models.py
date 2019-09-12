@@ -21,11 +21,201 @@ from users.models import JobTitle  # NOQA
 from search.search_utils import index_instance
 from common.models import (
     AbstractBase, Ward, Contact, SequenceMixin, SubCounty, County,
-    Town
+    Town, ApiAuthentication
 )
 from common.fields import SequenceField
+from django.contrib.sessions.backends.db import SessionStore
+import threading, requests, base64
 
 LOGGER = logging.getLogger(__name__)
+
+
+@encoding.python_2_unicode_compatible
+class DhisAuth(ApiAuthentication):
+    '''
+    Authenticates to DHIS via OAuth2.
+    Handles All API related functions
+    '''
+
+    oauth2_token_variable_name = models.CharField(max_length=255, default="api_oauth2_token", null=False, blank=False)
+    type = models.CharField(max_length=255, default="DHIS2")
+    session_store = SessionStore(session_key="dhis2_api_12904rs")
+
+    def set_interval(interval, times=-1):
+        # This will be the actual decorator,
+        # with fixed interval and times parameter
+        def outer_wrap(function):
+            # This will be the function to be
+            # called
+            def wrap(*args, **kwargs):
+                stop = threading.Event()
+
+                # This is another function to be executed
+                # in a different thread to simulate setInterval
+                def inner_wrap():
+                    i = 0
+                    while i != times and not stop.isSet():
+                        stop.wait(interval)
+                        function(*args, **kwargs)
+                        i += 1
+
+                t = threading.Timer(0, inner_wrap)
+                t.daemon = True
+                t.start()
+                return stop
+
+            return wrap
+
+        return outer_wrap
+
+    @set_interval(30.0)
+    def refresh_oauth2_token(self):
+        r = requests.post(
+            self.server+"uaa/oauth/token",
+            headers={
+                "Authorization": "Basic " + base64.b64encode(self.client_id + ":" + self.client_secret),
+                "Accept": "application/json"
+            },
+            params={
+                "grant_type": "refresh_token",
+                "refresh_token": json.loads(self.session_store[self.oauth2_token_variable_name].replace("u", "")
+                    .replace("'", '"'))["refresh_token"]
+            }
+        )
+
+        response = str(r.json())
+        # print("Response @ refresh_oauth2 ", response)
+        self.session_store[self.oauth2_token_variable_name] = response
+        self.session_store.save()
+
+    def get_oauth2_token(self):
+        r = requests.post(
+            self.server+"uaa/oauth/token",
+            headers={
+                "Authorization": "Basic "+base64.b64encode(self.client_id+":"+self.client_secret),
+                "Accept": "application/json"
+            },
+            params={
+                "grant_type": "password",
+                "username": self.username,
+                "password": self.password
+            }
+        )
+
+        response = str(r.json())
+        # print("Response @ get_oauth2 ", response)
+        self.session_store[self.oauth2_token_variable_name] = response
+        self.session_store.save()
+        self.refresh_oauth2_token()
+
+    def get_org_unit_id(self, code):
+        r = requests.get(
+            self.server + "api/organisationUnits.json",
+            headers={
+                "Authorization": "Bearer " +
+                                 json.loads(self.session_store[self.oauth2_token_variable_name].replace("u", "")
+                                            .replace("'", '"'))["access_token"],
+                "Accept": "application/json"
+            },
+            params={
+                "filter": "code:eq:"+str(code),
+                "fields": "[id]",
+                "paging": "false"
+            }
+        )
+        print("Get Org Unit ID Response", r.json(), str(code))
+        if len(r.json()["organisationUnits"]) is 1:
+            return r.json()["organisationUnits"][0]["id"]
+        else:
+            raise ValidationError(
+                {
+                    "Error!": ["Unable to resolve exact organisation unit of the facility to be updated in DHIS2. "
+                               "Most probably, the corresponding MFL code for the facility does not exist in DHIS2"]
+                }
+            )
+
+    def get_parent_id(self, facility_name):
+        headers={
+            "Authorization": "Bearer " + json.loads(self.session_store[self.oauth2_token_variable_name].replace("u", "")
+                .replace("'", '"'))["access_token"],
+            "Accept": "application/json"
+        }
+        r = requests.get(
+            self.server+"api/organisationUnits.json",
+            headers=headers,
+            params={
+                "query": facility_name,
+                "fields": "[id,name]",
+                "filter": "level:in:[4]",
+                "paging": "false"
+            }
+        )
+        print(r.json())
+        dhis2_facility_name = r.json()["organisationUnits"][0]["name"].lower()
+        facility_name = str(facility_name)+ " Ward"
+        facility_name = facility_name.lower()
+        print("1", dhis2_facility_name, "2", facility_name, len(r.json()["organisationUnits"]))
+
+        if len(r.json()["organisationUnits"]) is 1:
+            if dhis2_facility_name == facility_name:
+                return r.json()["organisationUnits"][0]["id"]
+        else:
+            raise ValidationError(
+                {
+                    "Error!": ["Unable to resolve exact parent of the new facility in DHIS2"]
+                }
+            )
+
+    def push_facility_to_dhis2(self, new_facility_payload):
+        r = requests.post(
+            self.server+"api/organisationUnits",
+            headers={
+                "Authorization": "Bearer " + json.loads(self.session_store[self.oauth2_token_variable_name].replace("u", "")
+                                                        .replace("'", '"'))["access_token"],
+                "Accept": "application/json"
+            },
+            json=new_facility_payload
+        )
+
+        print("Create Facility Response", r.url, r.status_code, r.json())
+
+        if r.json()["status"] != "OK":
+            raise ValidationError(
+                {
+                    "Error!": ["An error occured while pushing facility to DHIS2. This is may be caused by the "
+                               "existance of an organisation unit with as similar name as to the one you are creating. "
+                               "Or some specific information like geo-coordinates are not unique"]
+                }
+            )
+
+    def push_facility_updates_to_dhis2(self, org_unit_id, facility_updates_payload):
+        r = requests.put(
+            self.server + "api/organisationUnits/"+org_unit_id,
+            headers={
+                "Authorization": "Bearer " +
+                                 json.loads(self.session_store[self.oauth2_token_variable_name].replace("u", "")
+                                            .replace("'", '"'))["access_token"],
+                "Accept": "application/json"
+            },
+            json=facility_updates_payload
+        )
+
+        print("Update Facility Response", r.url, r.status_code, r.json(), "Status", r.json()["status"])
+
+        if r.json()["status"] != "OK":
+            raise ValidationError(
+                {
+                    "Error!": ["Unable to push facility updates to DHIS2"]
+                }
+            )
+
+    def format_coordinates(self, str_coordinates):
+        coordinates_str_list = str_coordinates.split(" ")
+        return str([float(coordinates_str_list[0]), float(coordinates_str_list[1])])
+
+    def __str__(self):
+        return "{}: {}".format("Dhis Auth - ", self.username)
+
 
 
 class FacilityKephManager(models.Manager):
@@ -687,6 +877,7 @@ class FacilityExportExcelMaterialView(models.Model):
     is_published = models.BooleanField(default=False)
     long = models.CharField(max_length=30, null=True, blank=True)
     lat = models.CharField(max_length=30, null=True, blank=True)
+    approved_national_level = models.BooleanField(default=False)
 
     class Meta(object):
         managed = False
@@ -851,6 +1042,8 @@ class Facility(SequenceMixin, AbstractBase):
         RegulationStatus, null=True, blank=True,
         on_delete=models.PROTECT,
         help_text='The regulatory status of the hospital')
+    approved_national_level = models.BooleanField(
+        default=False, help_text='Has the facility been approved at the national level')
 
     def validate_facility_name(self):
         if self.pk:
@@ -885,6 +1078,32 @@ class Facility(SequenceMixin, AbstractBase):
     @property
     def is_complete(self):
         return self.in_complete_details == ""
+
+    @property
+    def facility_checklist_document(self):
+        from common.models.model_declarations import DocumentUpload
+        try:
+            document = DocumentUpload.objects.get(
+                facility_name=self.name, document_type="Facility_ChecKList")
+            return {
+                "id": document.id,
+                "url": document.fyl.name,
+            }
+        except DocumentUpload.DoesNotExist:
+            return None
+
+    @property
+    def facility_license_document(self):
+        from common.models.model_declarations import DocumentUpload
+        try:
+            document = DocumentUpload.objects.get(
+                facility_name=self.name, document_type="FACILITY_LICENSE")
+            return {
+                "id": document.id,
+                "url": document.fyl.name,
+            }
+        except DocumentUpload.DoesNotExist:
+            return None
 
     def update_facility_regulation_status(self):
         self.regulated = True
@@ -1243,7 +1462,7 @@ class Facility(SequenceMixin, AbstractBase):
         approved.
         """
         from facilities.serializers import FacilityDetailSerializer
-        if not self.code and self.is_complete:
+        if not self.code and self.is_complete and self.approved_national_level:
             self.code = self.generate_next_code_sequence()
 
         if not self.official_name:
@@ -1332,7 +1551,7 @@ class Facility(SequenceMixin, AbstractBase):
                     changed_older_fields = []
                     for record in json_updates:
                         for k, v in record.items():
-                            if k=='field_name':
+                            if k == 'field_name':
                                 if v not in changed_older_fields:
                                     changed_older_fields.append(v)
                                 break
@@ -1401,6 +1620,9 @@ class FacilityUpdates(AbstractBase):
     units = models.TextField(null=True, blank=True)
     geo_codes = models.TextField(null=True, blank=True)
     is_new = models.BooleanField(default=False)
+    is_national_approval = models.BooleanField(default=False,
+        help_text='Approval of the facility at the national level')
+    dhis2_api_auth = DhisAuth()
 
     def facility_updated_json(self):
         updates = {}
@@ -1486,6 +1708,11 @@ class FacilityUpdates(AbstractBase):
 
                 setattr(self.facility, field_name, value)
             self.facility.save(allow_save=True)
+            print("Hellow! MFL!")
+            self.push_facility_updates()
+            '''TODO
+            Push update to DHIS2
+            '''
 
     def update_facility_services(self):
         from facilities.utils import create_facility_services
@@ -1578,6 +1805,33 @@ class FacilityUpdates(AbstractBase):
                          "approved or canceled before another one is made")
                 raise ValidationError(error)
 
+    def push_facility_updates(self):
+        from mfl_gis.models import FacilityCoordinates
+        import re
+        self.dhis2_api_auth.get_oauth2_token()
+
+        dhis2_parent_id = self.dhis2_api_auth.get_parent_id(self.facility.ward_name)
+        dhis2_org_unit_id = self.dhis2_api_auth.get_org_unit_id(self.facility.code)
+
+        new_facility_updates_payload = {
+            "code": str(self.facility.code),
+            "name": str(self.facility.name),
+            "shortName": str(self.facility.name),
+            "displayName": str(self.facility.official_name),
+            "parent": {
+                "id": dhis2_parent_id
+            },
+            "openingDate": self.facility.date_established.strftime("%Y-%m-%d"),
+            "coordinates": self.dhis2_api_auth.format_coordinates(
+                re.search(r'\((.*?)\)', str(FacilityCoordinates.objects.values('coordinates')
+                                            .get(facility_id=self.facility.id)['coordinates'])).group(1))
+        }
+
+        print("Names;", "Official Name:", self.facility.official_name, "Name:", self.facility.name)
+
+        print("New Facility Push Payload => ", new_facility_updates_payload)
+        self.dhis2_api_auth.push_facility_updates_to_dhis2(dhis2_org_unit_id, new_facility_updates_payload)
+
     def clean(self, *args, **kwargs):
         self.validate_only_one_update_at_a_time()
         self.validate_either_of_approve_or_cancel()
@@ -1595,6 +1849,8 @@ class FacilityUpdates(AbstractBase):
             self.approve_upgrades()
             self.facility.has_edits = False
             self.facility.updated = timezone.now()
+            if self.is_national_approval:
+                import pdb; pdb.set_trace()
             self.facility.save(allow_save=True)
         if self.cancelled:
             self.reject_upgrades()
@@ -1735,6 +1991,8 @@ class FacilityApproval(AbstractBase):
     is_cancelled = models.BooleanField(
         default=False, help_text='Cancel a facility approval'
     )
+    is_national_approval = models.BooleanField(default=False,
+        help_text='Approval of the facility at the national level')
 
     def validate_rejection_comment(self):
         if self.is_cancelled and not self.comment:
@@ -1752,6 +2010,8 @@ class FacilityApproval(AbstractBase):
             self.facility.rejected = False
             self.facility.approved = True
             self.facility.is_published = True
+            if self.is_national_approval:
+                self.facility.approved_national_level = True
         self.facility.save(allow_save=True)
 
     def clean(self, *args, **kwargs):

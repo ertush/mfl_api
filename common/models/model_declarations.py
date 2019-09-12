@@ -428,6 +428,8 @@ class DocumentUpload(AbstractBase):
     name = models.CharField(max_length=255, unique=True)
     description = models.TextField(null=True, blank=True)
     fyl = models.FileField(null=True, blank=True)
+    document_type = models.CharField(max_length=255, default='NORMAL')
+    facility_name = models.CharField(max_length=255, null=True, blank=True)
 
     def __str__(self):
         return self.name
@@ -504,3 +506,43 @@ class NoficiationGroup(AbstractBase):
 
     def __str__(self):
         return self.group.name
+
+
+class ApiAuthentication(models.Model):
+    username = models.CharField(max_length=255, default="healthit", null=False, blank=False)
+    password = models.CharField(max_length=255, default="Test1@hiskenya", null=False, blank=False)
+    client_id = models.CharField(max_length=255, default="workforce17mfl@2018$", null=False, blank=False)
+    client_secret = models.CharField(max_length=255, default="4b04e4e72-6542-3f78-f76b-37a3de0bdec", null=False,
+                                     blank=False)
+    server = models.CharField(max_length=255, default="https://test.hiskenya.org/kenya/", null=False, blank=False)
+    session_key = models.CharField(max_length=255, default="dhis2_api_12904rs", null=False, blank=False)
+
+    @property
+    def get_api_username(self):
+        "Returns the API username."
+        return '%s' % self.username
+
+    @property
+    def get_api_password(self):
+        "Returns the API password."
+        return '%s' % self.password
+
+    @property
+    def get_api_client_id(self):
+        "Returns the API client_id."
+        return '%s' % self.client_id
+
+    @property
+    def get_api_client_secret(self):
+        "Returns the API client_secret."
+        return '%s' % self.client_secret
+
+    @property
+    def get_api_server(self):
+        "Returns the API server."
+        return '%s' % self.server
+
+    @property
+    def get_api_session_key(self):
+        "Returns the API session_key."
+        return '%s' % self.session_key
