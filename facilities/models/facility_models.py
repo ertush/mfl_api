@@ -1045,6 +1045,33 @@ class Facility(SequenceMixin, AbstractBase):
     approved_national_level = models.BooleanField(
         default=False, help_text='Has the facility been approved at the national level')
 
+    dhis2_api_auth = DhisAuth()
+
+
+    def push_facility_updates(self):
+        from mfl_gis.models import FacilityCoordinates
+        import re
+        self.dhis2_api_auth.get_oauth2_token()
+
+        dhis2_parent_id = self.dhis2_api_auth.get_parent_id(self.ward_name)
+        dhis2_org_unit_id = self.dhis2_api_auth.get_org_unit_id(self.code)
+
+        new_facility_updates_payload = {
+            "code": str(self.code),
+            "name": str(self.name),
+            "shortName": str(self.name),
+            "displayName": str(self.official_name),
+            "parent": {
+                "id": dhis2_parent_id
+            },
+            "openingDate": self.facility.date_established.strftime("%Y-%m-%d"),
+            "coordinates": self.dhis2_api_auth.format_coordinates(
+                re.search(r'\((.*?)\)', str(FacilityCoordinates.objects.values('coordinates')
+                                            .get(facility_id=self.id)['coordinates'])).group(1))
+        }
+
+        self.dhis2_api_auth.push_facility_updates_to_dhis2(dhis2_org_unit_id, new_facility_updates_payload)
+
     def validate_facility_name(self):
         if self.pk:
             if self.__class__.objects.filter(name=self.name).count() != 1:
@@ -1464,6 +1491,7 @@ class Facility(SequenceMixin, AbstractBase):
         from facilities.serializers import FacilityDetailSerializer
         if not self.code and self.is_complete and self.approved_national_level:
             self.code = self.generate_next_code_sequence()
+            self.push_facility_updates()
 
         if not self.official_name:
             self.official_name = self.name
