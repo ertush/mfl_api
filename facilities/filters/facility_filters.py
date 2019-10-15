@@ -364,8 +364,7 @@ class FacilityFilter(CommonFieldsFilterset):
         so that they can be approved at the national level and assigned an MFL code.
         """
         return qs.filter(
-            approved_national_level=False, code=None, approved=True, has_edits=False,
-            closed=False
+            approved_national_level=False, code=None, approved=True, has_edits=False,closed=False
         )
 
     def filter_incomplete_facilities(self, qs, name, value):
@@ -473,9 +472,9 @@ class FacilityFilter(CommonFieldsFilterset):
     search = ClassicSearchFilter(name='name')
     incomplete = django_filters.CharFilter(
         method='filter_incomplete_facilities')
-    to_publish =  django_filters.CharFilter(
+    to_publish = django_filters.CharFilter(
         method='filter_unpublished_facilities_national_level')
-    approved_national_level =  django_filters.TypedChoiceFilter(
+    approved_national_level = django_filters.TypedChoiceFilter(
         choices=BOOLEAN_CHOICES,
         coerce=strtobool)
 
