@@ -175,7 +175,7 @@ class APIRoot(APIView):
 
 
 def root_redirect_view(request):
-    return redirect('root_listing', permanent=True)
+    return redirect('api:root_listing', permanent=True)
 
 
 class DownloadPDFMixin(object):
