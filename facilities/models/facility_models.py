@@ -814,6 +814,11 @@ class FacilityExportExcelMaterialView(models.Model):
     facility_type_name = models.CharField(
         max_length=100,
         help_text='The facility type')
+    facility_type_category = models.CharField(
+        max_length=100,
+        help_text='The facility category name')
+    facility_type_parent = models.UUIDField(null=True, blank=True,
+                           help_text='The name of the facility\'s type parent uid')
     county = models.UUIDField(
         null=True, blank=True,
         help_text='Name of the facility\'s county')
@@ -826,6 +831,9 @@ class FacilityExportExcelMaterialView(models.Model):
     owner_name = models.CharField(
         max_length=100,
         help_text='The facility\'s owner')
+    owner_type_name = models.CharField(
+        max_length=100,
+        help_text='The facility\'s owner type name')
     regulatory_body_name = models.CharField(
         max_length=100,
         help_text='The name of the facility\'s regulator')
