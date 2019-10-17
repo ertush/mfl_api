@@ -63,10 +63,12 @@ class FacilityExportExcelMaterialViewSerializer(serializers.ModelSerializer):
             "registration_number",
             "keph_level_name",
             "facility_type_name",
+            "facility_type_category",
             "county",
             "constituency",
             "ward",
             "owner_name",
+            "owner_type_name",
             "regulatory_body_name",
             "beds",
             "cots",
@@ -96,7 +98,7 @@ class FacilityExportExcelMaterialViewSerializer(serializers.ModelSerializer):
             "is_published",
             "id",
             "lat",
-            "long"
+            "long",
         ]
 
 
