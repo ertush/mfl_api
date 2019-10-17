@@ -511,8 +511,8 @@ class NoficiationGroup(AbstractBase):
 class ApiAuthentication(models.Model):
     username = models.CharField(max_length=255, default="healthit", null=False, blank=False)
     password = models.CharField(max_length=255, default="Test1@hiskenya", null=False, blank=False)
-    client_id = models.CharField(max_length=255, default="workforce17mfl@2018$", null=False, blank=False)
-    client_secret = models.CharField(max_length=255, default="4b04e4e72-6542-3f78-f76b-37a3de0bdec", null=False,
+    client_id = models.CharField(max_length=255, default="102", null=False, blank=False)
+    client_secret = models.CharField(max_length=255, default="11386102b-277b-0af7-889d-0a3b76f1e79", null=False,
                                      blank=False)
     server = models.CharField(max_length=255, default="https://test.hiskenya.org/kenya/", null=False, blank=False)
     session_key = models.CharField(max_length=255, default="dhis2_api_12904rs", null=False, blank=False)
