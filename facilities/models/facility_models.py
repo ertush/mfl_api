@@ -108,6 +108,19 @@ class DhisAuth(ApiAuthentication):
         self.session_store.save()
         self.refresh_oauth2_token()
 
+    def generate_uuid_dhis(self):
+        r_generate_orgunit_uid = requests.get(
+            self.server + "api/system/uid.json",
+            headers={
+                "Authorization": "Bearer " +
+                                 json.loads(self.session_store[self.oauth2_token_variable_name].replace("u", "")
+                                            .replace("'", '"'))["access_token"],
+                "Accept": "application/json"
+            }
+        )
+        print("New OrgUnit UID Generated-", r_generate_orgunit_uid.json()['codes'][0])
+        return r_generate_orgunit_uid.json()['code'][0]
+
     def get_org_unit_id(self, code):
         r = requests.get(
             self.server + "api/organisationUnits.json",
@@ -123,18 +136,36 @@ class DhisAuth(ApiAuthentication):
                 "paging": "false"
             }
         )
+
+        r_generate_orgunit_uid= requests.get(
+            self.server + "api/system/uid.json",
+            headers={
+                "Authorization": "Bearer " +
+                                 json.loads(self.session_store[self.oauth2_token_variable_name].replace("u", "")
+                                            .replace("'", '"'))["access_token"],
+                "Accept": "application/json"
+            }
+        )
+
         print("Get Org Unit ID Response", r.json(), str(code))
         if len(r.json()["organisationUnits"]) is 1:
-            return r.json()["organisationUnits"][0]["id"]
-        else:
             raise ValidationError(
                 {
-                    "Error!": ["Unable to resolve exact organisation unit of the facility to be updated in DHIS2. "
-                               "Most probably, the corresponding MFL code for the facility does not exist in DHIS2"]
+                    "Error!": ["This facility is already available in DHIS2. Please ensure details are correct"]
                 }
             )
+            # return r.json()["organisationUnits"][0]["id"]
+        else:
+            # print("New OrgUnit UID Generated-", r_generate_orgunit_uid.json()['codes'][0])
+            return r_generate_orgunit_uid.json()['codes'][0]
+            # raise ValidationError(
+            #     {
+            #         "Error!": ["Unable to resolve exact organisation unit of the facility to be updated in DHIS2. "
+            #                    "Most probably, the corresponding MFL code for the facility does not exist in DHIS2"]
+            #     }
+            # )
 
-    def get_parent_id(self, facility_name):
+    def get_parent_id(self, ward_name):
         headers={
             "Authorization": "Bearer " + json.loads(self.session_store[self.oauth2_token_variable_name].replace("u", "")
                 .replace("'", '"'))["access_token"],
@@ -144,7 +175,7 @@ class DhisAuth(ApiAuthentication):
             self.server+"api/organisationUnits.json",
             headers=headers,
             params={
-                "query": facility_name,
+                "query": ward_name,
                 "fields": "[id,name]",
                 "filter": "level:in:[4]",
                 "paging": "false"
@@ -152,12 +183,12 @@ class DhisAuth(ApiAuthentication):
         )
         print(r.json())
         dhis2_facility_name = r.json()["organisationUnits"][0]["name"].lower()
-        facility_name = str(facility_name)+ " Ward"
-        facility_name = facility_name.lower()
-        print("1", dhis2_facility_name, "2", facility_name, len(r.json()["organisationUnits"]))
+        ward_name = str(ward_name) + " Ward"
+        ward_name = ward_name.lower()
+        print("1", dhis2_facility_name, "2", ward_name, len(r.json()["organisationUnits"]))
 
         if len(r.json()["organisationUnits"]) is 1:
-            if dhis2_facility_name == facility_name:
+            if dhis2_facility_name == ward_name:
                 return r.json()["organisationUnits"][0]["id"]
         else:
             raise ValidationError(
@@ -184,9 +215,59 @@ class DhisAuth(ApiAuthentication):
                 {
                     "Error!": ["An error occured while pushing facility to DHIS2. This is may be caused by the "
                                "existance of an organisation unit with as similar name as to the one you are creating. "
-                               "Or some specific information like geo-coordinates are not unique"]
+                               "Or some specific information like codes are not unique"]
                 }
             )
+
+    def push_facility_metadata(self, metadata_payload, facility_uid):
+        # Keph Level
+        r_keph = requests.post(
+            self.server + "api/organisationUnitGroups/" + metadata_payload['keph'] + "/organisationUnits/" + facility_uid,
+            headers={
+                "Authorization": "Bearer " +
+                                 json.loads(self.session_store[self.oauth2_token_variable_name].replace("u", "")
+                                            .replace("'", '"'))["access_token"],
+                "Accept": "application/json"
+            }
+        )
+        # print r_keph.json()
+        # if r_keph.json()["status"] != "OK":
+        #     raise ValidationError(
+        #         {
+        #             "Error!": ["An error occured with allocation of KEPH level to DHIS"]
+        #         }
+        #     )
+        r_facility_type = requests.post(
+            self.server + "api/organisationUnitGroups/" + metadata_payload['facility_type'] + "/organisationUnits/" + facility_uid,
+            headers={
+                "Authorization": "Bearer " +
+                                 json.loads(self.session_store[self.oauth2_token_variable_name].replace("u", "")
+                                            .replace("'", '"'))["access_token"],
+                "Accept": "application/json"
+            }
+        )
+        # if r_facility_type.json()["status"] != "OK":
+        #     raise ValidationError(
+        #         {
+        #             "Error!": ["An error occured witha allocation of facility type to DHIS2"]
+        #         }
+        #     )
+        r_ownership = requests.post(
+            self.server + "api/organisationUnitGroups/" + metadata_payload[
+                'ownership'] + "}/organisationUnits/" + facility_uid,
+            headers={
+                "Authorization": "Bearer " +
+                                 json.loads(self.session_store[self.oauth2_token_variable_name].replace("u", "")
+                                            .replace("'", '"'))["access_token"],
+                "Accept": "application/json"
+            }
+        )
+        # if r_ownership.json()["status"] != "OK":
+        #     raise ValidationError(
+        #         {
+        #             "Error!": ["An error occured witha allocation of Ffacility ownership to DHIS2"]
+        #         }
+        #     )
 
     def push_facility_updates_to_dhis2(self, org_unit_id, facility_updates_payload):
         r = requests.put(
@@ -401,7 +482,6 @@ class Officer(AbstractBase):
         return self.name
 
     class Meta(AbstractBase.Meta):
-        verbose_name_plural = 'officer in charge'
         verbose_name_plural = 'officers in charge'
 
 
@@ -1055,37 +1135,126 @@ class Facility(SequenceMixin, AbstractBase):
 
     dhis2_api_auth = DhisAuth()
 
+    def push_new_facility(self):
+        if self.approved_national_level and str(self.operation_status.id) == 'ae75777e-5ce3-4ac9-a17e-63823c34b55e':
+            print ('code is here', self.code)
+            from mfl_gis.models import FacilityCoordinates
+            import re
+            self.dhis2_api_auth.get_oauth2_token()
+
+            dhis2_parent_id = self.dhis2_api_auth.get_parent_id(self.ward_name)
+            dhis2_org_unit_id = self.dhis2_api_auth.get_org_unit_id(self.code)
+            kmhfl_dhis2_facility_type_mapping = {
+                "20b86171-0c16-47e1-9277-5e773d485c33": "YQK9pleIoeB",
+                "5eb392ac-d10a-40c9-b525-53dac866ef6c": "lTrpyOiOcM6",
+                "ccc1600e-9a24-499f-889f-bd9f0bdc4b95": "YQK9pleIoeB",
+                "d8d741b1-21c5-45c8-86d0-a2094bf9bda6": "YQK9pleIoeB",
+                "869118aa-0e97-4f47-b6b7-1f295d109c8f": "YQK9pleIoeB",
+                "a8af148f-b1b6-4eed-9d86-07d4f3135229": "YQK9pleIoeB",
+                "74755372-99ba-4b70-bca8-a583f03990bc": "lTrpyOiOcM6",
+                "4714529e-21de-4d5c-89da-11e335831327": "lTrpyOiOcM6",
+                "52ccbc58-2a71-4a66-be40-3cd72e67f798": "CGDNIWGHRNr",
+                "831a23c1-9124-4ce1-a0cf-60b59ef0fba5": "YQK9pleIoeB",
+                "336bf913-b42e-476a-bf47-11d3f769922f": "YQK9pleIoeB",
+                "f222bab7-589c-4ba8-bd9a-fe6c96fcd085": "CGDNIWGHRNr",
+                "35376bf5-2e83-4f70-8c4d-a7b80f782eb1": "YQK9pleIoeB",
+                "479a9a16-219f-48f6-818d-b2c06ada2332": "rhKJPLo27x7",
+                "b9a51572-c931-4cc5-8e21-f17b22b0fd20": "CGDNIWGHRNr",
+                "1571711c-4b80-493b-8109-faab2e4f43f0": "YQK9pleIoeB",
+                "4d47a5dd-628a-4049-a240-3ab767415c49": "rhKJPLo27x7",
+                "0fa47f39-d58e-4a16-845c-82818719188d": "CGDNIWGHRNr",
+                "22c161ee-577f-41ef-bd4e-dd0a26327bbc": "YQK9pleIoeB",
+                "cd841f88-198a-4d8a-869c-3ab4a7091c11": "YQK9pleIoeB",
+                "188551b7-4f22-4fc4-b07b-f9c9aeeea872": "rhKJPLo27x7",
+                "e5923a48-6b22-42c4-a4e6-6c5a5e8e0b0e": "YQK9pleIoeB",
+                "55d65dd6-5351-4cf4-a6d9-e05ce6d343ab": "mVrepdLAqSD",
+                "79158397-0d87-4d0e-8694-ad680a907a79": "YQK9pleIoeB",
+                "031293d9-fd8a-4682-a91e-a4390d57b0cf": "YQK9pleIoeB",
+            }
+            kmhfl_dhis2_ownership_mapping = {
+                "d45541f8-3b3d-475b-94f4-17741d468135": "aRxa6o8GqZN",
+                "56937bed-ea04-4306-bdf9-86668eb570c7": "aRxa6o8GqZN",
+                "122f57a8-51ef-4a26-9024-4b34386485fd": "aRxa6o8GqZN",
+                "abda166b-5c02-44c8-8058-5e4112ef9f95": "eT1vvFVhLHc",
+                "cd04053e-a5eb-425b-b4d7-24746c311fa6": "eT1vvFVhLHc",
+                "a3477ae7-ee1e-410e-83b1-64bf8b723d95": "aRxa6o8GqZN",
+                "9bbcb2b4-f1d6-449b-a2cf-e92db2d861df": "aRxa6o8GqZN",
+                "5363e7ac-2728-4099-9f5b-da14e2ee83d0": "aRxa6o8GqZN",
+                "f918d78e-e09b-4e91-8a97-f6229a27346b": "aRxa6o8GqZN",
+                "4a1c60b2-85b3-41b5-aed7-8448b863d566": "aRxa6o8GqZN",
+                "ddebc398-fe10-44c2-b45a-1a35b357ae99": "AaAF5EmS1fk",
+                "15aa5a44-0833-4e8f-83e6-916e5e5ab213": "eT1vvFVhLHc",
+                "28d7a8e1-e15c-4326-ace1-b2c1b81af586": "None",
+                "4560545a-67c7-4b2b-87be-b0babee4cb83": "AaAF5EmS1fk",
+                "2c62704b-8072-470c-a7e6-259384f364f7": "eT1vvFVhLHc",
+                "cfe25392-4f85-49ea-b180-35388f47ea9e": "eT1vvFVhLHc",
+                "93c0fe24-3f12-4be2-b5ff-027e0bd02274": "AaAF5EmS1fk",
+                "c3bab995-0c29-433c-b39c-6b86d6084f5f": "AaAF5EmS1fk"
+            }
+            kmhfl_dhis2_keph_mapping = {
+                "ed23da85-4c92-45af-80fa-9b2123769f49": "FpY8vg4gh46",
+                "7824068f-6533-4532-9775-f8ef200babd1": "d5QX71PY5t0",
+                "c0bb24c2-1a96-47ce-b327-f855121f354f": "hBZ5DRto7iF",
+                "174f7d48-3b57-4997-a743-888d97c5ec31": "wwiu1jyZOXO",
+                "ceab4366-4538-4bcf-b7a7-a7e2ce3b50d5": "tvMxZ8aCVou"
+            }
+            new_facility_payload = {
+                "id": dhis2_org_unit_id,
+                "code": str(self.code),
+                "name": str(self.name),
+                "shortName": str(self.name),
+                "displayName": str(self.official_name),
+                "parent": {
+                    "id": dhis2_parent_id
+                },
+                "openingDate": self.date_established.strftime("%Y-%m-%d"),
+                "coordinates": self.dhis2_api_auth.format_coordinates(
+                    re.search(r'\((.*?)\)', str(FacilityCoordinates.objects.values('coordinates')
+                                                .get(facility_id=self.id)['coordinates'])).group(1))
+            }
+            metadata_payload = {
+                "facility_type": kmhfl_dhis2_facility_type_mapping[str(self.facility_type_id)],
+                "keph": kmhfl_dhis2_keph_mapping[str(self.keph_level_id)],
+                "ownership": kmhfl_dhis2_ownership_mapping[str(self.owner_id)]
+            }
+            self.dhis2_api_auth.push_facility_to_dhis2(new_facility_payload)
+            # facility_uid = self.dhis2_api_auth.get_org_unit_id(self.code)
+            facility_uid = dhis2_org_unit_id
+            self.dhis2_api_auth.push_facility_metadata(metadata_payload, facility_uid)
+        else:
+            pass
 
     def push_facility_updates(self):
-        from mfl_gis.models import FacilityCoordinates
-        import re
-        self.dhis2_api_auth.get_oauth2_token()
-
-        dhis2_parent_id = self.dhis2_api_auth.get_parent_id(self.ward_name)
-        dhis2_org_unit_id = self.dhis2_api_auth.get_org_unit_id(self.code)
-
-        new_facility_updates_payload = {
-            "code": str(self.code),
-            "name": str(self.name),
-            "shortName": str(self.name),
-            "displayName": str(self.official_name),
-            "parent": {
-                "id": dhis2_parent_id
-            },
-            "openingDate": self.facility.date_established.strftime("%Y-%m-%d"),
-            "coordinates": self.dhis2_api_auth.format_coordinates(
-                re.search(r'\((.*?)\)', str(FacilityCoordinates.objects.values('coordinates')
-                                            .get(facility_id=self.id)['coordinates'])).group(1))
-        }
-
-        self.dhis2_api_auth.push_facility_updates_to_dhis2(dhis2_org_unit_id, new_facility_updates_payload)
+        pass
+        # if self.approved_national_level:
+        #     from mfl_gis.models import FacilityCoordinates
+        #     import re
+        #     self.dhis2_api_auth.get_oauth2_token()
+        #
+        #     dhis2_parent_id = self.dhis2_api_auth.get_parent_id(self.ward_name)
+        #     dhis2_org_unit_id = self.dhis2_api_auth.get_org_unit_id(self.code)
+        #     new_facility_updates_payload = {
+        #         "code": str(self.code),
+        #         "name": str(self.name),
+        #         "shortName": str(self.name),
+        #         "displayName": str(self.official_name),
+        #         "parent": {
+        #             "id": dhis2_parent_id
+        #         },
+        #         "openingDate": self.facility.date_established.strftime("%Y-%m-%d"),
+        #         "coordinates": self.dhis2_api_auth.format_coordinates(
+        #             re.search(r'\((.*?)\)', str(FacilityCoordinates.objects.values('coordinates')
+        #                                         .get(facility_id=self.id)['coordinates'])).group(1))
+        #     }
+        #
+        #     self.dhis2_api_auth.push_facility_updates_to_dhis2(dhis2_org_unit_id, new_facility_updates_payload)
 
     def validate_facility_name(self):
         if self.pk:
             if self.__class__.objects.filter(name=self.name).count() != 1:
                 raise ValidationError({"name": "The name must be unique"})
         else:
-            if self.__class__.objects.filter(name=self.name()).count() > 0:
+            if self.__class__.objects.filter(name=self.name).count() > 0:
                 raise ValidationError({"name": "The name must be unique"})
 
     @property
@@ -1499,7 +1668,7 @@ class Facility(SequenceMixin, AbstractBase):
         from facilities.serializers import FacilityDetailSerializer
         if not self.code and self.is_complete and self.approved_national_level:
             self.code = self.generate_next_code_sequence()
-            self.push_facility_updates()
+            self.push_new_facility()
 
         if not self.official_name:
             self.official_name = self.name
@@ -1511,8 +1680,7 @@ class Facility(SequenceMixin, AbstractBase):
             self.update_facility_regulation_status()
             return
 
-
-        if  self.is_complete and not self.is_approved:
+        if self.is_complete and not self.is_approved:
             kwargs.pop('allow_save', None)
             super(Facility, self).save(*args, **kwargs)
             self.index_facility_material_view()
