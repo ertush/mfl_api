@@ -149,12 +149,12 @@ class DhisAuth(ApiAuthentication):
 
         print("Get Org Unit ID Response", r.json(), str(code))
         if len(r.json()["organisationUnits"]) is 1:
-            raise ValidationError(
-                {
-                    "Error!": ["This facility is already available in DHIS2. Please ensure details are correct"]
-                }
-            )
-            # return r.json()["organisationUnits"][0]["id"]
+            # raise ValidationError(
+            #     {
+            #         "Error!": ["This facility is already available in DHIS2. Please ensure details are correct"]
+            #     }
+            # )
+            return r.json()["organisationUnits"][0]["id"]
         else:
             # print("New OrgUnit UID Generated-", r_generate_orgunit_uid.json()['codes'][0])
             return r_generate_orgunit_uid.json()['codes'][0]
@@ -254,7 +254,7 @@ class DhisAuth(ApiAuthentication):
         #     )
         r_ownership = requests.post(
             self.server + "api/organisationUnitGroups/" + metadata_payload[
-                'ownership'] + "}/organisationUnits/" + facility_uid,
+                'ownership'] + "/organisationUnits/" + facility_uid,
             headers={
                 "Authorization": "Bearer " +
                                  json.loads(self.session_store[self.oauth2_token_variable_name].replace("u", "")
@@ -281,7 +281,7 @@ class DhisAuth(ApiAuthentication):
             json=facility_updates_payload
         )
 
-        print("Update Facility Response", r.url, r.status_code, r.json(), "Status", r.json()["status"])
+        print("Update Facility Response", r.url, r.status_code, r.json())
 
         if r.json()["status"] != "OK":
             raise ValidationError(
