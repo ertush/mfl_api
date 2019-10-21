@@ -1130,8 +1130,11 @@ class Facility(SequenceMixin, AbstractBase):
         RegulationStatus, null=True, blank=True,
         on_delete=models.PROTECT,
         help_text='The regulatory status of the hospital')
-    approved_national_level = models.BooleanField(
-        default=False, help_text='Has the facility been approved at the national level')
+    reporting_in_dhis = models.NullBooleanField(
+        blank=True, null=True,
+        help_text='A flag to indicate whether facility should have reporting in dhis')
+    approved_national_level = models.NullBooleanField(
+        blank=True, null=True, help_text='Has the facility been approved at the national level')
 
     dhis2_api_auth = DhisAuth()
 
