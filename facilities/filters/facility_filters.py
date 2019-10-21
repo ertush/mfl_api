@@ -364,7 +364,7 @@ class FacilityFilter(CommonFieldsFilterset):
         so that they can be approved at the national level and assigned an MFL code.
         """
         return qs.filter(
-            approved_national_level=False, code=None, approved=True, has_edits=False,closed=False
+            approved_national_level=None, code=None, approved=True, has_edits=False,closed=False
         )
 
     def filter_incomplete_facilities(self, qs, name, value):

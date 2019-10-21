@@ -5,6 +5,7 @@ from django.db import transaction
 
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
+from rest_framework.parsers import MultiPartParser
 
 from common.models import Contact, ContactType
 from users.models import MflUser

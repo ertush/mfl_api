@@ -3,6 +3,7 @@ import json
 from django.utils import timezone
 from rest_framework import generics, status
 from rest_framework.views import Response, APIView
+from rest_framework.parsers import MultiPartParser
 
 from common.views import AuditableDetailViewMixin
 from common.utilities import CustomRetrieveUpdateDestroyView
@@ -602,6 +603,8 @@ class FacilityDetailView(
         request.data['updated_by_id'] = request.user.id
         instance = self.get_object()
         self.validation_errors = {}
+
+        parser_classes = (MultiPartParser)
 
         services = request.data.pop('services', [])
         contacts = request.data.pop('contacts', [])
