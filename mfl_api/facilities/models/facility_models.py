@@ -912,7 +912,7 @@ class Facility(SequenceMixin, AbstractBase):
         if approvals:
             return True
         else:
-            False
+            return False
 
     @property
     def latest_approval(self):
