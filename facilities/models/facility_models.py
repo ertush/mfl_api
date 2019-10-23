@@ -1139,8 +1139,7 @@ class Facility(SequenceMixin, AbstractBase):
     dhis2_api_auth = DhisAuth()
 
     def push_new_facility(self):
-        if self.approved_national_level and str(self.operation_status.id) == 'ae75777e-5ce3-4ac9-a17e-63823c34b55e':
-            print ('code is here', self.code)
+        if self.approved_national_level and str(self.operation_status.id) == 'ae75777e-5ce3-4ac9-a17e-63823c34b55e' and self.reporting_in_dhis == True:
             from mfl_gis.models import FacilityCoordinates
             import re
             self.dhis2_api_auth.get_oauth2_token()
