@@ -509,12 +509,12 @@ class NoficiationGroup(AbstractBase):
 
 
 class ApiAuthentication(models.Model):
-    username = models.CharField(max_length=255, default="stevewaweru", null=False, blank=False)
-    password = models.CharField(max_length=255, default="Admin123", null=False, blank=False)
+    username = models.CharField(max_length=255, default="kmhfl_integration", null=False, blank=False)
+    password = models.CharField(max_length=255, default="Integration@kmhfl@2019", null=False, blank=False)
     client_id = models.CharField(max_length=255, default="102", null=False, blank=False)
-    client_secret = models.CharField(max_length=255, default="b79c67c5e-e06e-0e2c-72ce-99977ff65af", null=False,
+    client_secret = models.CharField(max_length=255, default="4e9a05722-62f4-3e03-287c-74f5ad1aa5f", null=False,
                                      blank=False)
-    server = models.CharField(max_length=255, default="https://testhis.uonbi.ac.ke/", null=False, blank=False)
+    server = models.CharField(max_length=255, default="https://hiskenya.org/", null=False, blank=False)
     session_key = models.CharField(max_length=255, default="dhis2_api_12904rs", null=False, blank=  False)
 
     @property
