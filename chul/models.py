@@ -241,6 +241,7 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
             super(CommunityHealthUnit, self).save(*args, **kwargs)
         if self.is_approved and not self.code:
             self.code = self.generate_next_code_sequence()
+            self.push_chu_to_dhis2()
             super(CommunityHealthUnit, self).save(*args, **kwargs)
 
     @property
@@ -250,6 +251,101 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
     @property
     def rating_count(self):
         return self.chu_ratings.count()
+
+    def push_chu_to_dhis2(self):
+        from common.models.model_declarations import ApiAuthentication
+        from facilities.models.facility_models import DhisAuth
+        import requests
+        dhisauth = DhisAuth()
+        dhisauth.get_oauth2_token()
+        facility_dhis_id = self.get_facility_dhis2_parent_id()
+        unit_uuid = dhisauth.get_org_unit_id(self.code)
+        new_chu_payload = {
+            "id": unit_uuid,
+            "code": str(self.code),
+            "name": str(self.name),
+            "shortName": str(self.name),
+            "displayName": str(self.name),
+            "parent": {
+                "id": facility_dhis_id
+            },
+            "openingDate": self.date_operational.strftime("%Y-%m-%d"),
+        }
+        metadata_payload = {
+            "keph": 'axUnguN4QDh'
+        }
+        r = requests.post(
+            "https://testhis.uonbi.ac.ke/" + "api/organisationUnits",
+            headers={
+                "Authorization": "Bearer " +
+                                 json.loads(dhisauth.session_store[dhisauth.oauth2_token_variable_name].replace("u", "")
+                                            .replace("'", '"'))["access_token"],
+                "Accept": "application/json"
+            },
+            json=new_chu_payload
+        )
+
+        print("Create CHU Response", r.url, r.status_code, r.json())
+
+        if r.json()["status"] != "OK":
+            raise ValidationError(
+                {
+                    "Error!": ["An error occured while pushing Community Unit to DHIS2. This is may be caused by the "
+                               "existance of an organisation unit with as similar name as to the one you are creating. "
+                               "Or some specific information like codes are not unique"]
+                }
+            )
+        self.push_chu_metadata(metadata_payload, unit_uuid)
+
+    def push_chu_metadata(self, metadata_payload, chu_uid):
+        # Keph Level
+        from facilities.models.facility_models import DhisAuth
+        import requests
+        dhisauth = DhisAuth()
+        r_keph = requests.post(
+            "https://testhis.uonbi.ac.ke/" + "api/organisationUnitGroups/" + metadata_payload[
+                'keph'] + "/organisationUnits/" + chu_uid,
+            headers={
+                "Authorization": "Bearer " +
+                                 json.loads(dhisauth.session_store[dhisauth.oauth2_token_variable_name].replace("u", "")
+                                            .replace("'", '"'))["access_token"],
+                "Accept": "application/json"
+            }
+        )
+        print('Metadata CUs pushed successfullly')
+
+    def get_facility_dhis2_parent_id(self):
+        from common.models.model_declarations import ApiAuthentication
+        from facilities.models.facility_models import DhisAuth
+        import requests
+        dhisauth = DhisAuth()
+        headers={
+            "Authorization": "Bearer " + json.loads(dhisauth.session_store[dhisauth.oauth2_token_variable_name].replace("u", "")
+                .replace("'", '"'))["access_token"],
+            "Accept": "application/json"
+        }
+        r = requests.get(
+            "https://testhis.uonbi.ac.ke/"+"api/organisationUnits.json",
+            headers=headers,
+            params={
+                "query": self.facility.code,
+                "fields": "[id,name]",
+                "filter": "level:in:[5]",
+                "paging": "false"
+            }
+        )
+        print(r.json())
+        dhis2_facility_name = r.json()["organisationUnits"][0]["name"].lower()
+
+        if len(r.json()["organisationUnits"]) is 1:
+            if r.json()["organisationUnits"][0]["id"]:
+                return r.json()["organisationUnits"][0]["id"]
+        else:
+            raise ValidationError(
+                {
+                    "Error!": ["Unable to resolve exact Facility linked to the CHU in DHIS2"]
+                }
+            )
 
     class Meta(AbstractBase.Meta):
         unique_together = ('name', 'facility', )
