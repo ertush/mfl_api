@@ -68,7 +68,10 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
     curative health services
     """
     name = models.CharField(max_length=100)
-    code = SequenceField(unique=True)
+    code = SequenceField(
+        unique=True, editable=False,
+        help_text='A sequential number allocated to each chu',
+        null=True, blank=True)
     facility = models.ForeignKey(
         Facility,
         help_text='The facility on which the health unit is tied to.')
@@ -78,7 +81,8 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
         help_text='The number of house holds a CHU is in-charge of')
     date_established = models.DateField(default=timezone.now)
     date_operational = models.DateField(null=True, blank=True)
-    is_approved = models.BooleanField(default=False)
+    is_approved = models.NullBooleanField(
+        blank=True, null=True, help_text='Determines if a chu has been approved')
     approval_comment = models.TextField(null=True, blank=True)
     approval_date = models.DateTimeField(null=True, blank=True)
     location = models.CharField(max_length=255, null=True, blank=True)
@@ -233,9 +237,11 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
             return None
 
     def save(self, *args, **kwargs):
-        if not self.code:
+        if not self.code and not self.is_approved:
+            super(CommunityHealthUnit, self).save(*args, **kwargs)
+        if self.is_approved and not self.code:
             self.code = self.generate_next_code_sequence()
-        super(CommunityHealthUnit, self).save(*args, **kwargs)
+            super(CommunityHealthUnit, self).save(*args, **kwargs)
 
     @property
     def average_rating(self):
