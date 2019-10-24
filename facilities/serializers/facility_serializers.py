@@ -61,6 +61,7 @@ class FacilityExportExcelMaterialViewSerializer(serializers.ModelSerializer):
         fields = [
             "code",
             "name",
+            "officialname",
             "registration_number",
             "keph_level_name",
             "facility_type_name",

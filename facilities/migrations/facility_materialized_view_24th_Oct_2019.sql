@@ -2,7 +2,7 @@ DROP MATERIALIZED VIEW IF EXISTS facilities_excel_export;
 
 CREATE MATERIALIZED VIEW facilities_excel_export AS
 SELECT facilities_facility.id as id, facilities_facility.search as search,
-facilities_facility.name as name, facilities_facility.code as code,
+facilities_facility.name as name, facilities_facility.official_name as officialname, facilities_facility.code as code,
 facilities_facility.registration_number, facilities_facility.number_of_beds as beds,
 facilities_facility.number_of_cots as cots, common_ward.name as ward_name,
 common_ward.id as ward,facilities_facility.approved,facilities_facility.created,
