@@ -883,7 +883,9 @@ class FacilityExportExcelMaterialView(models.Model):
 
     id = models.UUIDField(primary_key=True)
     name = models.CharField(
-        max_length=100, help_text='Name of the facility')
+        max_length=100, help_text='Unique name of the facility')
+    officialname = models.CharField(
+        max_length=100, help_text='Official name of the facility')
     code = models.IntegerField(help_text='The facility code')
     registration_number = models.CharField(
         max_length=100,
