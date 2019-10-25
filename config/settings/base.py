@@ -24,9 +24,12 @@ env = environ.Env(
     STORAGE_BACKEND=(str, ''),
     ADMINS=(str, "admin:admin@example.com,"),
     SERVER_EMAIL=(str, "root@localhost"),
-    ALLOWED_HOSTS=(str, "localhost")
-
-
+    ALLOWED_HOSTS=(str, "localhost"),
+    DHIS_ENDPOINT=(str, "http://testhis.uonbi.ac.ke/"),
+    DHIS_USERNAME=(str, 'kmhfl_integration'),
+    DHIS_PASSWORD=(str, ''),
+    DHIS_CLIENT_ID=(str, '102'),
+    DHIS_CLIENT_SECRET=(str, '')
 )
 env.read_env(os.path.join(BASE_DIR, '.env'))
 
@@ -114,8 +117,6 @@ INSTALLED_APPS = (
 # It is *NOT* appended to INSTALLED_APPS ( **deliberate** DRY violation )
 # This was forced by the need to override rest_framework templates in common
 # It is a list because order matters
-
-print INSTALLED_APPS
 
 LOCAL_APPS = [
     'users',
@@ -525,3 +526,12 @@ CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = TIME_ZONE
 EXCEL_EXCEPT_FIELDS_FOR_PUBLIC_USERS = EXCEL_EXCEPT_FIELDS + ['lat', 'long']
+
+# KMHFL - DHIS2 Configurations
+PUSH_TO_DHIS = not DEBUG
+DHIS_ENDPOINT = env('DHIS_ENDPOINT')
+DHIS_USERNAME = env('DHIS_USERNAME')
+DHIS_PASSWORD = env('DHIS_PASSWORD')
+DHIS_CLIENT_ID = env('DHIS_CLIENT_ID')
+DHIS_CLIENT_SECRET = env('DHIS_CLIENT_SECRET')
+
