@@ -6,6 +6,7 @@ from django.db import models
 from django.core.exceptions import ValidationError
 from django.core import validators
 from django.utils import timezone, encoding
+from django.conf import settings
 
 from common.models import AbstractBase, Contact, SequenceMixin
 from common.fields import SequenceField
@@ -241,7 +242,8 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
             super(CommunityHealthUnit, self).save(*args, **kwargs)
         if self.is_approved and not self.code:
             self.code = self.generate_next_code_sequence()
-            self.push_chu_to_dhis2()
+            if settings.PUSH_TO_DHIS:
+                self.push_chu_to_dhis2()
             super(CommunityHealthUnit, self).save(*args, **kwargs)
 
     @property
@@ -253,7 +255,6 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
         return self.chu_ratings.count()
 
     def push_chu_to_dhis2(self):
-        from common.models.model_declarations import ApiAuthentication
         from facilities.models.facility_models import DhisAuth
         import requests
         dhisauth = DhisAuth()
@@ -275,7 +276,7 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
             "keph": 'axUnguN4QDh'
         }
         r = requests.post(
-            "https://testhis.uonbi.ac.ke/" + "api/organisationUnits",
+            settings.DHIS_ENDPOINT + "api/organisationUnits",
             headers={
                 "Authorization": "Bearer " +
                                  json.loads(dhisauth.session_store[dhisauth.oauth2_token_variable_name].replace("u", "")
@@ -303,7 +304,7 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
         import requests
         dhisauth = DhisAuth()
         r_keph = requests.post(
-            "https://testhis.uonbi.ac.ke/" + "api/organisationUnitGroups/" + metadata_payload[
+            settings.DHIS_ENDPOINT + "api/organisationUnitGroups/" + metadata_payload[
                 'keph'] + "/organisationUnits/" + chu_uid,
             headers={
                 "Authorization": "Bearer " +
@@ -315,7 +316,6 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
         print('Metadata CUs pushed successfullly')
 
     def get_facility_dhis2_parent_id(self):
-        from common.models.model_declarations import ApiAuthentication
         from facilities.models.facility_models import DhisAuth
         import requests
         dhisauth = DhisAuth()
@@ -325,7 +325,7 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
             "Accept": "application/json"
         }
         r = requests.get(
-            "https://testhis.uonbi.ac.ke/"+"api/organisationUnits.json",
+            settings.DHIS_ENDPOINT + "api/organisationUnits.json",
             headers=headers,
             params={
                 "query": self.facility.code,
@@ -334,8 +334,6 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
                 "paging": "false"
             }
         )
-        print(r.json())
-        dhis2_facility_name = r.json()["organisationUnits"][0]["name"].lower()
 
         if len(r.json()["organisationUnits"]) is 1:
             if r.json()["organisationUnits"][0]["id"]:

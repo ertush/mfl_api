@@ -71,9 +71,9 @@ class DhisAuth(ApiAuthentication):
     @set_interval(30.0)
     def refresh_oauth2_token(self):
         r = requests.post(
-            self.server+"uaa/oauth/token",
+            settings.DHIS_ENDPOINT+"uaa/oauth/token",
             headers={
-                "Authorization": "Basic " + base64.b64encode(self.client_id + ":" + self.client_secret),
+                "Authorization": "Basic " + base64.b64encode(settings.DHIS_CLIENT_ID + ":" + settings.DHIS_CLIENT_SECRET),
                 "Accept": "application/json"
             },
             params={
@@ -90,15 +90,15 @@ class DhisAuth(ApiAuthentication):
 
     def get_oauth2_token(self):
         r = requests.post(
-            self.server+"uaa/oauth/token",
+            settings.DHIS_ENDPOINT+"uaa/oauth/token",
             headers={
-                "Authorization": "Basic "+base64.b64encode(self.client_id+":"+self.client_secret),
+                "Authorization": "Basic "+base64.b64encode(settings.DHIS_CLIENT_ID+":"+settings.DHIS_CLIENT_SECRET),
                 "Accept": "application/json"
             },
             params={
                 "grant_type": "password",
-                "username": self.username,
-                "password": self.password
+                "username": settings.DHIS_USERNAME,
+                "password": settings.DHIS_PASSWORD
             }
         )
 
@@ -110,7 +110,7 @@ class DhisAuth(ApiAuthentication):
 
     def generate_uuid_dhis(self):
         r_generate_orgunit_uid = requests.get(
-            self.server + "api/system/uid.json",
+            settings.DHIS_ENDPOINT + "api/system/uid.json",
             headers={
                 "Authorization": "Bearer " +
                                  json.loads(self.session_store[self.oauth2_token_variable_name].replace("u", "")
@@ -123,7 +123,7 @@ class DhisAuth(ApiAuthentication):
 
     def get_org_unit_id(self, code):
         r = requests.get(
-            self.server + "api/organisationUnits.json",
+            settings.DHIS_ENDPOINT + "api/organisationUnits.json",
             headers={
                 "Authorization": "Bearer " +
                                  json.loads(self.session_store[self.oauth2_token_variable_name].replace("u", "")
@@ -138,7 +138,7 @@ class DhisAuth(ApiAuthentication):
         )
 
         r_generate_orgunit_uid= requests.get(
-            self.server + "api/system/uid.json",
+            settings.DHIS_ENDPOINT + "api/system/uid.json",
             headers={
                 "Authorization": "Bearer " +
                                  json.loads(self.session_store[self.oauth2_token_variable_name].replace("u", "")
@@ -172,7 +172,7 @@ class DhisAuth(ApiAuthentication):
             "Accept": "application/json"
         }
         r = requests.get(
-            self.server+"api/organisationUnits.json",
+            settings.DHIS_ENDPOINT+"api/organisationUnits.json",
             headers=headers,
             params={
                 "query": ward_name,
@@ -181,11 +181,9 @@ class DhisAuth(ApiAuthentication):
                 "paging": "false"
             }
         )
-        print(r.json())
         dhis2_facility_name = r.json()["organisationUnits"][0]["name"].lower()
         ward_name = str(ward_name) + " Ward"
         ward_name = ward_name.lower()
-        print("1", dhis2_facility_name, "2", ward_name, len(r.json()["organisationUnits"]))
 
         if len(r.json()["organisationUnits"]) is 1:
             if dhis2_facility_name == ward_name:
@@ -199,7 +197,7 @@ class DhisAuth(ApiAuthentication):
 
     def push_facility_to_dhis2(self, new_facility_payload):
         r = requests.post(
-            self.server+"api/organisationUnits",
+            settings.DHIS_ENDPOINT+"api/organisationUnits",
             headers={
                 "Authorization": "Bearer " + json.loads(self.session_store[self.oauth2_token_variable_name].replace("u", "")
                                                         .replace("'", '"'))["access_token"],
@@ -222,7 +220,7 @@ class DhisAuth(ApiAuthentication):
     def push_facility_metadata(self, metadata_payload, facility_uid):
         # Keph Level
         r_keph = requests.post(
-            self.server + "api/organisationUnitGroups/" + metadata_payload['keph'] + "/organisationUnits/" + facility_uid,
+            settings.DHIS_ENDPOINT + "api/organisationUnitGroups/" + metadata_payload['keph'] + "/organisationUnits/" + facility_uid,
             headers={
                 "Authorization": "Bearer " +
                                  json.loads(self.session_store[self.oauth2_token_variable_name].replace("u", "")
@@ -238,7 +236,7 @@ class DhisAuth(ApiAuthentication):
         #         }
         #     )
         r_facility_type = requests.post(
-            self.server + "api/organisationUnitGroups/" + metadata_payload['facility_type'] + "/organisationUnits/" + facility_uid,
+            settings.DHIS_ENDPOINT + "api/organisationUnitGroups/" + metadata_payload['facility_type'] + "/organisationUnits/" + facility_uid,
             headers={
                 "Authorization": "Bearer " +
                                  json.loads(self.session_store[self.oauth2_token_variable_name].replace("u", "")
@@ -253,7 +251,7 @@ class DhisAuth(ApiAuthentication):
         #         }
         #     )
         r_ownership = requests.post(
-            self.server + "api/organisationUnitGroups/" + metadata_payload[
+            settings.DHIS_ENDPOINT + "api/organisationUnitGroups/" + metadata_payload[
                 'ownership'] + "/organisationUnits/" + facility_uid,
             headers={
                 "Authorization": "Bearer " +
@@ -271,7 +269,7 @@ class DhisAuth(ApiAuthentication):
 
     def push_facility_updates_to_dhis2(self, org_unit_id, facility_updates_payload):
         r = requests.put(
-            self.server + "api/organisationUnits/"+org_unit_id,
+            settings.DHIS_ENDPOINT + "api/organisationUnits/"+org_unit_id,
             headers={
                 "Authorization": "Bearer " +
                                  json.loads(self.session_store[self.oauth2_token_variable_name].replace("u", "")
@@ -295,7 +293,7 @@ class DhisAuth(ApiAuthentication):
         return str([float(coordinates_str_list[0]), float(coordinates_str_list[1])])
 
     def __str__(self):
-        return "{}: {}".format("Dhis Auth - ", self.username)
+        return "{}: {}".format("Dhis Auth - ", settings.DHIS_USERNAME)
 
 
 
@@ -1141,7 +1139,8 @@ class Facility(SequenceMixin, AbstractBase):
     dhis2_api_auth = DhisAuth()
 
     def push_new_facility(self):
-        if self.approved_national_level and str(self.operation_status.id) == 'ae75777e-5ce3-4ac9-a17e-63823c34b55e' and self.reporting_in_dhis == True:
+        if self.approved_national_level and str(self.operation_status.id) == 'ae75777e-5ce3-4ac9-a17e-63823c34b55e' \
+                and self.reporting_in_dhis is True and settings.PUSH_TO_DHIS:
             from mfl_gis.models import FacilityCoordinates
             import re
             self.dhis2_api_auth.get_oauth2_token()
@@ -1916,7 +1915,6 @@ class FacilityUpdates(AbstractBase):
 
                 setattr(self.facility, field_name, value)
             self.facility.save(allow_save=True)
-            print("Hellow! MFL!")
             self.push_facility_updates()
             '''TODO
             Push update to DHIS2
@@ -2035,9 +2033,9 @@ class FacilityUpdates(AbstractBase):
                                             .get(facility_id=self.facility.id)['coordinates'])).group(1))
         }
 
-        print("Names;", "Official Name:", self.facility.official_name, "Name:", self.facility.name)
-
-        print("New Facility Push Payload => ", new_facility_updates_payload)
+        # print("Names;", "Official Name:", self.facility.official_name, "Name:", self.facility.name)
+        #
+        # print("New Facility Push Payload => ", new_facility_updates_payload)
         self.dhis2_api_auth.push_facility_updates_to_dhis2(dhis2_org_unit_id, new_facility_updates_payload)
 
     def clean(self, *args, **kwargs):

@@ -233,9 +233,10 @@ class CommunityHealthUnitSerializer(
                 contact.save()
                 return contact
             else:
-                contact = Contact.objects.get(
+                # TODO: Fix get returning multiple objects error
+                contact = Contact.objects.filter(
                     contact=contact_data['contact']
-                )
+                ).first()
                 return contact
         except Contact.DoesNotExist:
             contact = ContactSerializer(
