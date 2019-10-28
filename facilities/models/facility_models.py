@@ -1073,7 +1073,8 @@ class Facility(SequenceMixin, AbstractBase):
 
     # set of boolean to optimize filtering though through tables
     regulated = models.BooleanField(default=False)
-    approved = models.BooleanField(default=False)
+    approved =  models.NullBooleanField(
+        blank=True, null=True, help_text='Has the facility been approved at the county level')
     rejected = models.BooleanField(default=False)
     has_edits = models.BooleanField(default=False)
 
