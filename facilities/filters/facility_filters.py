@@ -378,23 +378,23 @@ class FacilityFilter(CommonFieldsFilterset):
             return qs.exclude(id__in=[facility.id for facility in incomplete])
 
     def facilities_pending_approval(self, qs, name, value):
-        incomplete = qs.filter(code=None)
+        incomplete = qs.filter(code=not None)
         incomplete_facility_ids = [facility.id for facility in incomplete]
         if value in TRUTH_NESS:
             return qs.filter(
                 Q(
                     Q(rejected=False),
                     Q(has_edits=True) |
-                    Q(approved=False,rejected=False)
+                    Q(approved=None,rejected=False)
                 ) |
                 Q(
-                    Q(rejected=True),
-                    Q(has_edits=True) | Q(approved=False,rejected=False))
+                    Q(rejected=False),
+                    Q(has_edits=True) | Q(approved=None,rejected=False))
             ).exclude(id__in=incomplete_facility_ids)
         else:
             return qs.filter(
                 Q(rejected=True) |
-                Q(has_edits=False) & Q(approved=True)
+                Q(has_edits=False) & Q(approved=None)
             ).exclude(id__in=incomplete_facility_ids)
 
     def filter_number_beds(self, qs, name, value):
