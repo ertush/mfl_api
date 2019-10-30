@@ -397,6 +397,15 @@ class FacilityFilter(CommonFieldsFilterset):
                 Q(has_edits=False) & Q(approved=None)
             ).exclude(id__in=incomplete_facility_ids)
 
+    def filter_national_rejected(self, qs, name, value):
+        rejected_national = qs.filter(rejected=False,code=None,
+            approved=True,approved_national_level=False)
+        if value in TRUTH_NESS:
+            return rejected_national
+        else:
+            return qs.exclude(id__in=[facility.id for facility in rejected_national])
+
+
     def filter_number_beds(self, qs, name, value):
         return qs.filter(number_of_beds__gte=1)
 
@@ -469,6 +478,8 @@ class FacilityFilter(CommonFieldsFilterset):
         choices=BOOLEAN_CHOICES, coerce=strtobool)
     pending_approval = django_filters.CharFilter(
         method='facilities_pending_approval')
+    rejected_national = django_filters.CharFilter(
+        method='filter_national_rejected')
     search = ClassicSearchFilter(name='name')
     incomplete = django_filters.CharFilter(
         method='filter_incomplete_facilities')
