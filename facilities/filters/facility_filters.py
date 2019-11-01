@@ -488,6 +488,9 @@ class FacilityFilter(CommonFieldsFilterset):
     approved_national_level = django_filters.TypedChoiceFilter(
         choices=BOOLEAN_CHOICES,
         coerce=strtobool)
+    reporting_in_dhis = django_filters.TypedChoiceFilter(
+        choices=BOOLEAN_CHOICES,
+        coerce=strtobool)
 
     class Meta(CommonFieldsFilterset.Meta):
         model = Facility
