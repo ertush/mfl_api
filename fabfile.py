@@ -331,7 +331,7 @@ def backup_mfl_db(*args, **kwargs):
         local('rm {0}.sql'.format(file_name))
 
     test_generated_backup_file()
-    save_the_db_backup_to_s3()
+    # save_the_db_backup_to_s3()
     remove_local_files()
 
 

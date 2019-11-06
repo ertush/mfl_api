@@ -1,9 +1,7 @@
-#!/usr/bin/env python
-
 from django.db import connection
 from django.core.mail import mail_admins
 from celery.schedules import crontab
-from celery.decorators import periodic_task
+from celery.task import periodic_task
 
 from fabfile import backup_mfl_db
 

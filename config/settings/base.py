@@ -1,5 +1,3 @@
-# MAGIC HACK: without this, a recent Homebrew update broke GDAL!
-
 import os
 import environ
 
