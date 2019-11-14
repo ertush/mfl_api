@@ -233,16 +233,16 @@ class CommunityHealthUnitSerializer(
                 contact.save()
                 return contact
             else:
-                # TODO: Fix get returning multiple objects error
-                contact = Contact.objects.filter(
-                    contact=contact_data['contact']
-                ).first()
+                contact = Contact.objects.get(contact=contact_data['contact'])
                 return contact
         except Contact.DoesNotExist:
             contact = ContactSerializer(
                 data=contact_data, context=self.context)
             return contact.save() if contact.is_valid() else \
                 self.inlined_errors.update(contact.errors)
+        except Contact.MultipleObjectsReturned:
+            contact = Contact.objects.filter(contact=contact_data['contact']).first()
+            return contact
 
     def create_chu_contacts(self, instance, contacts, validated_data):
 

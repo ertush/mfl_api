@@ -570,8 +570,7 @@ class FacilityDetailSerializer(FacilitySerializer):
 
     def create_contact(self, contact_data):
         try:
-            #TODO: Fix get() returning multiple objects error
-            return Contact.objects.filter(contact=contact_data["contact"]).first()
+            return Contact.objects.get(contact=contact_data["contact"])
         except Contact.DoesNotExist:
             contact = ContactSerializer(
                 data=contact_data, context=self.context)
@@ -579,6 +578,8 @@ class FacilityDetailSerializer(FacilitySerializer):
                 return contact.save()
             else:
                 self.inlining_errors.update(contact.errors)
+        except Contact.MultipleObjectsReturned:
+            return Contact.objects.filter(contact=contact_data["contact"]).first()
 
     def create_facility_contacts(self, instance, contact_data, validated_data):
         contact = self.create_contact(contact_data)
