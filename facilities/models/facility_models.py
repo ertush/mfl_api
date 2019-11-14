@@ -1139,7 +1139,7 @@ class Facility(SequenceMixin, AbstractBase):
 
     dhis2_api_auth = DhisAuth()
 
-    def push_new_facility(self):
+    def push_new_facility(self, code=None):
         if self.approved_national_level and str(self.operation_status.id) == 'ae75777e-5ce3-4ac9-a17e-63823c34b55e' \
                 and self.reporting_in_dhis is True and settings.PUSH_TO_DHIS:
             from mfl_gis.models import FacilityCoordinates
@@ -1202,9 +1202,13 @@ class Facility(SequenceMixin, AbstractBase):
                 "174f7d48-3b57-4997-a743-888d97c5ec31": "wwiu1jyZOXO",
                 "ceab4366-4538-4bcf-b7a7-a7e2ce3b50d5": "tvMxZ8aCVou"
             }
+            if code:
+                facility_code = str(code)
+            else:
+                facility_code = str(self.code)
             new_facility_payload = {
                 "id": dhis2_org_unit_id,
-                "code": str(self.code),
+                "code": facility_code,
                 "name": str(self.name),
                 "shortName": str(self.name),
                 "displayName": str(self.official_name),
@@ -1910,16 +1914,15 @@ class FacilityUpdates(AbstractBase):
                     new_date = datetime.date(year=value.year, month=value.month, day=value.day)
                     value = new_date
                 elif field_name == 'sub_county_id':
-                    value =  SubCounty.objects.get(name=field_changed.get('display_value')).id
+                    value = SubCounty.objects.get(name=field_changed.get('display_value')).id
                 else:
                     value = field_changed.get("actual_value")
 
                 setattr(self.facility, field_name, value)
             self.facility.save(allow_save=True)
-            self.push_facility_updates()
-            '''TODO
-            Push update to DHIS2
-            '''
+            self.facility.push_new_facility(self.facility.code)
+            # self.push_facility_updates()
+
 
     def update_facility_services(self):
         from facilities.utils import create_facility_services
@@ -2056,8 +2059,6 @@ class FacilityUpdates(AbstractBase):
             self.approve_upgrades()
             self.facility.has_edits = False
             self.facility.updated = timezone.now()
-            if self.is_national_approval:
-                import pdb; pdb.set_trace()
             self.facility.save(allow_save=True)
         if self.cancelled:
             self.reject_upgrades()
