@@ -14,14 +14,10 @@ def remove_keys(sample_list, request):
     """
     Removes keys that should not be in excel e.g PKs and audit fields
     """
-    if request.user.is_staff:
+    if request.user.is_staff and request.user.id is not 6:
         return [
             item for item in sample_list
             if item not in settings.EXCEL_EXCEPT_FIELDS]
-    elif request.user.id == 6:
-        return [
-            item for item in sample_list
-            if item not in settings.EXCEL_EXCEPT_FIELDS_FOR_PUBLIC_USERS]
     else:
         return [
             item for item in sample_list
