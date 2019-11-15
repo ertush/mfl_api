@@ -1920,7 +1920,7 @@ class FacilityUpdates(AbstractBase):
 
                 setattr(self.facility, field_name, value)
             self.facility.save(allow_save=True)
-            if self.code and self.is_complete and self.approved_national_level:
+            if self.facility.code and self.facility.is_complete and self.facility.approved_national_level:
                 self.facility.push_new_facility(self.facility.code)
             # self.push_facility_updates()
 
