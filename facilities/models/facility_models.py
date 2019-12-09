@@ -165,7 +165,8 @@ class DhisAuth(ApiAuthentication):
             #     }
             # )
 
-    def get_parent_id(self, ward_name):
+    def get_parent_id(self, ward_id):
+        print self.session_store[self.oauth2_token_variable_name]
         headers={
             "Authorization": "Bearer " + json.loads(self.session_store[self.oauth2_token_variable_name].replace("u", "")
                 .replace("'", '"'))["access_token"],
@@ -175,20 +176,15 @@ class DhisAuth(ApiAuthentication):
             settings.DHIS_ENDPOINT+"api/organisationUnits.json",
             headers=headers,
             params={
-                "query": ward_name,
+                "query": "KE_Ward_" + str(ward_id),
                 "fields": "[id,name]",
                 "filter": "level:in:[4]",
                 "paging": "false"
             }
         )
-        dhis2_facility_name = r.json()["organisationUnits"][0]["name"].lower()
-        ward_name = str(ward_name) + " Ward"
-        ward_name = ward_name.lower()
+        dhis2_facility = r.json()["organisationUnits"]
 
-        if len(r.json()["organisationUnits"]) is 1:
-            if dhis2_facility_name == ward_name:
-                return r.json()["organisationUnits"][0]["id"]
-        else:
+        if len(dhis2_facility) == 0:
             raise ValidationError(
                 {
                     "Error!": ["Unable to resolve exact parent of the new facility in DHIS2"]
@@ -209,6 +205,8 @@ class DhisAuth(ApiAuthentication):
         print("Create Facility Response", r.url, r.status_code, r.json())
 
         if r.json()["status"] != "OK":
+            # import logging
+            # logging.info(r.json()["status"])
             raise ValidationError(
                 {
                     "Error!": ["An error occured while pushing facility to DHIS2. This is may be caused by the "
@@ -1146,7 +1144,7 @@ class Facility(SequenceMixin, AbstractBase):
             import re
             self.dhis2_api_auth.get_oauth2_token()
 
-            dhis2_parent_id = self.dhis2_api_auth.get_parent_id(self.ward_name)
+            dhis2_parent_id = self.dhis2_api_auth.get_parent_id(self.ward_id)
             dhis2_org_unit_id = self.dhis2_api_auth.get_org_unit_id(self.code)
             kmhfl_dhis2_facility_type_mapping = {
                 "20b86171-0c16-47e1-9277-5e773d485c33": "YQK9pleIoeB",
@@ -1239,7 +1237,7 @@ class Facility(SequenceMixin, AbstractBase):
         #     import re
         #     self.dhis2_api_auth.get_oauth2_token()
         #
-        #     dhis2_parent_id = self.dhis2_api_auth.get_parent_id(self.ward_name)
+        #     dhis2_parent_id = self.dhis2_api_auth.get_parent_id(self.ward_id)
         #     dhis2_org_unit_id = self.dhis2_api_auth.get_org_unit_id(self.code)
         #     new_facility_updates_payload = {
         #         "code": str(self.code),
@@ -2021,7 +2019,7 @@ class FacilityUpdates(AbstractBase):
         import re
         self.dhis2_api_auth.get_oauth2_token()
 
-        dhis2_parent_id = self.dhis2_api_auth.get_parent_id(self.facility.ward_name)
+        dhis2_parent_id = self.dhis2_api_auth.get_parent_id(self.facility.ward_id)
         dhis2_org_unit_id = self.dhis2_api_auth.get_org_unit_id(self.facility.code)
 
         new_facility_updates_payload = {
