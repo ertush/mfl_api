@@ -190,6 +190,8 @@ class DhisAuth(ApiAuthentication):
                     "Error!": ["Unable to resolve exact parent of the new facility in DHIS2"]
                 }
             )
+        else:
+            return dhis2_facility[0]["id"]
 
     def push_facility_to_dhis2(self, new_facility_payload):
         r = requests.post(
