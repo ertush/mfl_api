@@ -88,7 +88,7 @@ setup(
         "djangorestframework-csv>=1.3,<1.4.0",
         "django-rest-swagger==2.1.0",
         "Markdown>=2.5.1,<2.6.0",
-        "django==1.11",
+        "django==1.11.27",
         'sqlparse>=0.1,<0.2.0',
         "pytest>=2.7,<2.8.0",
         "pytest-django>=2.8,<2.9.0",
