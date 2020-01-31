@@ -1157,7 +1157,7 @@ class Facility(SequenceMixin, AbstractBase):
             self.dhis2_api_auth.get_oauth2_token()
 
             dhis2_parent_id = self.dhis2_api_auth.get_parent_id(self.ward.code)
-            dhis2_org_unit_id = self.dhis2_api_auth.get_org_unit_id(self.code)[0]
+            dhis2_org_unit_id = self.dhis2_api_auth.get_org_unit_id(self.code)
             kmhfl_dhis2_facility_type_mapping = {
                 "20b86171-0c16-47e1-9277-5e773d485c33": "YQK9pleIoeB",
                 "5eb392ac-d10a-40c9-b525-53dac866ef6c": "lTrpyOiOcM6",
@@ -1217,7 +1217,7 @@ class Facility(SequenceMixin, AbstractBase):
             else:
                 facility_code = str(self.code)
             new_facility_payload = {
-                "id": dhis2_org_unit_id,
+                "id": dhis2_org_unit_id[0],
                 "code": facility_code,
                 "name": str(self.name),
                 "shortName": str(self.name),
