@@ -207,7 +207,7 @@ class DhisAuth(ApiAuthentication):
             LOGGER.info("Create Facility Response: %s" % r.text)
         else:
             r = requests.put(
-                settings.DHIS_ENDPOINT + "api/organisationUnits",
+                settings.DHIS_ENDPOINT + "api/organisationUnits/" + new_facility_payload.pop('id'),
                 headers={
                     "Authorization": "Bearer " +
                                      json.loads(self.session_store[self.oauth2_token_variable_name].replace("u", "")
