@@ -265,8 +265,7 @@ class CreateFacilityOfficerMixin(object):
             officer.job_title = job_title
             officer.name = data['name']
             officer.save()
-            facility_officer = FacilityOfficer.objects.get(
-                facility=facility, officer=officer)
+            facility_officer = FacilityOfficer.objects.get(officer=officer)
         except (Officer.DoesNotExist, Officer.MultipleObjectsReturned):
 
             officer = Officer.objects.create(**officer_dict)
