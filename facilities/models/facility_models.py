@@ -218,7 +218,7 @@ class DhisAuth(ApiAuthentication):
             )
             LOGGER.info("Update Facility Response: %s" % r.text)
         if r.json()["status"] != "OK":
-            LOGGER.error('Facility feedback: ', r.text)
+            LOGGER.error('Facility feedback: %s' % r.text)
             raise ValidationError(
                 {
                     "Error!": ["An error occured while pushing facility to DHIS2. This is may be caused by the "
