@@ -260,7 +260,7 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
         dhisauth = DhisAuth()
         dhisauth.get_oauth2_token()
         facility_dhis_id = self.get_facility_dhis2_parent_id()
-        unit_uuid = dhisauth.get_org_unit_id(self.code)
+        unit_uuid = dhisauth.get_org_unit_id(self.code)[0]
         new_chu_payload = {
             "id": unit_uuid,
             "code": str(self.code),

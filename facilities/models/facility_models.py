@@ -147,17 +147,17 @@ class DhisAuth(ApiAuthentication):
             }
         )
 
-        print("Get Org Unit ID Response", r.json(), str(code))
+        print("Get Org Unit ID Response", r.text, str(code))
         if len(r.json()["organisationUnits"]) is 1:
             # raise ValidationError(
             #     {
             #         "Error!": ["This facility is already available in DHIS2. Please ensure details are correct"]
             #     }
             # )
-            return r.json()["organisationUnits"][0]["id"]
+            return [r.json()["organisationUnits"][0]["id"], 'retrieved']
         else:
             # print("New OrgUnit UID Generated-", r_generate_orgunit_uid.json()['codes'][0])
-            return r_generate_orgunit_uid.json()['codes'][0]
+            return [r_generate_orgunit_uid.json()['codes'][0], 'generated']
             # raise ValidationError(
             #     {
             #         "Error!": ["Unable to resolve exact organisation unit of the facility to be updated in DHIS2. "
@@ -193,22 +193,32 @@ class DhisAuth(ApiAuthentication):
         else:
             return dhis2_facility[0]["id"]
 
-    def push_facility_to_dhis2(self, new_facility_payload):
-        r = requests.post(
-            settings.DHIS_ENDPOINT+"api/organisationUnits",
-            headers={
-                "Authorization": "Bearer " + json.loads(self.session_store[self.oauth2_token_variable_name].replace("u", "")
-                                                        .replace("'", '"'))["access_token"],
-                "Accept": "application/json"
-            },
-            json=new_facility_payload
-        )
-
-        print("Create Facility Response", r.url, r.status_code, r.json())
-
+    def push_facility_to_dhis2(self, new_facility_payload, new_facility=True):
+        if new_facility:
+            r = requests.post(
+                settings.DHIS_ENDPOINT+"api/organisationUnits",
+                headers={
+                    "Authorization": "Bearer " + json.loads(self.session_store[self.oauth2_token_variable_name].replace("u", "")
+                                                            .replace("'", '"'))["access_token"],
+                    "Accept": "application/json"
+                },
+                json=new_facility_payload
+            )
+            LOGGER.info("Create Facility Response: %s" % r.text)
+        else:
+            r = requests.put(
+                settings.DHIS_ENDPOINT + "api/organisationUnits",
+                headers={
+                    "Authorization": "Bearer " +
+                                     json.loads(self.session_store[self.oauth2_token_variable_name].replace("u", "")
+                                                .replace("'", '"'))["access_token"],
+                    "Accept": "application/json"
+                },
+                json=new_facility_payload
+            )
+            LOGGER.info("Update Facility Response: %s" % r.text)
         if r.json()["status"] != "OK":
-            # import logging
-            # logging.info(r.json()["status"])
+            LOGGER.error('Facility feedback: ', r.text)
             raise ValidationError(
                 {
                     "Error!": ["An error occured while pushing facility to DHIS2. This is may be caused by the "
@@ -1147,7 +1157,7 @@ class Facility(SequenceMixin, AbstractBase):
             self.dhis2_api_auth.get_oauth2_token()
 
             dhis2_parent_id = self.dhis2_api_auth.get_parent_id(self.ward.code)
-            dhis2_org_unit_id = self.dhis2_api_auth.get_org_unit_id(self.code)
+            dhis2_org_unit_id = self.dhis2_api_auth.get_org_unit_id(self.code)[0]
             kmhfl_dhis2_facility_type_mapping = {
                 "20b86171-0c16-47e1-9277-5e773d485c33": "YQK9pleIoeB",
                 "5eb392ac-d10a-40c9-b525-53dac866ef6c": "lTrpyOiOcM6",
@@ -1225,7 +1235,10 @@ class Facility(SequenceMixin, AbstractBase):
                 "keph": kmhfl_dhis2_keph_mapping[str(self.keph_level_id)],
                 "ownership": kmhfl_dhis2_ownership_mapping[str(self.owner_id)]
             }
-            self.dhis2_api_auth.push_facility_to_dhis2(new_facility_payload)
+            new_facility = True
+            if dhis2_org_unit_id[1] == 'retrieved':
+                new_facility = False
+            self.dhis2_api_auth.push_facility_to_dhis2(new_facility_payload, new_facility)
             # facility_uid = self.dhis2_api_auth.get_org_unit_id(self.code)
             facility_uid = dhis2_org_unit_id
             self.dhis2_api_auth.push_facility_metadata(metadata_payload, facility_uid)
