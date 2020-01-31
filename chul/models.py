@@ -1,6 +1,7 @@
 import json
 import datetime
 import reversion
+import logging
 
 from django.db import models
 from django.core.exceptions import ValidationError
@@ -12,6 +13,7 @@ from common.models import AbstractBase, Contact, SequenceMixin
 from common.fields import SequenceField
 from facilities.models import Facility
 
+LOGGER = logging.getLogger(__name__)
 
 @reversion.register
 @encoding.python_2_unicode_compatible
@@ -260,7 +262,8 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
         dhisauth = DhisAuth()
         dhisauth.get_oauth2_token()
         facility_dhis_id = self.get_facility_dhis2_parent_id()
-        unit_uuid = dhisauth.get_org_unit_id(self.code)[0]
+        unit_uuid_status = dhisauth.get_org_unit_id(self.code)
+        unit_uuid = unit_uuid_status[0]
         new_chu_payload = {
             "id": unit_uuid,
             "code": str(self.code),
@@ -275,18 +278,35 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
         metadata_payload = {
             "keph": 'axUnguN4QDh'
         }
-        r = requests.post(
-            settings.DHIS_ENDPOINT + "api/organisationUnits",
-            headers={
-                "Authorization": "Bearer " +
-                                 json.loads(dhisauth.session_store[dhisauth.oauth2_token_variable_name].replace("u", "")
-                                            .replace("'", '"'))["access_token"],
-                "Accept": "application/json"
-            },
-            json=new_chu_payload
-        )
 
-        print("Create CHU Response", r.url, r.status_code, r.json())
+        if unit_uuid_status == 'retrieved':
+            r = requests.put(
+                settings.DHIS_ENDPOINT + "api/organisationUnits/" + new_chu_payload.pop('id'),
+                headers={
+                    "Authorization": "Bearer " +
+                                     json.loads(
+                                         dhisauth.session_store[dhisauth.oauth2_token_variable_name].replace("u", "")
+                                         .replace("'", '"'))["access_token"],
+                    "Accept": "application/json"
+                },
+                json=new_chu_payload
+            )
+            print("Update CHU Response", r.url, r.status_code, r.json())
+            LOGGER.info("Update CHU Response: %s" % r.text)
+        else:
+            r = requests.post(
+                settings.DHIS_ENDPOINT + "api/organisationUnits",
+                headers={
+                    "Authorization": "Bearer " +
+                                     json.loads(dhisauth.session_store[dhisauth.oauth2_token_variable_name].replace("u", "")
+                                                .replace("'", '"'))["access_token"],
+                    "Accept": "application/json"
+                },
+                json=new_chu_payload
+            )
+
+            print("Create CHU Response", r.url, r.status_code, r.json())
+            LOGGER.info("Create CHU Response: %s" % r.text)
 
         if r.json()["status"] != "OK":
             raise ValidationError(
