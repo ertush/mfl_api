@@ -1240,7 +1240,7 @@ class Facility(SequenceMixin, AbstractBase):
                 new_facility = False
             self.dhis2_api_auth.push_facility_to_dhis2(new_facility_payload, new_facility)
             # facility_uid = self.dhis2_api_auth.get_org_unit_id(self.code)
-            facility_uid = dhis2_org_unit_id
+            facility_uid = dhis2_org_unit_id[0]
             self.dhis2_api_auth.push_facility_metadata(metadata_payload, facility_uid)
         else:
             pass
