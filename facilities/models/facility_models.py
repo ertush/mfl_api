@@ -136,17 +136,6 @@ class DhisAuth(ApiAuthentication):
                 "paging": "false"
             }
         )
-
-        r_generate_orgunit_uid= requests.get(
-            settings.DHIS_ENDPOINT + "api/system/uid.json",
-            headers={
-                "Authorization": "Bearer " +
-                                 json.loads(self.session_store[self.oauth2_token_variable_name].replace("u", "")
-                                            .replace("'", '"'))["access_token"],
-                "Accept": "application/json"
-            }
-        )
-
         print("Get Org Unit ID Response", r.text, str(code))
         if len(r.json()["organisationUnits"]) is 1:
             # raise ValidationError(
@@ -156,6 +145,15 @@ class DhisAuth(ApiAuthentication):
             # )
             return [r.json()["organisationUnits"][0]["id"], 'retrieved']
         else:
+            r_generate_orgunit_uid = requests.get(
+                settings.DHIS_ENDPOINT + "api/system/uid.json",
+                headers={
+                    "Authorization": "Bearer " +
+                                     json.loads(self.session_store[self.oauth2_token_variable_name].replace("u", "")
+                                                .replace("'", '"'))["access_token"],
+                    "Accept": "application/json"
+                }
+            )
             # print("New OrgUnit UID Generated-", r_generate_orgunit_uid.json()['codes'][0])
             return [r_generate_orgunit_uid.json()['codes'][0], 'generated']
             # raise ValidationError(
