@@ -240,8 +240,14 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
             return None
 
     def save(self, *args, **kwargs):
+        # new chus that have just been added but not approved yet
         if not self.code and not self.is_approved:
             super(CommunityHealthUnit, self).save(*args, **kwargs)
+        # existing chus that were approved previously and have been updated
+        if self.code and self.is_approved:
+            super(CommunityHealthUnit, self).save(*args, **kwargs)
+        # chus that have just been approved but don't have a code yet
+        # and have not been pushed to DHIS yet
         if self.is_approved and not self.code:
             self.code = self.generate_next_code_sequence()
             if settings.PUSH_TO_DHIS:
