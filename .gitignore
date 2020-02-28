@@ -89,6 +89,7 @@ mfl_models_graph.png
 
 # env files store config stuff
 .env
+.env.sh
 
 # IPython notebooks, used to experiment on stuff
 *.ipynb
