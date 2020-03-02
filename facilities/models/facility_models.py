@@ -1015,10 +1015,31 @@ class Facility(SequenceMixin, AbstractBase):
         help_text="A brief summary of the Facility")
     number_of_beds = models.PositiveIntegerField(
         default=0,
-        help_text="The number of beds that a facility has. e.g 0")
+        help_text="The number of authorized inpatient beds"
+        " that a facility has. e.g 0")
     number_of_cots = models.PositiveIntegerField(
         default=0,
-        help_text="The number of cots that a facility has e.g 0")
+        help_text="The number of authorized cots that a facility has e.g 0")
+    number_of_emergency_casualty_beds = models.PositiveIntegerField(
+        default=0,
+        help_text="The number of emergency casualty beds "
+        " that a facility has e.g 0")
+    number_of_icu_beds = models.PositiveIntegerField(
+        default=0,
+        help_text="The number of Intensive Care Units (ICU) beds"
+        " that a facility has e.g 0")
+    number_of_hdu_beds = models.PositiveIntegerField(
+        default=0,
+        help_text="The number of High Dependency Units (HDU) beds"
+        " that a facility has e.g 0")
+    number_of_general_theatres = models.PositiveIntegerField(
+        default=0,
+        help_text="The number of general theatres "
+        " that a facility has e.g 0")  
+    number_of_maternity_theatres = models.PositiveIntegerField(
+        default=0,
+        help_text="The number of maternity theatres "
+        " that a facility has e.g 0")  
     open_whole_day = models.BooleanField(
         default=False,
         help_text="Does the facility operate 24 hours a day")
@@ -1142,6 +1163,9 @@ class Facility(SequenceMixin, AbstractBase):
     reporting_in_dhis = models.NullBooleanField(
         blank=True, null=True,
         help_text='A flag to indicate whether facility should have reporting in dhis')
+    nhif_accreditation = models.NullBooleanField(
+        blank=True, null=True, default=False,
+        help_text='A flag to indicate whether facility is accredited by nhif')
     approved_national_level = models.NullBooleanField(
         blank=True, null=True, help_text='Has the facility been approved at the national level')
 
