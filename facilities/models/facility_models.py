@@ -1242,7 +1242,7 @@ class Facility(SequenceMixin, AbstractBase):
                 "id": dhis2_org_unit_id[0],
                 "code": facility_code,
                 "name": str(self.name),
-                "shortName": str(self.name),
+                "shortName": str(self.name[:49]),
                 "displayName": str(self.official_name),
                 "parent": {
                     "id": dhis2_parent_id
