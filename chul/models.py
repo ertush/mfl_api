@@ -245,6 +245,8 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
             super(CommunityHealthUnit, self).save(*args, **kwargs)
         # existing chus that were approved previously and have been updated
         if self.code and self.is_approved:
+            if settings.PUSH_TO_DHIS:
+                self.push_chu_to_dhis2()
             super(CommunityHealthUnit, self).save(*args, **kwargs)
         # chus that have just been approved but don't have a code yet
         # and have not been pushed to DHIS yet
