@@ -287,7 +287,7 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
             "keph": 'axUnguN4QDh'
         }
 
-        if unit_uuid_status == 'retrieved':
+        if unit_uuid_status[1] == 'retrieved':
             r = requests.put(
                 settings.DHIS_ENDPOINT + "api/organisationUnits/" + new_chu_payload.pop('id'),
                 headers={
@@ -317,6 +317,7 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
             LOGGER.info("Create CHU Response: %s" % r.text)
 
         if r.json()["status"] != "OK":
+            LOGGER.error("Failed PUSH: error -> {}".format(r.text))
             raise ValidationError(
                 {
                     "Error!": ["An error occured while pushing Community Unit to DHIS2. This is may be caused by the "
