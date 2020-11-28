@@ -2791,7 +2791,7 @@ class Speciality(SequenceMixin, AbstractBase):
 
 @reversion.register(follow=['facility', 'option', 'service'])
 @encoding.python_2_unicode_compatible
-class FacilitySpecialists(AbstractBase):
+class FacilitySpecialist(AbstractBase):
 
     """
     A facility can have zero or more specialists.
