@@ -2666,3 +2666,179 @@ class RegulatorSync(AbstractBase):
 
     def __str__(self):
         return self.name
+
+
+@reversion.register(follow=['parent', ])
+@encoding.python_2_unicode_compatible
+class SpecialityCategory(AbstractBase):
+
+    """
+    Categorization of health specilaists. e.g Anesthesiologist, Gastroentologist,
+    Radiologists etc.
+    """
+    name = models.CharField(
+        max_length=100,
+        help_text="What is the name of the category? ")
+    description = models.TextField(null=True, blank=True)
+    abbreviation = models.CharField(
+        max_length=50, null=True, blank=True,
+        help_text='A short form of the category e.g ANC for antenatal')
+    parent = models.ForeignKey(
+        'self', null=True, blank=True,
+        help_text='The parent category under which the category falls',
+        related_name='sub_categories', on_delete=models.PROTECT)
+
+    def __str__(self):
+        return self.name
+
+    @property
+    def specialities_count(self):
+        return len(self.category_services.all())
+
+    class Meta(AbstractBase.Meta):
+        verbose_name_plural = 'specialities categories'
+
+
+# @reversion.register
+# @encoding.python_2_unicode_compatible
+# class OptionGroup(AbstractBase):
+
+#     """
+#     Groups similar a options available to a service.
+#     E.g  options 1 to 6 could fall after KEPH level group
+#     """
+#     name = models.CharField(max_length=100, unique=True)
+
+#     def __str__(self):
+#         return self.name
+
+
+# @reversion.register(follow=['group'])
+# class Option(AbstractBase):
+
+#     """
+#     services could either be:
+#         Given in terms of KEPH levels:
+
+#         Similar services are offered in the different KEPH levels:
+#             For example, Environmental Health Services offered in KEPH level
+#             2 are similar to those offered in KEPH level 3. If the KEPH level
+#             of the facility is known, the corresponding KEPH level of the
+#             service should apply. If it is not known, write the higher KEPH
+#             level.
+
+#         Given through a choice of service level:
+#             For example, Oral Health Services are either Basic or Comprehensive
+
+#         A combination of choices and KEPH levels:
+#             For example, Mental Health Services are either Integrated or
+#             Specialised (and the Specialised Services are split into KEPH
+#             level).
+#     """
+#     value = models.TextField()
+#     display_text = models.CharField(max_length=30)
+#     is_exclusive_option = models.BooleanField(default=True)
+#     option_type = models.CharField(max_length=12, choices=(
+#         ('BOOLEAN', 'Yes/No or True/False responses'),
+#         ('INTEGER', 'Integral numbers e.g 1,2,3'),
+#         ('DECIMAL', 'Decimal numbers, may have a fraction e.g 3.14'),
+#         ('TEXT', 'Plain text'),
+#     ))
+#     group = models.ForeignKey(
+#         OptionGroup,
+#         help_text="The option group where the option lies",
+#         related_name='options', on_delete=models.PROTECT)
+
+#     def __str__(self):
+#         return "{}: {}".format(self.option_type, self.display_text)
+
+
+@reversion.register(follow=['category', ])
+@encoding.python_2_unicode_compatible
+class Speciality(SequenceMixin, AbstractBase):
+
+    """
+    Health specilities.
+    """
+    name = models.CharField(max_length=255, unique=True)
+    description = models.TextField(null=True, blank=True)
+    abbreviation = models.CharField(
+        max_length=50, null=True, blank=True,
+        help_text='A short form for the service e.g FANC for Focused '
+        'Antenatal Care')
+    category = models.ForeignKey(
+        SpecialityCategory,
+        on_delete=models.PROTECT,
+        help_text="The classification that the specialities lies in.",
+        related_name='category_services')
+    code = SequenceField(unique=True, editable=False)
+
+    def save(self, *args, **kwargs):
+        if not self.code:
+            self.code = self.generate_next_code_sequence()
+        super(Specialities, self).save(*args, **kwargs)
+
+    @property
+    def category_name(self):
+        return self.category.name
+
+    def __str__(self):
+        return self.name
+
+    class Meta(AbstractBase.Meta):
+        verbose_name_plural = 'specialities'
+
+
+@reversion.register(follow=['facility', 'option', 'service'])
+@encoding.python_2_unicode_compatible
+class FacilitySpecialists(AbstractBase):
+
+    """
+    A facility can have zero or more specialists.
+    """
+    facility = models.ForeignKey(
+        Facility, related_name='facility_specialists',
+        on_delete=models.PROTECT)
+
+    # For services that do not have options, the service will be linked
+    # directly to the
+    speciality = models.ForeignKey(Speciality, on_delete=models.PROTECT,)
+
+    # @property
+    # def service_has_options(self):
+    #     return True if self.option else False
+
+    @property
+    def speciality_name(self):
+            return self.speciality.name
+
+    # @property
+    # def option_display_value(self):
+    #     return self.option.display_text
+
+    # @property
+    # def average_rating(self):
+    #     avg = self.facility_service_ratings.aggregate(models.Avg('rating'))
+    #     return avg['rating__avg'] or 0.0
+
+    def __str__(self):
+        if self.option:
+            return "{}: {} ({})".format(
+                self.facility, self.speciality, self.option
+            )
+        return "{}: {}".format(self.facility, self.speciality)
+
+    def validate_unique_speciality_or_speciality_with_option_for_facility(self):
+
+        if len(self.__class__.objects.filter(
+                speciality=self.speciality, facility=self.facility,
+                deleted=False)) == 1 and not self.deleted:
+            error = {
+                "speciality": [
+                    ("The speciality {} has already been added to the "
+                     "facility").format(self.speciality.name)]
+            }
+            raise ValidationError(error)
+
+    def clean(self, *args, **kwargs):
+        self.validate_unique_speciality_or_speciality_with_option_for_facility()
