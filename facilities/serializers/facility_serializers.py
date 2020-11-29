@@ -750,7 +750,7 @@ class SpecialitySerializer(AbstractFieldsMixin, serializers.ModelSerializer):
 
 class FacilitySpecialistSerializer(
         AbstractFieldsMixin, serializers.ModelSerializer):
-    service_name = serializers.CharField(read_only=True)
+    speciality_name = serializers.CharField(read_only=True)
     # service_code = serializers.ReadOnlyField(source='service.code')
     option_display_value = serializers.CharField(read_only=True)
 

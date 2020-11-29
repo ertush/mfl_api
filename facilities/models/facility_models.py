@@ -2668,7 +2668,7 @@ class RegulatorSync(AbstractBase):
         return self.name
 
 
-@reversion.register(follow=['parent', ])
+@reversion.register(follow=['parent'])
 @encoding.python_2_unicode_compatible
 class SpecialityCategory(AbstractBase):
 
@@ -2711,13 +2711,13 @@ class Speciality(SequenceMixin, AbstractBase):
     description = models.TextField(null=True, blank=True)
     abbreviation = models.CharField(
         max_length=50, null=True, blank=True,
-        help_text='A short form for the service e.g FANC for Focused '
-        'Antenatal Care')
+        help_text='A short form for the speciality'
+        )
     category = models.ForeignKey(
         SpecialityCategory,
         on_delete=models.PROTECT,
         help_text="The classification that the specialities lies in.",
-        related_name='category_services')
+        related_name='category_specialities')
     code = SequenceField(unique=True, editable=False)
 
     def save(self, *args, **kwargs):
@@ -2736,7 +2736,7 @@ class Speciality(SequenceMixin, AbstractBase):
         verbose_name_plural = 'specialities'
 
 
-@reversion.register(follow=['facility'])
+@reversion.register(follow=['facility', 'speciality'])
 @encoding.python_2_unicode_compatible
 class FacilitySpecialist(AbstractBase):
 
@@ -2747,8 +2747,6 @@ class FacilitySpecialist(AbstractBase):
         Facility, related_name='facility_specialists',
         on_delete=models.PROTECT)
 
-    # For services that do not have options, the service will be linked
-    # directly to the
     speciality = models.ForeignKey(Speciality, on_delete=models.PROTECT,)
 
     @property
@@ -2758,7 +2756,7 @@ class FacilitySpecialist(AbstractBase):
     def __str__(self):
         return "{}: {}".format(self.facility, self.speciality)
 
-    def validate_unique_speciality_or_speciality_with_option_for_facility(self):
+    def validate_unique_speciality(self):
 
         if len(self.__class__.objects.filter(
                 speciality=self.speciality, facility=self.facility,
@@ -2771,4 +2769,4 @@ class FacilitySpecialist(AbstractBase):
             raise ValidationError(error)
 
     def clean(self, *args, **kwargs):
-        self.validate_unique_speciality_or_speciality_with_option_for_facility()
+        self.validate_unique_speciality()

@@ -24,7 +24,7 @@ from ..models import (
     FacilityService,
     SpecialityCategory,
     Speciality,
-    FacilitySpecialists,
+    FacilitySpecialist,
     FacilityApproval,
     FacilityOperationState,
     FacilityUpgrade,
@@ -540,7 +540,7 @@ class SpecialityFilter(CommonFieldsFilterset):
 
 class FacilitySpecialistFilter(CommonFieldsFilterset):
     facility = django_filters.AllValuesFilter(lookup_expr='exact')
-    option = django_filters.AllValuesFilter(lookup_expr='exact')
+    speciality = django_filters.AllValuesFilter(lookup_expr='exact')
     is_confirmed = django_filters.TypedChoiceFilter(
         choices=BOOLEAN_CHOICES, coerce=strtobool
     )
@@ -549,4 +549,4 @@ class FacilitySpecialistFilter(CommonFieldsFilterset):
     )
 
     class Meta(CommonFieldsFilterset.Meta):
-        model = FacilitySpecialists
+        model = FacilitySpecialist

@@ -65,8 +65,8 @@ class SpecialityListView(generics.ListCreateAPIView):
     """
     queryset = Speciality.objects.all()
     serializer_class = SpecialitySerializer
-    filter_class = FacilitySpecialistFilter
-    ordering_fields = ('facility', 'speciality')
+    filter_class = SpecialityFilter
+    ordering_fields = ('created', 'name')
 
 
 class SpecialityDetailView(
@@ -83,7 +83,6 @@ class FacilitySpecialistListView(generics.ListCreateAPIView):
     Lists and creates links between facilities and specialists.
 
     facility -- A facility's pk
-    # selected_option -- A speciality selected_option's pk
     Created --  Date the record was Created
     Updated -- Date the record was Updated
     Created_by -- User who created the record
