@@ -157,6 +157,22 @@ urlpatterns = (
         views.FacilityServiceDetailView.as_view(),
         name='facility_service_detail'),
 
+    # 
+    url(r'^specialities/$', views.SpecialityListView.as_view(), name='specialities_list'),
+    url(r'^specialities/(?P<pk>[^/]+)/$', views.SpecialityDetailView.as_view(),
+        name='speciality_detail'),
+    url(r'^speciality_categories/$', views.SpecialityCategoryListView.as_view(),
+        name='facility_services_list'),
+    url(r'^speciality_categories/(?P<pk>[^/]+)/$',
+        views.SpecialityCategoryDetailView.as_view(),
+        name='facility_service_detail'),
+    url(r'^facility_specialists/$', views.FacilitySpecialistListView.as_view(),
+        name='facility_services_list'),
+    url(r'^facility_specialists/(?P<pk>[^/]+)/$',
+        views.FacilitySpecialistDetailView.as_view(),
+        name='facility_service_detail'),
+    # 
+
     url(r'^facility_units/$', views.FacilityUnitsListView.as_view(),
         name='facility_units_list'),
     url(r'^facility_units/(?P<pk>[^/]+)/$',
