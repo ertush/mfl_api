@@ -22,6 +22,9 @@ from ..models import (
     Option,
     Service,
     FacilityService,
+    SpecialityCategory,
+    Speciality,
+    FacilitySpecialists,
     FacilityApproval,
     FacilityOperationState,
     FacilityUpgrade,
@@ -515,3 +518,35 @@ class FacilityDepartmentFilter(CommonFieldsFilterset):
 
     class Meta(CommonFieldsFilterset.Meta):
         model = FacilityDepartment
+
+
+# Speciality filters
+
+class SpecialityCategoryFilter(CommonFieldsFilterset):
+    name = django_filters.CharFilter(lookup_expr='icontains')
+    description = django_filters.CharFilter(lookup_expr='icontains')
+
+    class Meta(CommonFieldsFilterset.Meta):
+        model = SpecialityCategory
+
+class SpecialityFilter(CommonFieldsFilterset):
+    name = django_filters.CharFilter(lookup_expr='icontains')
+    description = django_filters.CharFilter(lookup_expr='icontains')
+    category = django_filters.AllValuesFilter(lookup_expr='exact')
+    code = django_filters.CharFilter(lookup_expr='exact')
+
+    class Meta(CommonFieldsFilterset.Meta):
+        model = Speciality
+
+class FacilitySpecialistFilter(CommonFieldsFilterset):
+    facility = django_filters.AllValuesFilter(lookup_expr='exact')
+    option = django_filters.AllValuesFilter(lookup_expr='exact')
+    is_confirmed = django_filters.TypedChoiceFilter(
+        choices=BOOLEAN_CHOICES, coerce=strtobool
+    )
+    is_cancelled = django_filters.TypedChoiceFilter(
+        choices=BOOLEAN_CHOICES, coerce=strtobool
+    )
+
+    class Meta(CommonFieldsFilterset.Meta):
+        model = FacilitySpecialists

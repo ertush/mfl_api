@@ -19,11 +19,9 @@ from ..serializers import (
     FacilitySpecialistSerializer,
 )
 from ..filters import (
-    ServiceCategoryFilter,
-    OptionFilter,
-    ServiceFilter,
-    FacilityServiceFilter,
-    FacilityServiceRatingFilter
+    SpecialityCategoryFilter,
+    SpecialityFilter,
+    FacilitySpecialistFilter,
 )
 
 
