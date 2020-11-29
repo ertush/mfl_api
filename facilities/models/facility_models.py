@@ -2749,6 +2749,11 @@ class FacilitySpecialist(AbstractBase):
 
     speciality = models.ForeignKey(Speciality, on_delete=models.PROTECT,)
 
+    count = models.IntegerField(
+        default=0, 
+        blank=True, 
+        help_text='The actual number of specialists for this speciality.')
+
     @property
     def speciality_name(self):
             return self.speciality.name
