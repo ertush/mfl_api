@@ -2723,7 +2723,7 @@ class Speciality(SequenceMixin, AbstractBase):
     def save(self, *args, **kwargs):
         if not self.code:
             self.code = self.generate_next_code_sequence()
-        super(Specialities, self).save(*args, **kwargs)
+        super(Speciality, self).save(*args, **kwargs)
 
     @property
     def category_name(self):

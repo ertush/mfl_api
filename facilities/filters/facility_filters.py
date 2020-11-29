@@ -39,7 +39,10 @@ from ..models import (
     FacilityLevelChangeReason,
     FacilityDepartment,
     RegulatorSync,
-    FacilityExportExcelMaterialView
+    FacilityExportExcelMaterialView,
+    InfrastructureCategory,
+    Infrastructure,
+    FacilityInfrastructure
 )
 from common.filters.filter_shared import (
     CommonFieldsFilterset,
@@ -550,3 +553,34 @@ class FacilitySpecialistFilter(CommonFieldsFilterset):
 
     class Meta(CommonFieldsFilterset.Meta):
         model = FacilitySpecialist
+
+# Infrastructure
+
+class InfrastructureCategoryFilter(CommonFieldsFilterset):
+    name = django_filters.CharFilter(lookup_expr='icontains')
+    description = django_filters.CharFilter(lookup_expr='icontains')
+
+    class Meta(CommonFieldsFilterset.Meta):
+        model = InfrastructureCategory
+
+class InfrastructureFilter(CommonFieldsFilterset):
+    name = django_filters.CharFilter(lookup_expr='icontains')
+    description = django_filters.CharFilter(lookup_expr='icontains')
+    category = django_filters.AllValuesFilter(lookup_expr='exact')
+    code = django_filters.CharFilter(lookup_expr='exact')
+
+    class Meta(CommonFieldsFilterset.Meta):
+        model = Infrastructure
+
+class FacilityInfrastructureFilter(CommonFieldsFilterset):
+    facility = django_filters.AllValuesFilter(lookup_expr='exact')
+    Infrastructure = django_filters.AllValuesFilter(lookup_expr='exact')
+    is_confirmed = django_filters.TypedChoiceFilter(
+        choices=BOOLEAN_CHOICES, coerce=strtobool
+    )
+    is_cancelled = django_filters.TypedChoiceFilter(
+        choices=BOOLEAN_CHOICES, coerce=strtobool
+    )
+
+    class Meta(CommonFieldsFilterset.Meta):
+        model = FacilityInfrastructure
