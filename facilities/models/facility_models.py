@@ -2699,61 +2699,8 @@ class SpecialityCategory(AbstractBase):
         verbose_name_plural = 'specialities categories'
 
 
-# @reversion.register
-# @encoding.python_2_unicode_compatible
-# class OptionGroup(AbstractBase):
 
-#     """
-#     Groups similar a options available to a service.
-#     E.g  options 1 to 6 could fall after KEPH level group
-#     """
-#     name = models.CharField(max_length=100, unique=True)
-
-#     def __str__(self):
-#         return self.name
-
-
-# @reversion.register(follow=['group'])
-# class Option(AbstractBase):
-
-#     """
-#     services could either be:
-#         Given in terms of KEPH levels:
-
-#         Similar services are offered in the different KEPH levels:
-#             For example, Environmental Health Services offered in KEPH level
-#             2 are similar to those offered in KEPH level 3. If the KEPH level
-#             of the facility is known, the corresponding KEPH level of the
-#             service should apply. If it is not known, write the higher KEPH
-#             level.
-
-#         Given through a choice of service level:
-#             For example, Oral Health Services are either Basic or Comprehensive
-
-#         A combination of choices and KEPH levels:
-#             For example, Mental Health Services are either Integrated or
-#             Specialised (and the Specialised Services are split into KEPH
-#             level).
-#     """
-#     value = models.TextField()
-#     display_text = models.CharField(max_length=30)
-#     is_exclusive_option = models.BooleanField(default=True)
-#     option_type = models.CharField(max_length=12, choices=(
-#         ('BOOLEAN', 'Yes/No or True/False responses'),
-#         ('INTEGER', 'Integral numbers e.g 1,2,3'),
-#         ('DECIMAL', 'Decimal numbers, may have a fraction e.g 3.14'),
-#         ('TEXT', 'Plain text'),
-#     ))
-#     group = models.ForeignKey(
-#         OptionGroup,
-#         help_text="The option group where the option lies",
-#         related_name='options', on_delete=models.PROTECT)
-
-#     def __str__(self):
-#         return "{}: {}".format(self.option_type, self.display_text)
-
-
-@reversion.register(follow=['category', ])
+@reversion.register(follow=['category'])
 @encoding.python_2_unicode_compatible
 class Speciality(SequenceMixin, AbstractBase):
 
@@ -2789,7 +2736,7 @@ class Speciality(SequenceMixin, AbstractBase):
         verbose_name_plural = 'specialities'
 
 
-@reversion.register(follow=['facility', 'option', 'service'])
+@reversion.register(follow=['facility'])
 @encoding.python_2_unicode_compatible
 class FacilitySpecialist(AbstractBase):
 
@@ -2804,28 +2751,11 @@ class FacilitySpecialist(AbstractBase):
     # directly to the
     speciality = models.ForeignKey(Speciality, on_delete=models.PROTECT,)
 
-    # @property
-    # def service_has_options(self):
-    #     return True if self.option else False
-
     @property
     def speciality_name(self):
             return self.speciality.name
 
-    # @property
-    # def option_display_value(self):
-    #     return self.option.display_text
-
-    # @property
-    # def average_rating(self):
-    #     avg = self.facility_service_ratings.aggregate(models.Avg('rating'))
-    #     return avg['rating__avg'] or 0.0
-
     def __str__(self):
-        if self.option:
-            return "{}: {} ({})".format(
-                self.facility, self.speciality, self.option
-            )
         return "{}: {}".format(self.facility, self.speciality)
 
     def validate_unique_speciality_or_speciality_with_option_for_facility(self):

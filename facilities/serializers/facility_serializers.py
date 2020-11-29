@@ -741,7 +741,7 @@ class SpecialityCategorySerializer(
 
 
 class SpecialitySerializer(AbstractFieldsMixin, serializers.ModelSerializer):
-    # category_name = serializers.CharField(read_only=True)
+    category_name = serializers.CharField(read_only=True)
 
     class Meta(AbstractFieldsMixin.Meta):
         model = Speciality
