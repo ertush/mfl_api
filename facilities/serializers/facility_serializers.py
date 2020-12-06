@@ -48,7 +48,13 @@ from ..models import (
     FacilityLevelChangeReason,
     FacilityDepartment,
     RegulatorSync,
-    FacilityExportExcelMaterialView
+    FacilityExportExcelMaterialView,
+    SpecialityCategory,
+    Speciality,
+    FacilitySpecialist,
+    InfrastructureCategory,
+    Infrastructure,
+    FacilityInfrastructure
 )
 
 from ..utils import CreateFacilityOfficerMixin
@@ -727,3 +733,55 @@ class FacilityDepartmentSerializer(
 
     class Meta(AbstractFieldsMixin.Meta):
         model = FacilityDepartment
+
+
+
+class SpecialityCategorySerializer(
+        AbstractFieldsMixin, serializers.ModelSerializer):
+
+    class Meta(AbstractFieldsMixin.Meta):
+        model = SpecialityCategory
+
+
+class SpecialitySerializer(AbstractFieldsMixin, serializers.ModelSerializer):
+    category_name = serializers.CharField(read_only=True)
+
+    class Meta(AbstractFieldsMixin.Meta):
+        model = Speciality
+        read_only_fields = ('code',)
+
+
+class FacilitySpecialistSerializer(
+        AbstractFieldsMixin, serializers.ModelSerializer):
+    speciality_name = serializers.CharField(read_only=True)
+    # service_code = serializers.ReadOnlyField(source='service.code')
+    option_display_value = serializers.CharField(read_only=True)
+
+    class Meta(AbstractFieldsMixin.Meta):
+        model = FacilitySpecialist
+
+
+# Infrastructure
+class InfrastructureCategorySerializer(
+        AbstractFieldsMixin, serializers.ModelSerializer):
+
+    class Meta(AbstractFieldsMixin.Meta):
+        model = InfrastructureCategory
+
+
+class InfrastructureSerializer(AbstractFieldsMixin, serializers.ModelSerializer):
+    category_name = serializers.CharField(read_only=True)
+
+    class Meta(AbstractFieldsMixin.Meta):
+        model = Infrastructure
+        read_only_fields = ('code',)
+
+
+class FacilityInfrastructureSerializer(
+        AbstractFieldsMixin, serializers.ModelSerializer):
+    infrastructure_name = serializers.CharField(read_only=True)
+    # service_code = serializers.ReadOnlyField(source='service.code')
+    option_display_value = serializers.CharField(read_only=True)
+
+    class Meta(AbstractFieldsMixin.Meta):
+        model = FacilityInfrastructure

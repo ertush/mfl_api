@@ -2666,3 +2666,112 @@ class RegulatorSync(AbstractBase):
 
     def __str__(self):
         return self.name
+
+
+@reversion.register(follow=['parent'])
+@encoding.python_2_unicode_compatible
+class SpecialityCategory(AbstractBase):
+
+    """
+    Categorization of health specilaists. e.g Anesthesiologist, Gastroentologist,
+    Radiologists etc.
+    """
+    name = models.CharField(
+        max_length=100,
+        help_text="What is the name of the category? ")
+    description = models.TextField(null=True, blank=True)
+    abbreviation = models.CharField(
+        max_length=50, null=True, blank=True,
+        help_text='A short form of the category e.g ANC for antenatal')
+    parent = models.ForeignKey(
+        'self', null=True, blank=True,
+        help_text='The parent category under which the category falls',
+        related_name='sub_categories', on_delete=models.PROTECT)
+
+    def __str__(self):
+        return self.name
+
+    @property
+    def specialities_count(self):
+        return len(self.category_services.all())
+
+    class Meta(AbstractBase.Meta):
+        verbose_name_plural = 'specialities categories'
+
+
+
+@reversion.register(follow=['category'])
+@encoding.python_2_unicode_compatible
+class Speciality(SequenceMixin, AbstractBase):
+
+    """
+    Health specilities.
+    """
+    name = models.CharField(max_length=255, unique=True)
+    description = models.TextField(null=True, blank=True)
+    abbreviation = models.CharField(
+        max_length=50, null=True, blank=True,
+        help_text='A short form for the speciality'
+        )
+    category = models.ForeignKey(
+        SpecialityCategory,
+        on_delete=models.PROTECT,
+        help_text="The classification that the specialities lies in.",
+        related_name='category_specialities')
+    code = SequenceField(unique=True, editable=False)
+
+    def save(self, *args, **kwargs):
+        if not self.code:
+            self.code = self.generate_next_code_sequence()
+        super(Speciality, self).save(*args, **kwargs)
+
+    @property
+    def category_name(self):
+        return self.category.name
+
+    def __str__(self):
+        return self.name
+
+    class Meta(AbstractBase.Meta):
+        verbose_name_plural = 'specialities'
+
+
+@reversion.register(follow=['facility', 'speciality'])
+@encoding.python_2_unicode_compatible
+class FacilitySpecialist(AbstractBase):
+
+    """
+    A facility can have zero or more specialists.
+    """
+    facility = models.ForeignKey(
+        Facility, related_name='facility_specialists',
+        on_delete=models.PROTECT)
+
+    speciality = models.ForeignKey(Speciality, on_delete=models.PROTECT,)
+
+    count = models.IntegerField(
+        default=0, 
+        blank=True, 
+        help_text='The actual number of specialists for this speciality.')
+
+    @property
+    def speciality_name(self):
+            return self.speciality.name
+
+    def __str__(self):
+        return "{}: {}".format(self.facility, self.speciality)
+
+    def validate_unique_speciality(self):
+
+        if len(self.__class__.objects.filter(
+                speciality=self.speciality, facility=self.facility,
+                deleted=False)) == 1 and not self.deleted:
+            error = {
+                "speciality": [
+                    ("The speciality {} has already been added to the "
+                     "facility").format(self.speciality.name)]
+            }
+            raise ValidationError(error)
+
+    def clean(self, *args, **kwargs):
+        self.validate_unique_speciality()
