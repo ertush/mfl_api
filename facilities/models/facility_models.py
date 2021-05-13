@@ -1209,6 +1209,7 @@ class Facility(SequenceMixin, AbstractBase):
             }
             kmhfl_dhis2_ownership_mapping = {
                 "d45541f8-3b3d-475b-94f4-17741d468135": "aRxa6o8GqZN",
+                "afc4bcdb-fc22-4336-8958-d2df06fe90ad": "aRxa6o8GqZN",
                 "56937bed-ea04-4306-bdf9-86668eb570c7": "aRxa6o8GqZN",
                 "122f57a8-51ef-4a26-9024-4b34386485fd": "aRxa6o8GqZN",
                 "abda166b-5c02-44c8-8058-5e4112ef9f95": "eT1vvFVhLHc",
