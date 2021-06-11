@@ -290,11 +290,8 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
         if unit_uuid_status[1] == 'retrieved':
             r = requests.put(
                 settings.DHIS_ENDPOINT + "api/organisationUnits/" + new_chu_payload.pop('id'),
+                auth=(settings.DHIS_USERNAME, settings.DHIS_PASSWORD),
                 headers={
-                    "Authorization": "Bearer " +
-                                     json.loads(
-                                         dhisauth.session_store[dhisauth.oauth2_token_variable_name].replace("u", "")
-                                         .replace("'", '"'))["access_token"],
                     "Accept": "application/json"
                 },
                 json=new_chu_payload
@@ -304,10 +301,8 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
         else:
             r = requests.post(
                 settings.DHIS_ENDPOINT + "api/organisationUnits",
+                auth=(settings.DHIS_USERNAME, settings.DHIS_PASSWORD),
                 headers={
-                    "Authorization": "Bearer " +
-                                     json.loads(dhisauth.session_store[dhisauth.oauth2_token_variable_name].replace("u", "")
-                                                .replace("'", '"'))["access_token"],
                     "Accept": "application/json"
                 },
                 json=new_chu_payload
@@ -329,33 +324,26 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
 
     def push_chu_metadata(self, metadata_payload, chu_uid):
         # Keph Level
-        from facilities.models.facility_models import DhisAuth
         import requests
-        dhisauth = DhisAuth()
         r_keph = requests.post(
             settings.DHIS_ENDPOINT + "api/organisationUnitGroups/" + metadata_payload[
                 'keph'] + "/organisationUnits/" + chu_uid,
+            auth=(settings.DHIS_USERNAME, settings.DHIS_PASSWORD),
             headers={
-                "Authorization": "Bearer " +
-                                 json.loads(dhisauth.session_store[dhisauth.oauth2_token_variable_name].replace("u", "")
-                                            .replace("'", '"'))["access_token"],
                 "Accept": "application/json"
-            }
+            },
         )
         LOGGER.info('Metadata CUs pushed successfullly')
 
     def get_facility_dhis2_parent_id(self):
         from facilities.models.facility_models import DhisAuth
         import requests
-        dhisauth = DhisAuth()
-        headers={
-            "Authorization": "Bearer " + json.loads(dhisauth.session_store[dhisauth.oauth2_token_variable_name].replace("u", "")
-                .replace("'", '"'))["access_token"],
-            "Accept": "application/json"
-        }
         r = requests.get(
             settings.DHIS_ENDPOINT + "api/organisationUnits.json",
-            headers=headers,
+            auth=(settings.DHIS_USERNAME, settings.DHIS_PASSWORD),
+            headers={
+                "Accept": "application/json"
+            },
             params={
                 "query": self.facility.code,
                 "fields": "[id,name]",

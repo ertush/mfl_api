@@ -41,7 +41,7 @@ class DhisAuth(ApiAuthentication):
     type = models.CharField(max_length=255, default="DHIS2")
     session_store = SessionStore(session_key="dhis2_api_12904rs")
 
-    def set_interval(interval, times=-1):
+    def set_interval(self, interval, times=-1):
         # This will be the actual decorator,
         # with fixed interval and times parameter
         def outer_wrap(function):
@@ -111,12 +111,12 @@ class DhisAuth(ApiAuthentication):
     def generate_uuid_dhis(self):
         r_generate_orgunit_uid = requests.get(
             settings.DHIS_ENDPOINT + "api/system/uid.json",
+            auth=(settings.DHIS_USERNAME, settings.DHIS_PASSWORD),
             headers={
-                "Authorization": "Bearer " +
-                                 json.loads(self.session_store[self.oauth2_token_variable_name].replace("u", "")
-                                            .replace("'", '"'))["access_token"],
+                # "Authorization": "Bearer " + json.loads(self.session_store[self.oauth2_token_variable_name].replace("u", "")
+                #                                         .replace("'", '"'))["access_token"],
                 "Accept": "application/json"
-            }
+            },
         )
         print("New OrgUnit UID Generated-", r_generate_orgunit_uid.json()['codes'][0])
         return r_generate_orgunit_uid.json()['code'][0]
@@ -124,10 +124,8 @@ class DhisAuth(ApiAuthentication):
     def get_org_unit_id(self, code):
         r = requests.get(
             settings.DHIS_ENDPOINT + "api/organisationUnits.json",
+            auth=(settings.DHIS_USERNAME, settings.DHIS_PASSWORD),
             headers={
-                "Authorization": "Bearer " +
-                                 json.loads(self.session_store[self.oauth2_token_variable_name].replace("u", "")
-                                            .replace("'", '"'))["access_token"],
                 "Accept": "application/json"
             },
             params={
@@ -147,12 +145,10 @@ class DhisAuth(ApiAuthentication):
         else:
             r_generate_orgunit_uid = requests.get(
                 settings.DHIS_ENDPOINT + "api/system/uid.json",
+                auth=(settings.DHIS_USERNAME, settings.DHIS_PASSWORD),
                 headers={
-                    "Authorization": "Bearer " +
-                                     json.loads(self.session_store[self.oauth2_token_variable_name].replace("u", "")
-                                                .replace("'", '"'))["access_token"],
                     "Accept": "application/json"
-                }
+                },
             )
             # print("New OrgUnit UID Generated-", r_generate_orgunit_uid.json()['codes'][0])
             return [r_generate_orgunit_uid.json()['codes'][0], 'generated']
@@ -165,14 +161,12 @@ class DhisAuth(ApiAuthentication):
 
     def get_parent_id(self, ward_id):
         print self.session_store[self.oauth2_token_variable_name]
-        headers={
-            "Authorization": "Bearer " + json.loads(self.session_store[self.oauth2_token_variable_name].replace("u", "")
-                .replace("'", '"'))["access_token"],
-            "Accept": "application/json"
-        }
         r = requests.get(
             settings.DHIS_ENDPOINT+"api/organisationUnits.json",
-            headers=headers,
+            auth=(settings.DHIS_USERNAME, settings.DHIS_PASSWORD),
+            headers={
+                "Accept": "application/json"
+            },
             params={
                 "query": "KE_Ward_" + str(ward_id),
                 "fields": "[id,name]",
@@ -195,9 +189,10 @@ class DhisAuth(ApiAuthentication):
         if new_facility:
             r = requests.post(
                 settings.DHIS_ENDPOINT+"api/organisationUnits",
+                auth=(settings.DHIS_USERNAME, settings.DHIS_PASSWORD),
                 headers={
-                    "Authorization": "Bearer " + json.loads(self.session_store[self.oauth2_token_variable_name].replace("u", "")
-                                                            .replace("'", '"'))["access_token"],
+                    # "Authorization": "Bearer " + json.loads(self.session_store[self.oauth2_token_variable_name].replace("u", "")
+                    #                                         .replace("'", '"'))["access_token"],
                     "Accept": "application/json"
                 },
                 json=new_facility_payload
@@ -206,10 +201,8 @@ class DhisAuth(ApiAuthentication):
         else:
             r = requests.put(
                 settings.DHIS_ENDPOINT + "api/organisationUnits/" + new_facility_payload.pop('id'),
+                auth=(settings.DHIS_USERNAME, settings.DHIS_PASSWORD),
                 headers={
-                    "Authorization": "Bearer " +
-                                     json.loads(self.session_store[self.oauth2_token_variable_name].replace("u", "")
-                                                .replace("'", '"'))["access_token"],
                     "Accept": "application/json"
                 },
                 json=new_facility_payload
@@ -229,12 +222,10 @@ class DhisAuth(ApiAuthentication):
         # Keph Level
         r_keph = requests.post(
             settings.DHIS_ENDPOINT + "api/organisationUnitGroups/" + metadata_payload['keph'] + "/organisationUnits/" + facility_uid,
+            auth=(settings.DHIS_USERNAME, settings.DHIS_PASSWORD),
             headers={
-                "Authorization": "Bearer " +
-                                 json.loads(self.session_store[self.oauth2_token_variable_name].replace("u", "")
-                                            .replace("'", '"'))["access_token"],
                 "Accept": "application/json"
-            }
+            },
         )
         # print r_keph.json()
         # if r_keph.json()["status"] != "OK":
@@ -245,12 +236,10 @@ class DhisAuth(ApiAuthentication):
         #     )
         r_facility_type = requests.post(
             settings.DHIS_ENDPOINT + "api/organisationUnitGroups/" + metadata_payload['facility_type'] + "/organisationUnits/" + facility_uid,
+            auth=(settings.DHIS_USERNAME, settings.DHIS_PASSWORD),
             headers={
-                "Authorization": "Bearer " +
-                                 json.loads(self.session_store[self.oauth2_token_variable_name].replace("u", "")
-                                            .replace("'", '"'))["access_token"],
                 "Accept": "application/json"
-            }
+            },
         )
         # if r_facility_type.json()["status"] != "OK":
         #     raise ValidationError(
@@ -261,12 +250,10 @@ class DhisAuth(ApiAuthentication):
         r_ownership = requests.post(
             settings.DHIS_ENDPOINT + "api/organisationUnitGroups/" + metadata_payload[
                 'ownership'] + "/organisationUnits/" + facility_uid,
+            auth=(settings.DHIS_USERNAME, settings.DHIS_PASSWORD),
             headers={
-                "Authorization": "Bearer " +
-                                 json.loads(self.session_store[self.oauth2_token_variable_name].replace("u", "")
-                                            .replace("'", '"'))["access_token"],
                 "Accept": "application/json"
-            }
+            },
         )
         # if r_ownership.json()["status"] != "OK":
         #     raise ValidationError(
@@ -278,10 +265,8 @@ class DhisAuth(ApiAuthentication):
     def push_facility_updates_to_dhis2(self, org_unit_id, facility_updates_payload):
         r = requests.put(
             settings.DHIS_ENDPOINT + "api/organisationUnits/"+org_unit_id,
+            auth=(settings.DHIS_USERNAME, settings.DHIS_PASSWORD),
             headers={
-                "Authorization": "Bearer " +
-                                 json.loads(self.session_store[self.oauth2_token_variable_name].replace("u", "")
-                                            .replace("'", '"'))["access_token"],
                 "Accept": "application/json"
             },
             json=facility_updates_payload
@@ -1226,7 +1211,8 @@ class Facility(SequenceMixin, AbstractBase):
                 "2c62704b-8072-470c-a7e6-259384f364f7": "eT1vvFVhLHc",
                 "cfe25392-4f85-49ea-b180-35388f47ea9e": "eT1vvFVhLHc",
                 "93c0fe24-3f12-4be2-b5ff-027e0bd02274": "AaAF5EmS1fk",
-                "c3bab995-0c29-433c-b39c-6b86d6084f5f": "AaAF5EmS1fk"
+                "c3bab995-0c29-433c-b39c-6b86d6084f5f": "AaAF5EmS1fk",
+                "6cb92834-107c-404a-91fa-cf60b1eb5333": "aRxa6o8GqZN",
             }
             kmhfl_dhis2_keph_mapping = {
                 "ed23da85-4c92-45af-80fa-9b2123769f49": "FpY8vg4gh46",
