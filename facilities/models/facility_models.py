@@ -68,7 +68,7 @@ class DhisAuth(ApiAuthentication):
 
         return outer_wrap
 
-    @set_interval(30.0)
+    @set_interval(30.0, -1)
     def refresh_oauth2_token(self):
         r = requests.post(
             settings.DHIS_ENDPOINT+"uaa/oauth/token",
