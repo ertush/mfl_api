@@ -102,13 +102,13 @@ class FacilitySpecialistListView(generics.ListCreateAPIView):
     queryset = FacilitySpecialist.objects.all()
     serializer_class = FacilitySpecialistSerializer
     filter_class = FacilitySpecialistFilter
-    ordering_fields = ('facility', 'service')
+    ordering_fields = ('facility', 'created')
 
 
 class FacilitySpecialistDetailView(
         AuditableDetailViewMixin, CustomRetrieveUpdateDestroyView):
     """
-    Retrieves a particular facility service detail
+    Retrieves a particular facility specialist detail
     """
     queryset = FacilitySpecialist.objects.all()
     serializer_class = FacilitySpecialistSerializer
@@ -143,7 +143,7 @@ class InfrastructureCategoryDetailView(
 
 class InfrastructureListView(generics.ListCreateAPIView):
     """
-    Lists and creates specialities.
+    Lists and creates infrastructure.
 
     category -- Infrastructure category pk
     Created --  Date the record was Created
@@ -162,7 +162,7 @@ class InfrastructureListView(generics.ListCreateAPIView):
 class InfrastructureDetailView(
         AuditableDetailViewMixin, CustomRetrieveUpdateDestroyView):
     """
-    Retrieves a particular speciality detail
+    Retrieves a particular infrastructure detail
     """
     queryset = Infrastructure.objects.all()
     serializer_class = InfrastructureSerializer
@@ -170,7 +170,7 @@ class InfrastructureDetailView(
 
 class FacilityInfrastructureListView(generics.ListCreateAPIView):
     """
-    Lists and creates links between facilities and specialists.
+    Lists and creates links between facilities and infrastructure.
 
     facility -- A facility's pk
     Created --  Date the record was Created
@@ -183,13 +183,13 @@ class FacilityInfrastructureListView(generics.ListCreateAPIView):
     queryset = FacilityInfrastructure.objects.all()
     serializer_class = FacilityInfrastructureSerializer
     filter_class = FacilityInfrastructureFilter
-    ordering_fields = ('facility', 'service')
+    ordering_fields = ('facility', 'created')
 
 
 class FacilityInfrastructureDetailView(
         AuditableDetailViewMixin, CustomRetrieveUpdateDestroyView):
     """
-    Retrieves a particular facility service detail
+    Retrieves a particular facility infrastructure detail
     """
     queryset = FacilityInfrastructure.objects.all()
     serializer_class = FacilityInfrastructureSerializer

@@ -574,7 +574,7 @@ class InfrastructureFilter(CommonFieldsFilterset):
 
 class FacilityInfrastructureFilter(CommonFieldsFilterset):
     facility = django_filters.AllValuesFilter(lookup_expr='exact')
-    Infrastructure = django_filters.AllValuesFilter(lookup_expr='exact')
+    infrastructure = django_filters.AllValuesFilter(lookup_expr='exact')
     is_confirmed = django_filters.TypedChoiceFilter(
         choices=BOOLEAN_CHOICES, coerce=strtobool
     )

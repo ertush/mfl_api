@@ -56,7 +56,7 @@ class InfrastructureCategory(AbstractBase):
 class Infrastructure(SequenceMixin, AbstractBase):
 
     """
-    Health specilities.
+    Health infrastructure.
     """
     name = models.CharField(max_length=255, unique=True)
     description = models.TextField(null=True, blank=True)
@@ -107,13 +107,13 @@ class FacilityInfrastructure(AbstractBase):
         help_text='True if the listed infrastructure is present.')
 
     @property
-    def speciality_name(self):
+    def infrastructure_name(self):
             return self.infrastructure.name
 
     def __str__(self):
         return "{}: {}".format(self.facility, self.infrastructure)
 
-    def validate_unique_speciality(self):
+    def validate_unique_infrastructure(self):
 
         if len(self.__class__.objects.filter(
                 infrastructure=self.infrastructure, facility=self.facility,
@@ -126,4 +126,4 @@ class FacilityInfrastructure(AbstractBase):
             raise ValidationError(error)
 
     def clean(self, *args, **kwargs):
-        self.validate_unique_speciality()
+        self.validate_unique_infrastructure()
