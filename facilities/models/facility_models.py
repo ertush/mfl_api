@@ -1310,6 +1310,14 @@ class Facility(SequenceMixin, AbstractBase):
             in_complete_data.append('services')
         return ", ".join(in_complete_data)
 
+        if len(self.facility_infrastructure.all()) == 0:
+            in_complete_data.append('infrastructure')
+        return ", ".join(in_complete_data)
+
+        if len(self.facility_humanresources.all()) == 0:
+            in_complete_data.append('humanresources')
+        return ", ".join(in_complete_data)
+
     @property
     def is_complete(self):
         return self.in_complete_details == ""
@@ -1498,6 +1506,38 @@ class Facility(SequenceMixin, AbstractBase):
                 "contact_type_name": contact.contact.contact_type.name
             }
             for contact in contacts
+        ]
+
+    @property
+    def get_facility_infrastructure(self):
+        """For the same purpose as the get_facility_contacts above"""
+        infra = self.facility_infrastructure.all()
+        return [
+            {
+                "id": infra.id,
+                "infrastructure_id": infra.id,
+                "name": infra.name,
+                "infrastructure_name": infra.name,
+                "infrastructure_category": infra.category.id,
+                "infrastructure_category_name": str(infra.category.name),
+            }
+            for inf in infra
+        ]
+
+    @property
+    def get_facility_humanresources(self):
+        """For the same purpose as the get_facility_infrastructure above"""
+        hr = self.facility_humanresources.all()
+        return [
+            {
+                "id": hr.id,
+                "speciality_id": hr.id,
+                "name": hr.name,
+                "speciality_name": hr.name,
+                "speciality_category": hr.category.id,
+                "speciality_category_name": str(hr.category.name),
+            }
+            for h_r in hr
         ]
 
     @property
