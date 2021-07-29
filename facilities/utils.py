@@ -15,6 +15,8 @@ from common.serializers import ContactSerializer
 from facilities.models import (
     FacilityContact,
     Service,
+    Infrastructure,
+    Speciality,
     FacilityDepartment,
     Facility,
     FacilityOfficer,
@@ -47,6 +49,34 @@ def _validate_services(services):
         except (ValueError, TypeError, KeyError, Service.DoesNotExist):
             errors.append("service with id {} not found".format(
                 service.get('service')))
+
+    return errors
+
+def _validate_infrastructure(infrastructure):
+    errors = []
+    for infra in infrastructure:
+        if not _is_valid_uuid(infra.get('infrastructure', None)):
+            errors.append("Infrastructure has a badly formed uuid")
+            return errors
+        try:
+            Infrastructure.objects.get(id=infra['infrastructure'])
+        except (ValueError, TypeError, KeyError, Infrastructure.DoesNotExist):
+            errors.append("infrastructure with id {} not found".format(
+                infra.get('infrastructure')))
+
+    return errors
+
+def _validate_humanresources(humanresources):
+    errors = []
+    for hr in humanresources:
+        if not _is_valid_uuid(hr.get('speciality', None)):
+            errors.append( "hr" ) #"Specialty has a badly formed uuid")
+            return errors
+        try:
+            Speciality.objects.get(id=hr['speciality'])
+        except (ValueError, TypeError, KeyError, Speciality.DoesNotExist):
+            errors.append("speciality with id {} not found".format(
+                hr.get('speciality')))
 
     return errors
 
@@ -158,6 +188,26 @@ def create_facility_services(instance, service_data, validated_data):
     f_service = FacilityServiceSerializer(data=service_data)
     f_service.save() if f_service.is_valid() else \
         inlining_errors.append(json.dumps(f_service.errors))
+
+def create_facility_infrastructure(instance, infrastructure_data, validated_data):
+    from facilities.serializers import FacilityInfrastructureSerializer
+
+    infrastructure_data['facility'] = instance.id
+    infrastructure_data = inject_audit_fields(
+        infrastructure_data, validated_data)
+    f_infrastructure = FacilityInfrastructureSerializer(data=infrastructure_data)
+    f_infrastructure.save() if f_infrastructure.is_valid() else \
+        inlining_errors.append(json.dumps(f_infrastructure.errors))
+
+def create_facility_humanresources(instance, humanresource_data, validated_data):
+    from facilities.serializers import FacilitySpecialistSerializer
+
+    humanresource_data['facility'] = instance.id
+    humanresource_data = inject_audit_fields(
+        humanresource_data, validated_data)
+    f_humanresource = FacilitySpecialistSerializer(data=humanresource_data)
+    f_humanresource.save() if f_humanresource.is_valid() else \
+        inlining_errors.append(json.dumps(f_humanresource.errors))
 
 
 class CreateFacilityOfficerMixin(object):

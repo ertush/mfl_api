@@ -29,7 +29,13 @@ from ..models import (
     JobTitle,
     FacilityDepartment,
     RegulatorSync,
-    FacilityExportExcelMaterialView
+    FacilityExportExcelMaterialView,
+    Speciality,
+    SpecialityCategory,
+    FacilitySpecialist,
+    InfrastructureCategory,
+    Infrastructure,
+    FacilityInfrastructure
 )
 
 from ..serializers import (
@@ -47,7 +53,13 @@ from ..serializers import (
     CreateFacilityOfficerMixin,
     FacilityLevelChangeReasonSerializer,
     RegulatorSyncSerializer,
-    FacilityExportExcelMaterialViewSerializer
+    FacilityExportExcelMaterialViewSerializer,
+    SpecialitySerializer,
+    SpecialityCategorySerializer,
+    FacilitySpecialistSerializer,
+    InfrastructureCategorySerializer,
+    InfrastructureSerializer,
+    FacilityInfrastructureSerializer,
 )
 
 from ..filters import (
@@ -62,12 +74,20 @@ from ..filters import (
     OptionGroupFilter,
     FacilityLevelChangeReasonFilter,
     RegulatorSyncFilter,
-    FacilityExportExcelMaterialViewFilter
+    FacilityExportExcelMaterialViewFilter,
+    SpecialityFilter,
+    SpecialityCategoryFilter,
+    FacilitySpecialistFilter,
+    InfrastructureCategoryFilter,
+    InfrastructureFilter,
+    FacilityInfrastructureFilter
 
 )
 
 from ..utils import (
     _validate_services,
+    _validate_humanresources,
+    _validate_infrastructure,
     _validate_units,
     _validate_contacts,
     _officer_data_is_valid
@@ -467,6 +487,40 @@ class FacilityDetailView(
         else:
             update.services = json.dumps(services)
 
+    def buffer_humanresources(self, update, humanresources):
+        """
+        Prepares the new facility humanresources to be saved in the facility
+        updates model
+        """
+        if update.humanresources and update.humanresources != 'null':
+            proposed_humanresources = json.loads(update.humanresources)
+
+            # remove duplicates
+            updated_humanresources = [
+                hr for hr in humanresources if hr not in
+                proposed_humanresources
+            ]
+            update.humanresources = json.dumps(proposed_humanresources + updated_humanresources)
+        else:
+            update.humanresources = json.dumps(humanresources)
+
+    def buffer_infrastructure(self, update, infrastructure):
+        """
+        Prepares the new facility infrastructure to be saved in the facility
+        updates model
+        """
+        if update.infrastructure and update.infrastructure != 'null':
+            proposed_infrastructure = json.loads(update.infrastructure)
+
+            # remove duplicates
+            updated_infrastructure = [
+                infra for infra in infrastructure if infra not in
+                proposed_infrastructure
+            ]
+            update.infrastructure = json.dumps(proposed_infrastructure + updated_infrastructure)
+        else:
+            update.infrastructure = json.dumps(infrastructure)
+
     def buffer_units(self, update, units):
         """
         Prepares the new facility units(departments) to be saved in the
@@ -482,6 +536,28 @@ class FacilityDetailView(
             update.units = json.dumps(proposed_units + updated_units)
         else:
             update.units = json.dumps(units)
+
+    def populate_infrastructure_name(self, infrastructures):
+        """
+        Resolves and updates the infrastructure names and option display_name
+        """
+        resolved_ids = []
+        for infrastructure in infrastructures:
+            infrastructure_id = infrastructure.get('infrastructure')
+
+            if infrastructure_id in resolved_ids:
+                continue
+
+            else:
+                resolved_ids.append(infrastructure_id)
+
+                obj = Infrastructure.objects.get(id=infrastructure_id)
+                infrastructure['name'] = obj.name
+                option = infrastructure.get('option', None)
+                if option:
+                    infrastructure['display_name'] = Option.objects.get(
+                        id=option).display_text
+        return infrastructures
 
     def populate_service_name(self, services):
         """
@@ -504,6 +580,28 @@ class FacilityDetailView(
                     service['display_name'] = Option.objects.get(
                         id=option).display_text
         return services
+
+    def populate_humanresources_name(self, humanresources):
+        """
+        Resolves and updates the humanresources names and option display_name
+        """
+        resolved_ids = []
+        for hr in humanresources:
+            humanresources_id = hr.get('speciality')
+
+            if humanresources_id in resolved_ids:
+                continue
+
+            else:
+                resolved_ids.append(humanresources_id)
+
+                obj = Speciality.objects.get(id=humanresources_id)
+                hr['name'] = obj.name
+                option = hr.get('option', None)
+                if option:
+                    hr['display_name'] = Option.objects.get(
+                        id=option).display_text
+        return humanresources
 
     def populate_contact_type_names(self, contacts):
         """
@@ -565,22 +663,29 @@ class FacilityDetailView(
         return verdict
 
     def something_changed(
-            self, services, contacts, units, officer_in_charge, instance):
+            self, services, humanresources, infrastructure, contacts, units, officer_in_charge, instance):
 
-        if (services == [] and contacts == [] and units == [] and not
+        if (services == [] and humanresources == [] and infrastructure == [] and contacts == [] and units == [] and not
                 self.should_buffer_officer_incharge(
                     officer_in_charge, instance)):
             return False
         return True
 
-    def _validate_payload(self, services, contacts, units, officer_in_charge):
+    def _validate_payload(self, services, humanresources, infrastructure, contacts, units, officer_in_charge):
         """
         Validates the updated attributes before  buffering them
         """
         service_errors = _validate_services(services)
-
         if service_errors:
             self.validation_errors.update({"services": service_errors})
+
+        hr_errors = _validate_humanresources(humanresources)
+        if hr_errors:
+            self.validation_errors.update({"humanresources": hr_errors})
+        
+        infra_errors = _validate_infrastructure(infrastructure)
+        if infra_errors:
+            self.validation_errors.update({"infrastructure": infra_errors})
 
         contact_errors = _validate_contacts(contacts)
         if contact_errors:
@@ -598,18 +703,20 @@ class FacilityDetailView(
 
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', False)
-        user_id = request.user
-        del user_id
+        # user_id = request.user
+        # del user_id
         request.data['updated_by_id'] = request.user.id
         instance = self.get_object()
         self.validation_errors = {}
 
         parser_classes = (MultiPartParser)
 
+        humanresources = request.data.pop('specialities', [])
+        infrastructure = request.data.pop('infrastructure', [])
         services = request.data.pop('services', [])
         contacts = request.data.pop('contacts', [])
-
         units = request.data.pop('units', [])
+
         officer_in_charge = request.data.pop(
             'officer_in_charge', {})
 
@@ -619,13 +726,13 @@ class FacilityDetailView(
         if officer_in_charge:
             officer_in_charge['facility_id'] = str(instance.id)
 
-        self. _validate_payload(services, contacts, units, officer_in_charge)
+        self. _validate_payload(services, humanresources, infrastructure, contacts, units, officer_in_charge)
         if any(self.validation_errors):
             return Response(
                 data=self.validation_errors,
                 status=status.HTTP_400_BAD_REQUEST)
         if instance.approved and self.something_changed(
-                services, contacts, units, officer_in_charge, instance):
+                services, humanresources, infrastructure, contacts, units, officer_in_charge, instance):
             try:
                 update = FacilityUpdates.objects.filter(
                     facility=instance, cancelled=False, approved=False)[0]
@@ -634,7 +741,11 @@ class FacilityDetailView(
                     facility=instance, created_by=request.user,
                     updated_by=request.user)
             services = self.populate_service_name(services)
+            hr = self.populate_humanresources_name(humanresources)
+            infra = self.populate_infrastructure_name(infrastructure)
             self.buffer_services(update, services)
+            self.buffer_humanresources(update, hr)
+            self.buffer_infrastructure(update, infra)
 
             contacts = self.populate_contact_type_names(contacts)
             self.buffer_contacts(update, contacts)
@@ -656,8 +767,10 @@ class FacilityDetailView(
             update.save()
 
         else:
-            request.data['services'] = services
+            request.data['specialities'] = humanresources
+            request.data['infrastructure'] = infrastructure
             request.data['contacts'] = contacts
+            request.data['services'] = services
             request.data['units'] = units
             if officer_in_charge != {}:
                 request.data['officer_in_charge'] = officer_in_charge
@@ -808,3 +921,168 @@ class RegulatorSyncUpdateView(generics.GenericAPIView):
         sync_obj.update_facility(facility)
         serializer = self.get_serializer(sync_obj)
         return Response(serializer.data)
+
+
+
+# -------------------
+
+class SpecialityCategoryListView(generics.ListCreateAPIView):
+    """
+    Lists and creates service categories.
+
+    Created ---  Date the record was Created
+    Updated -- Date the record was Updated
+    Created_by -- User who created the record
+    Updated_by -- User who updated the record
+    active  -- Boolean is the record active
+    deleted -- Boolean is the record deleted
+    """
+    queryset = SpecialityCategory.objects.all()
+    serializer_class = SpecialityCategorySerializer
+    filter_class = SpecialityCategoryFilter
+    ordering_fields = ('name', 'description', 'abbreviation')
+
+
+class SpecialityCategoryDetailView(
+        AuditableDetailViewMixin, CustomRetrieveUpdateDestroyView):
+    """
+    Retrieves a particular speciality category.
+    """
+    queryset = SpecialityCategory.objects.all()
+    serializer_class = SpecialityCategorySerializer
+
+
+class SpecialityListView(generics.ListCreateAPIView):
+    """
+    Lists and creates specialities.
+
+    category -- Speciality category pk
+    Created --  Date the record was Created
+    Updated -- Date the record was Updated
+    Created_by -- User who created the record
+    Updated_by -- User who updated the record
+    active  -- Boolean is the record active
+    deleted -- Boolean is the record deleted
+    """
+    queryset = Speciality.objects.all()
+    serializer_class = SpecialitySerializer
+    filter_class = SpecialityFilter
+    ordering_fields = ('created', 'name')
+
+
+class SpecialityDetailView(
+        AuditableDetailViewMixin, CustomRetrieveUpdateDestroyView):
+    """
+    Retrieves a particular speciality detail
+    """
+    queryset = Speciality.objects.all()
+    serializer_class = SpecialitySerializer
+
+
+class FacilitySpecialistListView(generics.ListCreateAPIView):
+    """
+    Lists and creates links between facilities and specialists.
+
+    facility -- A facility's pk
+    Created --  Date the record was Created
+    Updated -- Date the record was Updated
+    Created_by -- User who created the record
+    Updated_by -- User who updated the record
+    active  -- Boolean is the record active
+    deleted -- Boolean is the record deleted
+    """
+    queryset = FacilitySpecialist.objects.all()
+    serializer_class = FacilitySpecialistSerializer
+    filter_class = FacilitySpecialistFilter
+    ordering_fields = ('facility', 'created')
+
+
+class FacilitySpecialistDetailView(
+        AuditableDetailViewMixin, CustomRetrieveUpdateDestroyView):
+    """
+    Retrieves a particular facility specialist detail
+    """
+    queryset = FacilitySpecialist.objects.all()
+    serializer_class = FacilitySpecialistSerializer
+
+
+# Infrustructure
+class InfrastructureCategoryListView(generics.ListCreateAPIView):
+    """
+    Lists and creates service categories.
+
+    Created ---  Date the record was Created
+    Updated -- Date the record was Updated
+    Created_by -- User who created the record
+    Updated_by -- User who updated the record
+    active  -- Boolean is the record active
+    deleted -- Boolean is the record deleted
+    """
+    queryset = InfrastructureCategory.objects.all()
+    serializer_class = InfrastructureCategorySerializer
+    filter_class = InfrastructureCategoryFilter
+    ordering_fields = ('name', 'description', 'abbreviation')
+
+
+class InfrastructureCategoryDetailView(
+        AuditableDetailViewMixin, CustomRetrieveUpdateDestroyView):
+    """
+    Retrieves a particular speciality category.
+    """
+    queryset = InfrastructureCategory.objects.all()
+    serializer_class = InfrastructureCategorySerializer
+
+
+class InfrastructureListView(generics.ListCreateAPIView):
+    """
+    Lists and creates infrastructure.
+
+    category -- Infrastructure category pk
+    Created --  Date the record was Created
+    Updated -- Date the record was Updated
+    Created_by -- User who created the record
+    Updated_by -- User who updated the record
+    active  -- Boolean is the record active
+    deleted -- Boolean is the record deleted
+    """
+    queryset = Infrastructure.objects.all()
+    serializer_class = InfrastructureSerializer
+    filter_class = InfrastructureFilter
+    ordering_fields = ('created', 'name')
+
+
+class InfrastructureDetailView(
+        AuditableDetailViewMixin, CustomRetrieveUpdateDestroyView):
+    """
+    Retrieves a particular infrastructure detail
+    """
+    queryset = Infrastructure.objects.all()
+    serializer_class = InfrastructureSerializer
+
+
+class FacilityInfrastructureListView(generics.ListCreateAPIView):
+    """
+    Lists and creates links between facilities and infrastructure.
+
+    facility -- A facility's pk
+    Created --  Date the record was Created
+    Updated -- Date the record was Updated
+    Created_by -- User who created the record
+    Updated_by -- User who updated the record
+    active  -- Boolean is the record active
+    deleted -- Boolean is the record deleted
+    """
+    queryset = FacilityInfrastructure.objects.all()
+    serializer_class = FacilityInfrastructureSerializer
+    filter_class = FacilityInfrastructureFilter
+    ordering_fields = ('facility', 'created')
+
+
+class FacilityInfrastructureDetailView(
+        AuditableDetailViewMixin, CustomRetrieveUpdateDestroyView):
+    """
+    Retrieves a particular facility infrastructure detail
+    """
+    queryset = FacilityInfrastructure.objects.all()
+    serializer_class = FacilityInfrastructureSerializer
+# -------------------
