@@ -773,6 +773,8 @@ class FacilityDetailSerializer(FacilitySerializer):
         contacts = self.initial_data.pop('contacts', [])
         units = self.initial_data.pop('units', [])
 
+        infrastructure = self.initial_data.pop('infrastructure', [])
+        humanresources = self.initial_data.pop('specialities', [])
         services = self.initial_data.pop('services', [])
         officer_in_charge = self.initial_data.pop('officer_in_charge', None)
 
