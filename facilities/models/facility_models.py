@@ -2934,6 +2934,11 @@ class FacilityInfrastructure(AbstractBase):
         Infrastructure, 
         on_delete=models.PROTECT,)
 
+    count = models.IntegerField(
+        default=0, 
+        blank=True, 
+        help_text='The actual number of infrastructure items in a facility.')
+
     present = models.BooleanField(
         default=False, 
         help_text='True if the listed infrastructure is present.')
