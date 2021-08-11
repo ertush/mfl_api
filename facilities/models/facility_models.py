@@ -1018,6 +1018,16 @@ class Facility(SequenceMixin, AbstractBase):
         default=0,
         help_text="The number of High Dependency Units (HDU) beds"
         " that a facility has e.g 0")
+    # <Additions>
+    number_of_maternity_beds = models.PositiveIntegerField(
+        default=0,
+        help_text="The number of maternity beds"
+        " that a facility has e.g 0")
+    number_of_isolation_beds = models.PositiveIntegerField(
+        default=0,
+        help_text="The number of isolation beds"
+        " that a facility has e.g 0")
+    # </Additions>
     number_of_general_theatres = models.PositiveIntegerField(
         default=0,
         help_text="The number of general theatres "
@@ -1146,6 +1156,15 @@ class Facility(SequenceMixin, AbstractBase):
         RegulationStatus, null=True, blank=True,
         on_delete=models.PROTECT,
         help_text='The regulatory status of the hospital')
+    reporting_in_dhis = models.NullBooleanField(
+        blank=True, null=True,
+        help_text='A flag to indicate whether facility should have reporting in dhis')
+    admitting_maternity_only = models.NullBooleanField(
+        blank=True, null=True,
+        help_text='A flag to indicate whether facility admits only maternity patients')
+    admitting_maternity_general = models.NullBooleanField(
+        blank=True, null=True,
+        help_text='A flag to indicate whether facility admits both maternity & general casualty patients')
     reporting_in_dhis = models.NullBooleanField(
         blank=True, null=True,
         help_text='A flag to indicate whether facility should have reporting in dhis')
