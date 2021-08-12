@@ -2915,10 +2915,13 @@ class Infrastructure(SequenceMixin, AbstractBase):
         max_length=50, null=True, blank=True,
         help_text='A short form for the infrastructure'
         )
+    numbers = models.NullBooleanField(
+        blank=True, null=True, default=True,
+        help_text='A flag to indicate whether an infrastructure item can have count/numbers tracked ')
     category = models.ForeignKey(
         InfrastructureCategory,
         on_delete=models.PROTECT,
-        help_text="The classification that the specialities lies in.",
+        help_text="The classification that the infrastructure item lies in.",
         related_name='category_infrastructure')
     code = SequenceField(unique=True, editable=False)
 
