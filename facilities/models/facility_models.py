@@ -1070,6 +1070,9 @@ class Facility(SequenceMixin, AbstractBase):
         help_text="Indicates whether the facility"
         "has been approved to operate, is operating, is temporarily"
         "non-operational, or is closed down")
+    accredited_lab_iso_15189 = models.BooleanField(
+        default=False,
+        help_text="Indicate if facility is accredited Lab ISO 15189")
     ward = models.ForeignKey(
         Ward, null=True, blank=True,
         on_delete=models.PROTECT,
