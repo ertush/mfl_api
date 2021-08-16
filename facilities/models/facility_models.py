@@ -1,4 +1,5 @@
 from __future__ import division
+# from facilities.models.infrastructure import FacilityInfrastructure
 
 import reversion
 import json
@@ -68,7 +69,7 @@ class DhisAuth(ApiAuthentication):
 
         return outer_wrap
 
-    @set_interval(30.0)
+    @set_interval(30.0, -1)
     def refresh_oauth2_token(self):
         r = requests.post(
             settings.DHIS_ENDPOINT+"uaa/oauth/token",
@@ -1017,6 +1018,16 @@ class Facility(SequenceMixin, AbstractBase):
         default=0,
         help_text="The number of High Dependency Units (HDU) beds"
         " that a facility has e.g 0")
+    # <Additions>
+    number_of_maternity_beds = models.PositiveIntegerField(
+        default=0,
+        help_text="The number of maternity beds"
+        " that a facility has e.g 0")
+    number_of_isolation_beds = models.PositiveIntegerField(
+        default=0,
+        help_text="The number of isolation beds"
+        " that a facility has e.g 0")
+    # </Additions>
     number_of_general_theatres = models.PositiveIntegerField(
         default=0,
         help_text="The number of general theatres "
@@ -1059,6 +1070,9 @@ class Facility(SequenceMixin, AbstractBase):
         help_text="Indicates whether the facility"
         "has been approved to operate, is operating, is temporarily"
         "non-operational, or is closed down")
+    accredited_lab_iso_15189 = models.BooleanField(
+        default=False,
+        help_text="Indicate if facility is accredited Lab ISO 15189")
     ward = models.ForeignKey(
         Ward, null=True, blank=True,
         on_delete=models.PROTECT,
@@ -1145,6 +1159,15 @@ class Facility(SequenceMixin, AbstractBase):
         RegulationStatus, null=True, blank=True,
         on_delete=models.PROTECT,
         help_text='The regulatory status of the hospital')
+    reporting_in_dhis = models.NullBooleanField(
+        blank=True, null=True,
+        help_text='A flag to indicate whether facility should have reporting in dhis')
+    admitting_maternity_only = models.NullBooleanField(
+        blank=True, null=True,
+        help_text='A flag to indicate whether facility admits only maternity patients')
+    admitting_maternity_general = models.NullBooleanField(
+        blank=True, null=True,
+        help_text='A flag to indicate whether facility admits both maternity & general casualty patients')
     reporting_in_dhis = models.NullBooleanField(
         blank=True, null=True,
         help_text='A flag to indicate whether facility should have reporting in dhis')
@@ -1307,6 +1330,14 @@ class Facility(SequenceMixin, AbstractBase):
 
         if len(self.facility_services.all()) == 0:
             in_complete_data.append('services')
+        return ", ".join(in_complete_data)
+
+        if len(self.facility_infrastructure.all()) == 0:
+            in_complete_data.append('infrastructure')
+        return ", ".join(in_complete_data)
+
+        if len(self.facility_humanresources.all()) == 0:
+            in_complete_data.append('humanresources')
         return ", ".join(in_complete_data)
 
     @property
@@ -1497,6 +1528,38 @@ class Facility(SequenceMixin, AbstractBase):
                 "contact_type_name": contact.contact.contact_type.name
             }
             for contact in contacts
+        ]
+
+    @property
+    def get_facility_infrastructure(self):
+        """For the same purpose as the get_facility_contacts above"""
+        infra = self.facility_infrastructure.all()
+        return [
+            {
+                "id": infra.id,
+                "infrastructure_id": infra.id,
+                "name": infra.name,
+                "infrastructure_name": infra.name,
+                "infrastructure_category": infra.category.id,
+                "infrastructure_category_name": str(infra.category.name),
+            }
+            for inf in infra
+        ]
+
+    @property
+    def get_facility_humanresources(self):
+        """For the same purpose as the get_facility_infrastructure above"""
+        hr = self.facility_humanresources.all()
+        return [
+            {
+                "id": hr.id,
+                "speciality_id": hr.id,
+                "name": hr.name,
+                "speciality_name": hr.name,
+                "speciality_category": hr.category.id,
+                "speciality_category_name": str(hr.category.name),
+            }
+            for h_r in hr
         ]
 
     @property
@@ -1850,6 +1913,8 @@ class FacilityUpdates(AbstractBase):
     facility_updates = models.TextField(null=True, blank=True)
     contacts = models.TextField(null=True, blank=True)
     services = models.TextField(null=True, blank=True)
+    humanresources = models.TextField(null=True, blank=True)
+    infrastructure = models.TextField(null=True, blank=True)
     officer_in_charge = models.TextField(null=True, blank=True)
     units = models.TextField(null=True, blank=True)
     geo_codes = models.TextField(null=True, blank=True)
@@ -1864,6 +1929,10 @@ class FacilityUpdates(AbstractBase):
             updates['basic'] = json.loads(self.facility_updates)
         if self.services:
             updates['services'] = json.loads(self.services)
+        if self.humanresources:
+            updates['humanresources'] = json.loads(self.humanresources)
+        if self.infrastructure:
+            updates['infrastructure'] = json.loads(self.infrastructure)
         if self.contacts:
             updates['contacts'] = json.loads(self.contacts)
         if self.units:
@@ -1964,6 +2033,38 @@ class FacilityUpdates(AbstractBase):
             except FacilityService.DoesNotExist:
                 create_facility_services(
                     self.facility, service, validated_data)
+
+    def update_facility_humanresources(self):
+        from facilities.utils import create_facility_humanresources
+        humanresources_to_add = json.loads(self.humanresources)
+        validated_data = {}
+        validated_data['created'] = self.updated
+        validated_data['updated'] = self.updated
+        validated_data['created_by'] = self.created_by.id
+        validated_data['updated_by'] = self.updated_by.id
+        for hr in humanresources_to_add:
+            try:
+                FacilitySpecialist.objects.get(
+                    speciality_id=hr.get('speciality'), facility=self.facility)
+            except FacilitySpecialist.DoesNotExist:
+                create_facility_humanresources(
+                    self.facility, hr, validated_data)
+
+    def update_facility_infrastructure(self):
+        from facilities.utils import create_facility_infrastructure
+        infrastructure_to_add = json.loads(self.infrastructure)
+        validated_data = {}
+        validated_data['created'] = self.updated
+        validated_data['updated'] = self.updated
+        validated_data['created_by'] = self.created_by.id
+        validated_data['updated_by'] = self.updated_by.id
+        for infra in infrastructure_to_add:
+            try:
+                FacilityInfrastructure.objects.get(
+                    infrastructure_id=infra.get('infrastructure'), facility=self.facility)
+            except FacilityInfrastructure.DoesNotExist:
+                create_facility_infrastructure(
+                    self.facility, infra, validated_data)
 
     def update_facility_contacts(self):
         from facilities.utils import create_facility_contacts
@@ -2077,6 +2178,8 @@ class FacilityUpdates(AbstractBase):
             self.update_facility_units() if self.units else None
             self.update_facility_contacts() if self.contacts else None
             self.update_facility_services() if self.services else None
+            self.update_facility_humanresources() if self.humanresources else None
+            self.update_facility_infrastructure() if self.infrastructure else None
             self.update_officer_in_charge() if self.officer_in_charge else None
             self.update_geo_codes() if self.update_geo_codes else None
             self.approve_upgrades()
@@ -2762,3 +2865,128 @@ class FacilitySpecialist(AbstractBase):
 
     def clean(self, *args, **kwargs):
         self.validate_unique_speciality()
+
+
+
+
+
+
+
+####### infra
+@reversion.register(follow=['parent'])
+@encoding.python_2_unicode_compatible
+class InfrastructureCategory(AbstractBase):
+
+    """
+    Categorization of health specilaists. e.g Anesthesiologist, Gastroentologist,
+    Radiologists etc.
+    """
+    name = models.CharField(
+        max_length=100,
+        help_text="What is the name of the category? ")
+    description = models.TextField(null=True, blank=True)
+    abbreviation = models.CharField(
+        max_length=50, null=True, blank=True,
+        help_text='A short form of the category e.g ANC for antenatal')
+    parent = models.ForeignKey(
+        'self', null=True, blank=True,
+        help_text='The parent category under which the category falls',
+        related_name='sub_categories', on_delete=models.PROTECT)
+
+    def __str__(self):
+        return self.name
+
+    @property
+    def specialities_count(self):
+        return len(self.category_services.all())
+
+    class Meta(AbstractBase.Meta):
+        verbose_name_plural = 'specialities categories'
+
+
+
+@reversion.register(follow=['category'])
+@encoding.python_2_unicode_compatible
+class Infrastructure(SequenceMixin, AbstractBase):
+
+    """
+    Health infrastructure.
+    """
+    name = models.CharField(max_length=255, unique=True)
+    description = models.TextField(null=True, blank=True)
+    abbreviation = models.CharField(
+        max_length=50, null=True, blank=True,
+        help_text='A short form for the infrastructure'
+        )
+    numbers = models.NullBooleanField(
+        blank=True, null=True, default=True,
+        help_text='A flag to indicate whether an infrastructure item can have count/numbers tracked ')
+    category = models.ForeignKey(
+        InfrastructureCategory,
+        on_delete=models.PROTECT,
+        help_text="The classification that the infrastructure item lies in.",
+        related_name='category_infrastructure')
+    code = SequenceField(unique=True, editable=False)
+
+    def save(self, *args, **kwargs):
+        if not self.code:
+            self.code = self.generate_next_code_sequence()
+        super(Infrastructure, self).save(*args, **kwargs)
+
+    @property
+    def category_name(self):
+        return self.category.name
+
+    def __str__(self):
+        return self.name
+
+    class Meta(AbstractBase.Meta):
+        verbose_name_plural = 'infrastructure'
+
+
+@reversion.register(follow=['facility', 'infrastructure'])
+@encoding.python_2_unicode_compatible
+class FacilityInfrastructure(AbstractBase):
+
+    """
+    A facility can have zero or more infrastructure.
+    """
+    facility = models.ForeignKey(
+        Facility, related_name='facility_infrastructure',
+        on_delete=models.PROTECT)
+
+    infrastructure = models.ForeignKey(
+        Infrastructure, 
+        on_delete=models.PROTECT,)
+
+    count = models.IntegerField(
+        default=0, 
+        blank=True, 
+        help_text='The actual number of infrastructure items in a facility.')
+
+    present = models.BooleanField(
+        default=False, 
+        help_text='True if the listed infrastructure is present.')
+
+    @property
+    def infrastructure_name(self):
+            return self.infrastructure.name
+
+    def __str__(self):
+        return "{}: {}".format(self.facility, self.infrastructure)
+
+    def validate_unique_infrastructure(self):
+
+        if len(self.__class__.objects.filter(
+                infrastructure=self.infrastructure, facility=self.facility,
+                deleted=False)) == 1 and not self.deleted:
+            error = {
+                "infrastructure": [
+                    ("The infrastructure {} has already been added to the "
+                     "facility").format(self.infrastructure.name)]
+            }
+            raise ValidationError(error)
+
+    def clean(self, *args, **kwargs):
+        self.validate_unique_infrastructure()
+####### infra
