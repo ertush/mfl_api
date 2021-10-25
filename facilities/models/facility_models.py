@@ -1330,11 +1330,9 @@ class Facility(SequenceMixin, AbstractBase):
 
         if len(self.facility_services.all()) == 0:
             in_complete_data.append('services')
-        return ", ".join(in_complete_data)
 
         if len(self.facility_infrastructure.all()) == 0:
             in_complete_data.append('infrastructure')
-        return ", ".join(in_complete_data)
 
         if len(self.facility_humanresources.all()) == 0:
             in_complete_data.append('humanresources')
