@@ -394,6 +394,10 @@ SEARCH = {
                     "fields": ["name"]
                 },
                 {
+                    "name": "FacilityAdmissionStatus",
+                    "fields": ["name"]
+                },
+                {
                     "name": "FacilityType",
                     "fields": ["name"]
                 },

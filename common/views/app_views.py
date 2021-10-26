@@ -1,4 +1,5 @@
 from rest_framework import generics, views, response, parsers
+from facilities.models.facility_models import FacilityAdmissionStatus
 
 from rest_framework_xml.parsers import XMLParser
 
@@ -659,6 +660,7 @@ class FilteringSummariesView(views.APIView):
             'constituency': (Constituency, ('id', 'name', 'county', )),
             'ward': (Ward, ('id', 'name', 'constituency', 'sub_county')),
             'operation_status': (FacilityStatus, ('id', 'name')),
+            'admission_status': (FacilityAdmissionStatus, ('id', 'name')),
             'chu_status': (chu_models.Status, ('id', 'name', )),
             'service_category': (ServiceCategory, ('id', 'name')),
             'owner_type': (OwnerType, ('id', 'name')),

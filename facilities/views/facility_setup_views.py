@@ -4,6 +4,7 @@ from common.utilities import CustomRetrieveUpdateDestroyView
 
 from ..models import (
     FacilityStatus,
+    FacilityAdmissionStatus,
     OwnerType,
     Officer,
     JobTitle,
@@ -14,6 +15,7 @@ from ..models import (
 
 from ..serializers import (
     FacilityStatusSerializer,
+    FacilityAdmissionStatusSerializer,
     OwnerTypeSerializer,
     OfficerSerializer,
     RegulatingBodyContactSerializer,
@@ -24,6 +26,7 @@ from ..serializers import (
 
 from ..filters import (
     FacilityStatusFilter,
+    FacilityAdmissionStatusFilter,
     OwnerTypeFilter,
     OfficerFilter,
     JobTitleFilter,
@@ -51,6 +54,24 @@ class FacilityStatusListView(generics.ListCreateAPIView):
     filter_class = FacilityStatusFilter
 
 
+class FacilityAdmissionStatusListView(generics.ListCreateAPIView):
+
+    """
+    Lists and creates facility admission statuses
+
+    Created --  Date the record was Created
+    Updated -- Date the record was Updated
+    Created_by -- User who created the record
+    Updated_by -- User who updated the record
+    active  -- Boolean is the record active
+    deleted -- Boolean is the record deleted
+    """
+    queryset = FacilityAdmissionStatus.objects.all()
+    serializer_class = FacilityAdmissionStatusSerializer
+    ordering_fields = ('name',)
+    filter_class = FacilityAdmissionStatusFilter
+
+
 class FacilityStatusDetailView(
         AuditableDetailViewMixin, CustomRetrieveUpdateDestroyView):
 
@@ -59,6 +80,15 @@ class FacilityStatusDetailView(
     """
     queryset = FacilityStatus.objects.all()
     serializer_class = FacilityStatusSerializer
+
+class FacilityAdmissionStatusDetailView(
+        AuditableDetailViewMixin, CustomRetrieveUpdateDestroyView):
+
+    """
+    Retrieves a particular admission status
+    """
+    queryset = FacilityAdmissionStatus.objects.all()
+    serializer_class = FacilityAdmissionStatusSerializer
 
 
 class JobTitleListView(generics.ListCreateAPIView):

@@ -4,12 +4,14 @@ from distutils.util import strtobool
 import django_filters
 
 
+
 from ..models import (
     Owner,
     Facility,
     JobTitle,
     FacilityUnit,
     FacilityStatus,
+    FacilityAdmissionStatus,
     Officer,
     RegulatingBody,
     OwnerType,
@@ -296,6 +298,12 @@ class FacilityStatusFilter(CommonFieldsFilterset):
 
     class Meta(CommonFieldsFilterset.Meta):
         model = FacilityStatus
+class FacilityAdmissionStatusFilter(CommonFieldsFilterset):
+    name = django_filters.CharFilter(lookup_expr='icontains')
+    description = django_filters.CharFilter(lookup_expr='icontains')
+
+    class Meta(CommonFieldsFilterset.Meta):
+        model = FacilityAdmissionStatus
 
 
 class FacilityTypeFilter(CommonFieldsFilterset):

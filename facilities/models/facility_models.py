@@ -508,6 +508,32 @@ class FacilityStatus(AbstractBase):
         verbose_name_plural = 'facility statuses'
 
 
+@reversion.register
+@encoding.python_2_unicode_compatible
+class FacilityAdmissionStatus(AbstractBase):
+
+    """
+    Facility Admission Status covers the following elements:
+    whether the facility
+        1. Not admitting
+        2. Admitting general & maternity
+        3. Admitting maternity only
+    """
+    name = models.CharField(
+        max_length=100, unique=True,
+        help_text="A short name representing the admission status"
+        " e.g NOT ADMITTING")
+    description = models.TextField(
+        null=True, blank=True,
+        help_text="A short explanation of what the admission status entails.")
+
+    def __str__(self):
+        return self.name
+
+    class Meta(AbstractBase.Meta):
+        verbose_name_plural = 'facility admission statuses'
+
+
 @reversion.register(follow=['preceding', ])
 @encoding.python_2_unicode_compatible
 class FacilityType(AbstractBase):
@@ -1168,6 +1194,11 @@ class Facility(SequenceMixin, AbstractBase):
     admitting_maternity_general = models.NullBooleanField(
         blank=True, null=True,
         help_text='A flag to indicate whether facility admits both maternity & general casualty patients')
+    admission_status = models.ForeignKey(
+        FacilityAdmissionStatus, null=True, blank=True,
+        on_delete=models.PROTECT,
+        help_text="Indicates whether the facility"
+        "has been approved to admit and the admission categories it caters for")
     reporting_in_dhis = models.NullBooleanField(
         blank=True, null=True,
         help_text='A flag to indicate whether facility should have reporting in dhis')
@@ -1334,8 +1365,10 @@ class Facility(SequenceMixin, AbstractBase):
         if len(self.facility_infrastructure.all()) == 0:
             in_complete_data.append('infrastructure')
 
-        if len(self.facility_humanresources.all()) == 0:
+
+        if len(self.facility_specialists.all()) == 0:
             in_complete_data.append('humanresources')
+
         return ", ".join(in_complete_data)
 
     @property
@@ -1534,28 +1567,44 @@ class Facility(SequenceMixin, AbstractBase):
         infra = self.facility_infrastructure.all()
         return [
             {
-                "id": infra.id,
-                "infrastructure_id": infra.id,
-                "name": infra.name,
-                "infrastructure_name": infra.name,
-                "infrastructure_category": infra.category.id,
-                "infrastructure_category_name": str(infra.category.name),
+                "id": inf.id,
+                "infrastructure_id": inf.id,
+                "name": inf.name,
+                "infrastructure_name": inf.name,
+                "infrastructure_category": inf.category.id,
+                "infrastructure_category_name": str(inf.category.name),
             }
             for inf in infra
         ]
 
     @property
+    def get_facility_specialities(self):
+        """For the same purpose as the get_facility_infra... above"""
+        hr = self.facility_specialities.all()
+        return [
+            {
+                "id": h_r.id,
+                "speciality_id": h_r.id,
+                "name": h_r.name,
+                "speciality_name": h_r.name,
+                "speciality_category": h_r.category.id,
+                "speciality_category_name": str(h_r.category.name),
+            }
+            for h_r in hr
+        ]
+
+    @property
     def get_facility_humanresources(self):
-        """For the same purpose as the get_facility_infrastructure above"""
+        """For the same purpose as the get_facility_infra... above"""
         hr = self.facility_humanresources.all()
         return [
             {
-                "id": hr.id,
-                "speciality_id": hr.id,
-                "name": hr.name,
-                "speciality_name": hr.name,
-                "speciality_category": hr.category.id,
-                "speciality_category_name": str(hr.category.name),
+                "id": h_r.id,
+                "speciality_id": h_r.id,
+                "name": h_r.name,
+                "speciality_name": h_r.name,
+                "speciality_category": h_r.category.id,
+                "speciality_category_name": str(h_r.category.name),
             }
             for h_r in hr
         ]

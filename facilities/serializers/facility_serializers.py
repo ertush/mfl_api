@@ -8,6 +8,7 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.parsers import MultiPartParser
 
 from common.models import Contact, ContactType
+from facilities.models.facility_models import FacilityAdmissionStatus
 from users.models import MflUser
 
 from common.serializers import (
@@ -261,6 +262,13 @@ class FacilityStatusSerializer(
         model = FacilityStatus
 
 
+class FacilityAdmissionStatusSerializer(
+        AbstractFieldsMixin, serializers.ModelSerializer):
+
+    class Meta(AbstractFieldsMixin.Meta):
+        model = FacilityAdmissionStatus
+
+
 class RegulatingBodySerializer(
         AbstractFieldsMixin, serializers.ModelSerializer):
     regulatory_body_type_name = serializers.ReadOnlyField(
@@ -456,6 +464,8 @@ class FacilitySerializer(
         source="get_facility_infrastructure")
     facility_humanresources = serializers.ReadOnlyField(
         source="get_facility_humanresources")
+    facility_specialities = serializers.ReadOnlyField(
+        source="get_facility_specialities")
     is_approved = serializers.ReadOnlyField()
     has_edits = serializers.ReadOnlyField()
     latest_update = serializers.ReadOnlyField()

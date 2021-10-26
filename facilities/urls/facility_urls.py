@@ -206,11 +206,18 @@ urlpatterns = (
         name='facility_type_detail'),
     url(r'^facility_types_details/$', views.FacilityTypeDetailsListView.as_view(),
         name='facility_types_details_list'),
+        
     url(r'^facility_status/$', views.FacilityStatusListView.as_view(),
         name='facility_statuses_list'),
     url(r'^facility_status/(?P<pk>[^/]+)/$',
         views.FacilityStatusDetailView.as_view(),
         name='facility_status_detail'),
+
+    url(r'^facility_admission_status/$', views.FacilityAdmissionStatusListView.as_view(),
+        name='facility_admission_statuses_list'),
+    url(r'^facility_admission_status/(?P<pk>[^/]+)/$',
+        views.FacilityAdmissionStatusDetailView.as_view(),
+        name='facility_admission_status_detail'),
 
     url(r'^officer_contacts/$', views.OfficerContactListView.as_view(),
         name='officer_contacts_list'),
