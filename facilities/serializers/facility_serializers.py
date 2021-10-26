@@ -93,6 +93,7 @@ class FacilityExportExcelMaterialViewSerializer(serializers.ModelSerializer):
             "owner",
             "operation_status",
             "operation_status_name",
+            "admission_status_name",
             "open_whole_day",
             "open_public_holidays",
             "open_weekends",
@@ -449,6 +450,7 @@ class FacilitySerializer(
     owner_type = serializers.CharField(
         read_only=True, source='owner.owner_type.pk')
     operation_status_name = serializers.CharField(read_only=True)
+    admission_status_name = serializers.CharField(read_only=True)
 
     county = serializers.ReadOnlyField(source='ward.sub_county.county.name')
 
@@ -555,7 +557,7 @@ class FacilityListSerializer(FacilitySerializer):
         fields = [
             'code', 'name', 'id', 'county', 'constituency',
             'facility_type_name', 'owner_name', 'owner_type_name',
-            'regulatory_status_name', 'ward', 'operation_status_name',
+            'regulatory_status_name', 'ward', 'operation_status_name', 'admission_status_name',
             'ward_name', 'is_published', "is_approved", "has_edits",
             "rejected"
         ]

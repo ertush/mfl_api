@@ -956,6 +956,8 @@ class FacilityExportExcelMaterialView(models.Model):
     operation_status = models.UUIDField(null=True, blank=True)
     operation_status_name = models.CharField(
         max_length=100, null=True, blank=True)
+    admission_status_name = models.CharField(
+        max_length=100, null=True, blank=True)
     open_whole_day = models.BooleanField(
         default=False,
         help_text="Does the facility operate 24 hours a day")
@@ -1481,6 +1483,10 @@ class Facility(SequenceMixin, AbstractBase):
     @property
     def operation_status_name(self):
         return self.operation_status.name
+    
+    @property
+    def admission_status_name(self):
+        return self.admission_status.name
 
     @property
     def facility_type_name(self):
