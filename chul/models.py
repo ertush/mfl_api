@@ -218,7 +218,7 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
     @property
     def pending_updates(self):
         try:
-            chu = ChuUpdateBuffer.objects.get(
+            chu = ChuUpdateBuffer.objects.latest(
                 is_approved=False,
                 is_rejected=False,
                 health_unit=self
@@ -230,7 +230,7 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
     @property
     def latest_update(self):
         try:
-            chu = ChuUpdateBuffer.objects.get(
+            chu = ChuUpdateBuffer.objects.latest(
                 is_approved=False,
                 is_rejected=False,
                 health_unit=self
