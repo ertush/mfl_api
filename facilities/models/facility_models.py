@@ -121,19 +121,6 @@ class DhisAuth(ApiAuthentication):
         )
         print("New OrgUnit UID Generated-", r_generate_orgunit_uid.json()['codes'][0])
         return r_generate_orgunit_uid.json()['code'][0]
-        
-    def generate_uuid_dhis_tracker(self):
-        r_generate_orgunit_uid = requests.get(
-            settings.DHIS_TRACKER_ENDPOINT + "api/system/uid.json",
-            auth=(settings.DHIS_TRACKER_USERNAME, settings.DHIS_TRACKER_PASSWORD),
-            headers={
-                # "Authorization": "Bearer " + json.loads(self.session_store[self.oauth2_token_variable_name].replace("u", "")
-                #                                         .replace("'", '"'))["access_token"],
-                "Accept": "application/json"
-            },
-        )
-        print("New TRACKER OrgUnit UID Generated-", r_generate_orgunit_uid.json()['codes'][0])
-        return r_generate_orgunit_uid.json()['code'][0]
 
     def get_org_unit_id(self, code):
         r = requests.get(
@@ -212,18 +199,6 @@ class DhisAuth(ApiAuthentication):
                 json=new_facility_payload
             )
             LOGGER.info("Create Facility Response: %s" % r.text)
-            if settings.PUSH_TO_TRACKER:
-                rt = requests.post(
-                    settings.DHIS_TRACKER_ENDPOINT+"api/organisationUnits",
-                    auth=(settings.DHIS_TRACKER_USERNAME, settings.DHIS_TRACKER_PASSWORD),
-                    headers={
-                        # "Authorization": "Bearer " + json.loads(self.session_store[self.oauth2_token_variable_name].replace("u", "")
-                        #                                         .replace("'", '"'))["access_token"],
-                        "Accept": "application/json"
-                    },
-                    json=new_facility_payload
-                )
-                LOGGER.info("Create Tracker Facility Response: %s" % rt.text)
         else:
             r = requests.put(
                 settings.DHIS_ENDPOINT + "api/organisationUnits/" + new_facility_payload.pop('id'),
@@ -234,30 +209,11 @@ class DhisAuth(ApiAuthentication):
                 json=new_facility_payload
             )
             LOGGER.info("Update Facility Response: %s" % r.text)
-            if settings.PUSH_TO_TRACKER:
-                rt = requests.put(
-                    settings.DHIS_TRACKER_ENDPOINT + "api/organisationUnits/" + new_facility_payload.pop('id'),
-                    auth=(settings.DHIS_TRACKER_USERNAME, settings.DHIS_TRACKER_PASSWORD),
-                    headers={
-                        "Accept": "application/json"
-                    },
-                    json=new_facility_payload
-                )
-                LOGGER.info("Update Tracker Facility Response: %s" % rt.text)
         if r.json()["status"] != "OK":
             LOGGER.error('Facility feedback: %s' % r.text)
             raise ValidationError(
                 {
                     "Error!": ["An error occured while pushing facility to DHIS2. This is may be caused by the "
-                               "existance of an organisation unit with as similar name as to the one you are creating. "
-                               "Or some specific information like codes are not unique"]
-                }
-            )
-        if settings.PUSH_TO_TRACKER and rt.json()["status"] != "OK":
-            LOGGER.error('TRACKER Facility feedback: %s' % rt.text)
-            raise ValidationError(
-                {
-                    "Error!": ["An error occured while pushing facility to DHIS2 TRACKER. This is may be caused by the "
                                "existance of an organisation unit with as similar name as to the one you are creating. "
                                "Or some specific information like codes are not unique"]
                 }
@@ -272,14 +228,6 @@ class DhisAuth(ApiAuthentication):
                 "Accept": "application/json"
             },
         )
-        if settings.PUSH_TO_TRACKER:
-            rt_keph_t = requests.post(
-                settings.DHIS_TRACKER_ENDPOINT + "api/organisationUnitGroups/" + metadata_payload['keph'] + "/organisationUnits/" + facility_uid,
-                auth=(settings.DHIS_TRACKER_USERNAME, settings.DHIS_TRACKER_PASSWORD),
-                headers={
-                    "Accept": "application/json"
-                },
-            )
         # print r_keph.json()
         # if r_keph.json()["status"] != "OK":
         #     raise ValidationError(
@@ -294,14 +242,6 @@ class DhisAuth(ApiAuthentication):
                 "Accept": "application/json"
             },
         )
-        if settings.PUSH_TO_TRACKER:
-            rt_facility_type_t = requests.post(
-                settings.DHIS_TRACKER_ENDPOINT + "api/organisationUnitGroups/" + metadata_payload['facility_type'] + "/organisationUnits/" + facility_uid,
-                auth=(settings.DHIS_TRACKER_USERNAME, settings.DHIS_TRACKER_PASSWORD),
-                headers={
-                    "Accept": "application/json"
-                },
-            )
         # if r_facility_type.json()["status"] != "OK":
         #     raise ValidationError(
         #         {
@@ -316,15 +256,6 @@ class DhisAuth(ApiAuthentication):
                 "Accept": "application/json"
             },
         )
-        if settings.PUSH_TO_TRACKER:
-            rt_ownership_t = requests.post(
-                settings.DHIS_TRACKER_ENDPOINT + "api/organisationUnitGroups/" + metadata_payload[
-                    'ownership'] + "/organisationUnits/" + facility_uid,
-                auth=(settings.DHIS_TRACKER_USERNAME, settings.DHIS_TRACKER_PASSWORD),
-                headers={
-                    "Accept": "application/json"
-                },
-            )
         # if r_ownership.json()["status"] != "OK":
         #     raise ValidationError(
         #         {
@@ -341,29 +272,13 @@ class DhisAuth(ApiAuthentication):
             },
             json=facility_updates_payload
         )
-        print("Update Facility Response", r.url, r.status_code, r.json())
-        if settings.PUSH_TO_TRACKER:
-            rt = requests.put(
-                settings.DHIS_TRACKER_ENDPOINT + "api/organisationUnits/"+org_unit_id,
-                auth=(settings.DHIS_TRACKER_USERNAME, settings.DHIS_TRACKER_PASSWORD),
-                headers={
-                    "Accept": "application/json"
-                },
-                json=facility_updates_payload
-            )
-            print("Update Tracker Facility Response", rt.url, rt.status_code, rt.json())
 
+        print("Update Facility Response", r.url, r.status_code, r.json())
 
         if r.json()["status"] != "OK":
             raise ValidationError(
                 {
                     "Error!": ["Unable to push facility updates to DHIS2"]
-                }
-            )
-        if settings.PUSH_TO_TRACKER and rt.json()["status"] != "OK":
-            raise ValidationError(
-                {
-                    "Error!": ["Unable to push facility updates to DHIS2 TRACKER"]
                 }
             )
 
