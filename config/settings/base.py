@@ -7,7 +7,7 @@ BASE_DIR = os.path.dirname(
 # Override in production via env
 
 env = environ.Env(
-    DATABASE_URL=(str, 'postgres://mfl:mfl@localhost:5432/mfl'),
+    DATABASE_URL=(str, 'postgres://mfl:mfl@localhost:5433/mfl'),
     DEBUG=(bool, True),
     FRONTEND_URL=(str, "http://localhost:8062"),
     REALTIME_INDEX=(bool, False),
@@ -43,11 +43,11 @@ ENV_DB = env.db()
 DATABASES = {
     'default': {
         'ENGINE': 'django.contrib.gis.db.backends.postgis',
-        'HOST': ENV_DB['HOST'],
-        'NAME': ENV_DB['NAME'],
-        'PASSWORD': ENV_DB['PASSWORD'],
-        'PORT': ENV_DB['PORT'],
-        'USER': ENV_DB['USER'],
+        'HOST': '127.0.0.1',
+        'NAME': 'mfl',
+        'PASSWORD': 'mfl@pa55w0rd',
+        'PORT': '5433',
+        'USER': 'mfladmin',
     }
 }  # Env should have DATABASE_URL
 MIDDLEWARE = (
