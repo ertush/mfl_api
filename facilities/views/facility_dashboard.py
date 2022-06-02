@@ -374,8 +374,6 @@ class DashBoard(QuerysetFilterMixin, APIView):
         """
         Function to get facilities by keph level
         """
-        import pdb
-
         if county_name:
             keph_level = KephLevel.objects.values("id", "name")  
             keph_array = []
