@@ -1,4 +1,5 @@
 from datetime import timedelta
+from itertools import count
 
 from django.utils import timezone
 from django.db.models import Q
@@ -375,18 +376,30 @@ class DashBoard(QuerysetFilterMixin, APIView):
         """
         if county_name:
             keph_level = KephLevel.objects.values("id", "name")  
-            keph_dict = {}
+            keph_array = []
+            keph_details = {}
             for keph in keph_level:
                 keph_count = Facility.objects.filter(keph_level_id=keph.get("id"),ward__sub_county__county=county_name ).count()
-                keph_dict[keph.get("name")] = keph_count
-            return keph_dict
+
+                keph_details["name"] = keph.get("name")
+                keph_details["count"] = keph_count
+                keph_array.append(keph_details)
+
+            return keph_array
+
         else:
             keph_level = KephLevel.objects.values("id", "name")  
-            keph_dict = {}
+            keph_array = []
+            keph_details = {}
             for keph in keph_level:
-                keph_count = Facility.objects.filter(keph_level_id=keph.get("id"), ).count()
-                keph_dict[keph.get("name")] = keph_count
-            return keph_dict
+                keph_count = Facility.objects.filter(keph_level_id=keph.get("id")).count()
+
+                keph_details["name"] = keph.get("name")
+                keph_details["count"] = keph_count
+                keph_array.append(keph_details)
+
+            return keph_array
+       
 
     def get(self, *args, **kwargs):
         user = self.request.user
