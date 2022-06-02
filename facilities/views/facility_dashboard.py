@@ -416,7 +416,6 @@ class DashBoard(QuerysetFilterMixin, APIView):
             total_chus = CommunityHealthUnit.objects.filter(
                 facility__in=self.get_queryset().filter(
                 ward__sub_county__county=county_)).count()
-        print("--------------- >>>>> ",county_)
         data = {
             "keph_level" : self.get_facilities_kephlevel_count(county_),
             "total_facilities": total_facilities,
