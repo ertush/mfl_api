@@ -377,19 +377,14 @@ class DashBoard(QuerysetFilterMixin, APIView):
         if county_name:
             keph_level = KephLevel.objects.values("id", "name")  
             keph_array = []
-            keph_details = {}
             for keph in keph_level:
                 keph_count = Facility.objects.filter(keph_level_id=keph.get("id"),ward__sub_county__county=county_name ).count()
-
-                keph_details["name"] = keph.get("name")
-                keph_details["count"] = keph_count
                 keph_array.append({"name" : keph.get("name"), "count" : keph_count})
             return keph_array
 
         else:
             keph_level = KephLevel.objects.values("id", "name")  
             keph_array = []
-            keph_details = {}
             for keph in keph_level:
                 keph_count = Facility.objects.filter(keph_level_id=keph.get("id")).count()
                 keph_array.append({"name" : keph.get("name"), "count" : keph_count})
