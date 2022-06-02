@@ -383,8 +383,7 @@ class DashBoard(QuerysetFilterMixin, APIView):
 
                 keph_details["name"] = keph.get("name")
                 keph_details["count"] = keph_count
-                keph_array.append(keph_details)
-
+                keph_array.append({"name" : keph.get("name"), "count" : keph_count})
             return keph_array
 
         else:
@@ -393,10 +392,7 @@ class DashBoard(QuerysetFilterMixin, APIView):
             keph_details = {}
             for keph in keph_level:
                 keph_count = Facility.objects.filter(keph_level_id=keph.get("id")).count()
-
-                keph_details["name"] = keph.get("name")
-                keph_details["count"] = keph_count
-                keph_array.append(keph_details)
+                keph_array.append({"name" : keph.get("name"), "count" : keph_count})
 
             return keph_array
        
@@ -420,6 +416,7 @@ class DashBoard(QuerysetFilterMixin, APIView):
             total_chus = CommunityHealthUnit.objects.filter(
                 facility__in=self.get_queryset().filter(
                 ward__sub_county__county=county_)).count()
+        print("--------------- >>>>> ",county_)
         data = {
             "keph_level" : self.get_facilities_kephlevel_count(county_),
             "total_facilities": total_facilities,
