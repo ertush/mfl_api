@@ -47,36 +47,36 @@ class StaticReport(QuerysetFilterMixin, APIView):
             # pdb.set_trace()
             counties = County.objects.values("id","name","code")
             facility_beds_details = Facility.objects.values("number_of_cots", "number_of_beds","number_of_hdu_beds", "number_of_icu_beds", "number_of_isolation_beds","number_of_maternity_beds","owner_id","county_id", "facility_type_id","keph_level_id", "sub_county_id","ward_id")  
-            my_array = []
+            counties_beds_array = []
 
-            counter = 0
-            for beds_details in facility_beds_details:
-                for county in counties:
-                    # print(type(county.get("id")))
+            cobedunter = 0
+            for county in counties:
+                for beds_details in facility_beds_details:
                     if beds_details.get("county_id") is not None and beds_details.get("county_id")==county.get("id"):
-                        my_array.append({
+                        counties_beds_array.append({
                             "county_name" : county.get("name"),
                             "count" : beds_details.get("number_of_beds")
                         })
-            print("wwwwwwwwwwwwwwwwwwwww")
-
-
-                
-            return "keph_array"
+            final_sum = {}
+            
+            for county_data in counties_beds_array:   
+                # print("---------", county_data.get("county_name") != final_sum.get("county"))
+                if county_data.get("county_name") != final_sum.get("county"):
+                    final_sum[county_data.get("county_name")] = county_data.get("count")
+                elif county_data.get("county_name") == final_sum.get("county"):
+                    final_sum[county_data.get("county_name")] = county_data.get("count")+county_data.get("count")
+            return final_sum
 
     
 
     def get(self, *args, **kwargs):
-        import pdb
         user = self.request.user
         county_ = user.county
         if not self.request.query_params.get('county'):
             county_ = user.county
         else:
             county_ = County.objects.get(id=self.request.query_params.get('county'))
-        # pdb.set_trace()
-        print("*************** ",county_)
-        
+
         data = {
             "beds_by_county" : self.get_bed_count(county_),
 
