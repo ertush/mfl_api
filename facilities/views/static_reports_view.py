@@ -57,6 +57,7 @@ class StaticReport(QuerysetFilterMixin, APIView):
                             "county_name" : county.get("name"),
                             "count" : beds_details.get("number_of_beds")
                         })
+            summary=[]            
             final_sum = {}
             
             for county_data in counties_beds_array:   
@@ -65,7 +66,11 @@ class StaticReport(QuerysetFilterMixin, APIView):
                     final_sum[county_data.get("county_name")] = county_data.get("count")
                 elif county_data.get("county_name") == final_sum.get("county"):
                     final_sum[county_data.get("county_name")] = county_data.get("count")+county_data.get("count")
-            return final_sum
+
+            summary =  [
+            {"name": key, "count": value } for key, value in final_sum.items()
+            ]        
+            return summary
 
     
 
