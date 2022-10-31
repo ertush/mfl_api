@@ -54,6 +54,7 @@ class DashBoard(QuerysetFilterMixin, APIView):
         top_10_counties_summary = []
         for item in top_10_counties:
             county = County.objects.get(name=item[0])
+            print (county, item[0])
             chu_count = self.get_chu_count_in_county_summary(county)
             top_10_counties_summary.append(
                 {
