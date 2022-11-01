@@ -27,6 +27,8 @@ from facilities.models import(
     OwnerType,
     Owner,
     Service,
+    Infrastructure,
+    InfrastructureCategory,
     KephLevel
 )
 from users.models import JobTitle
@@ -663,12 +665,15 @@ class FilteringSummariesView(views.APIView):
             'admission_status': (FacilityAdmissionStatus, ('id', 'name')),
             'chu_status': (chu_models.Status, ('id', 'name', )),
             'service_category': (ServiceCategory, ('id', 'name')),
+            'infrastructure_category': (InfrastructureCategory, ('id', 'name')),
             'owner_type': (OwnerType, ('id', 'name')),
             'owner': (Owner, ('id', 'name', 'owner_type')),
             'service': (Service, ('id', 'name', 'category')),
             'keph_level': (KephLevel, ('id', 'name')),
+            'infrastructure': (Infrastructure, ('id', 'name')),
             'job_title': (JobTitle, ('id', 'name'))
         }
+
         if fields:
             resp = {}
             for key in fields.split(","):

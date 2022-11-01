@@ -133,7 +133,7 @@ class GroupSerializer(PartialResponseMixin, serializers.ModelSerializer):
         county_level = self.initial_data.pop('is_county_level', False)
         sub_county_level = self.initial_data.pop('is_sub_county_level', False)
         permissions = _lookup_permissions(
-            self.context['request'].DATA
+            self.context['request'].data
         )
         validated_data.pop('permissions', None)
 

@@ -1,4 +1,5 @@
 from datetime import timedelta
+from itertools import count
 
 from django.utils import timezone
 from django.db.models import Q
@@ -12,7 +13,7 @@ from ..models import (
     Owner,
     FacilityStatus,
     FacilityType,
-    Facility
+    Facility,KephLevel
 )
 from ..views import QuerysetFilterMixin
 
@@ -53,6 +54,7 @@ class DashBoard(QuerysetFilterMixin, APIView):
         top_10_counties_summary = []
         for item in top_10_counties:
             county = County.objects.get(name=item[0])
+            print (county, item[0])
             chu_count = self.get_chu_count_in_county_summary(county)
             top_10_counties_summary.append(
                 {
@@ -369,6 +371,28 @@ class DashBoard(QuerysetFilterMixin, APIView):
         else:
             return self.get_queryset().filter(closed=True, ward__sub_county__county=cty).count()
 
+    def get_facilities_kephlevel_count(self,county_name):
+        """
+        Function to get facilities by keph level
+        """
+        if county_name:
+            keph_level = KephLevel.objects.values("id", "name")  
+            keph_array = []
+            for keph in keph_level:
+                keph_count = Facility.objects.filter(keph_level_id=keph.get("id"),ward__sub_county__county=county_name ).count()
+                keph_array.append({"name" : keph.get("name"), "count" : keph_count})
+            return keph_array
+
+        else:
+            keph_level = KephLevel.objects.values("id", "name")  
+            keph_array = []
+            for keph in keph_level:
+                keph_count = Facility.objects.filter(keph_level_id=keph.get("id")).count()
+                keph_array.append({"name" : keph.get("name"), "count" : keph_count})
+
+            return keph_array
+       
+
     def get(self, *args, **kwargs):
         user = self.request.user
         county_ = user.county
@@ -389,6 +413,7 @@ class DashBoard(QuerysetFilterMixin, APIView):
                 facility__in=self.get_queryset().filter(
                 ward__sub_county__county=county_)).count()
         data = {
+            "keph_level" : self.get_facilities_kephlevel_count(county_),
             "total_facilities": total_facilities,
             "county_summary": self.get_facility_county_summary()
             if user.is_national else [],
