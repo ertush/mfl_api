@@ -283,6 +283,7 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
             },
             "openingDate": self.date_operational.strftime("%Y-%m-%d"),
         }
+        
         metadata_payload = {
             "keph": 'axUnguN4QDh'
         }
