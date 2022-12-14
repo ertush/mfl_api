@@ -689,7 +689,9 @@ class FacilityDetailSerializer(FacilitySerializer):
     ward_code = serializers.ReadOnlyField(source='ward.code')
     service_catalogue_active = serializers.ReadOnlyField()
     facility_units = FacilityUnitSerializer(many=True, required=False)
-    facility_infrastructure = FacilityInfrastructureSerializer(many=True, required=False)
+    # facility_infrastructure = FacilityInfrastructureSerializer(many=True, required=False)
+    facility_infrastructure = serializers.ReadOnlyField(
+        source="get_facility_infrastructure")
     officer_in_charge = serializers.ReadOnlyField()
     keph_level_name = serializers.ReadOnlyField(source='keph_level.name')
 

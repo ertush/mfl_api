@@ -23,13 +23,14 @@ env = environ.Env(
     ADMINS=(str, "admin:admin@example.com,"),
     SERVER_EMAIL=(str, "root@localhost"),
     ALLOWED_HOSTS=(str, "localhost"),
-    DHIS_ENDPOINT=(str, "http://testhis.uonbi.ac.ke/"),
+    DHIS_ENDPOINT=(str, "https://test.hiskenya.org/"),
     DHIS_USERNAME=(str, 'kmhfl_integration'),
     DHIS_PASSWORD=(str, ''),
     DHIS_CLIENT_ID=(str, '102'),
+    PUSH_TO_DHIS=(bool, True),
     DHIS_CLIENT_SECRET=(str, '')
 )
-env.read_env(os.path.join(BASE_DIR, '.env'))
+# env.read_env(os.path.join(BASE_DIR, '.env'))
 
 ADMINS = tuple(
     tuple(name.split(':')) for name in env('ADMINS').split(',') if name != ''
