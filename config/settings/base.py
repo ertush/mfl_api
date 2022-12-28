@@ -25,10 +25,10 @@ env = environ.Env(
     ALLOWED_HOSTS=(str, "localhost"),
     DHIS_ENDPOINT=(str, "https://test.hiskenya.org/"),
     DHIS_USERNAME=(str, 'kmhfl_integration'),
-    DHIS_PASSWORD=(str, ''),
+    DHIS_PASSWORD=(str, 'Integration@kmhfl@2019'),
     DHIS_CLIENT_ID=(str, '102'),
     PUSH_TO_DHIS=(bool, True),
-    DHIS_CLIENT_SECRET=(str, '')
+    DHIS_CLIENT_SECRET=(str, '4e9a05722-62f4-3e03-287c-74f5ad1aa5f')
 )
 # env.read_env(os.path.join(BASE_DIR, '.env'))
 

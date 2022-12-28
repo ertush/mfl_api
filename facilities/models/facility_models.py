@@ -1535,6 +1535,7 @@ class Facility(SequenceMixin, AbstractBase):
     def get_facility_services(self):
         """Digests the facility_services for the sake of frontend."""
         services = self.facility_services.all()
+
         return [
             {
                 "id": service.id,
@@ -1557,7 +1558,9 @@ class Facility(SequenceMixin, AbstractBase):
     @property
     def get_facility_contacts(self):
         """For the same purpose as the get_facility_services above"""
+      
         contacts = self.facility_contacts.all()
+
         return [
             {
                 "id": contact.id,
@@ -1572,14 +1575,14 @@ class Facility(SequenceMixin, AbstractBase):
     def get_facility_infrastructure(self):
         """For the same purpose as the get_facility_contacts above"""
         infra = self.facility_infrastructure.all()
+
         return [
             {
                 "id": inf.id,
-                "infrastructure_id": inf.id,
-                "name": inf.name,
-                "infrastructure_name": inf.name,
-                "infrastructure_category": inf.category.id,
-                "infrastructure_category_name": str(inf.category.name),
+                "name": inf.infrastructure.name,
+                "count":inf.count,
+                "infrastructure_category": inf.infrastructure.category.id,
+                "infrastructure_category_name": str(inf.infrastructure.category.name),
             }
             for inf in infra
         ]
@@ -1587,34 +1590,39 @@ class Facility(SequenceMixin, AbstractBase):
     @property
     def get_facility_specialities(self):
         """For the same purpose as the get_facility_infra... above"""
-        hr = self.facility_specialities.all()
+        hr = self.facility_specialists.all()
+
         return [
             {
                 "id": h_r.id,
-                "speciality_id": h_r.id,
-                "name": h_r.name,
-                "speciality_name": h_r.name,
-                "speciality_category": h_r.category.id,
-                "speciality_category_name": str(h_r.category.name),
+                "name": h_r.speciality.name,
+                "count": h_r.count,
+                "speciality_category": h_r.speciality.category.id,
+                "speciality_category_name": str(h_r.speciality.category.name),
             }
             for h_r in hr
         ]
 
-    @property
-    def get_facility_humanresources(self):
-        """For the same purpose as the get_facility_infra... above"""
-        hr = self.facility_humanresources.all()
-        return [
-            {
-                "id": h_r.id,
-                "speciality_id": h_r.id,
-                "name": h_r.name,
-                "speciality_name": h_r.name,
-                "speciality_category": h_r.category.id,
-                "speciality_category_name": str(h_r.category.name),
-            }
-            for h_r in hr
-        ]
+    # @property
+    # def get_facility_humanresources(self):
+    #     """For the same purpose as the get_facility_infra... above"""
+
+    #     import pdb
+    #     pdb.set_trace()
+
+    #     hr = self.facility_humanresources.all()
+
+        
+    #     return [
+    #         {
+    #             "id": h_r.id,
+    #             "name": h_r.speciality.name,
+    #             "count": h_r.count,
+    #             "hr_category": h_r.speciality.category.id,
+    #             "hr_category_name": str(h_r.speciality.category.name),
+    #         }
+    #         for h_r in hr
+    #     ]
 
     @property
     def average_rating(self):
