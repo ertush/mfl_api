@@ -82,6 +82,7 @@ class DashBoard(QuerysetFilterMixin, APIView):
             const = SubCounty.objects.get(name=item[0])
             chu_count = self.get_chu_count_in_constituency_summary(const)
             top_10_consts_summary.append(
+                
                 {
                     "name": item[0],
                     "count": item[1],
@@ -377,26 +378,17 @@ class DashBoard(QuerysetFilterMixin, APIView):
         if county_name:
             keph_level = KephLevel.objects.values("id", "name")  
             keph_array = []
-            keph_details = {}
             for keph in keph_level:
                 keph_count = Facility.objects.filter(keph_level_id=keph.get("id"),ward__sub_county__county=county_name ).count()
-
-                keph_details["name"] = keph.get("name")
-                keph_details["count"] = keph_count
-                keph_array.append(keph_details)
-
+                keph_array.append({"name" : keph.get("name"), "count" : keph_count})
             return keph_array
 
         else:
             keph_level = KephLevel.objects.values("id", "name")  
             keph_array = []
-            keph_details = {}
             for keph in keph_level:
                 keph_count = Facility.objects.filter(keph_level_id=keph.get("id")).count()
-
-                keph_details["name"] = keph.get("name")
-                keph_details["count"] = keph_count
-                keph_array.append(keph_details)
+                keph_array.append({"name" : keph.get("name"), "count" : keph_count})
 
             return keph_array
        

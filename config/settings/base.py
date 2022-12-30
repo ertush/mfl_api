@@ -7,7 +7,7 @@ BASE_DIR = os.path.dirname(
 # Override in production via env
 
 env = environ.Env(
-    DATABASE_URL=(str, 'postgres://mfl:mfl@localhost:5432/mfl'),
+    DATABASE_URL=(str, 'postgres://mfl:mfl@localhost:5433/mfl'),
     DEBUG=(bool, True),
     FRONTEND_URL=(str, "http://localhost:8062"),
     REALTIME_INDEX=(bool, False),
@@ -23,13 +23,14 @@ env = environ.Env(
     ADMINS=(str, "admin:admin@example.com,"),
     SERVER_EMAIL=(str, "root@localhost"),
     ALLOWED_HOSTS=(str, "localhost"),
-    DHIS_ENDPOINT=(str, "http://testhis.uonbi.ac.ke/"),
+    DHIS_ENDPOINT=(str, "https://test.hiskenya.org/"),
     DHIS_USERNAME=(str, 'kmhfl_integration'),
-    DHIS_PASSWORD=(str, ''),
+    DHIS_PASSWORD=(str, 'Integration@kmhfl@2019'),
     DHIS_CLIENT_ID=(str, '102'),
-    DHIS_CLIENT_SECRET=(str, '')
+    PUSH_TO_DHIS=(bool, True),
+    DHIS_CLIENT_SECRET=(str, '4e9a05722-62f4-3e03-287c-74f5ad1aa5f')
 )
-env.read_env(os.path.join(BASE_DIR, '.env'))
+# env.read_env(os.path.join(BASE_DIR, '.env'))
 
 ADMINS = tuple(
     tuple(name.split(':')) for name in env('ADMINS').split(',') if name != ''
@@ -43,11 +44,11 @@ ENV_DB = env.db()
 DATABASES = {
     'default': {
         'ENGINE': 'django.contrib.gis.db.backends.postgis',
-        'HOST': ENV_DB['HOST'],
-        'NAME': ENV_DB['NAME'],
-        'PASSWORD': ENV_DB['PASSWORD'],
-        'PORT': ENV_DB['PORT'],
-        'USER': ENV_DB['USER'],
+        'HOST': '127.0.0.1',
+        'NAME': 'mfl',
+        'PASSWORD': 'mfl@pa55w0rd',
+        'PORT': '5433',
+        'USER': 'mfladmin',
     }
 }  # Env should have DATABASE_URL
 MIDDLEWARE = (
