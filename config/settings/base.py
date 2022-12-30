@@ -12,7 +12,7 @@ env = environ.Env(
     FRONTEND_URL=(str, "http://localhost:8062"),
     REALTIME_INDEX=(bool, False),
     HTTPS_ENABLED=(bool, False),
-    SECRET_KEY=(str, 'p!ci1&ni8u98vvd#%18yp)aqh+m_8o565g*@!8@1wb$j#pj4d8'),
+    SECRET_KEY=(str, ''),
     EMAIL_HOST=(str, 'localhost'),
     EMAIL_HOST_USER=(str, 487),
     EMAIL_HOST_PASSWORD=(str, 'notarealpassword'),
@@ -25,10 +25,10 @@ env = environ.Env(
     ALLOWED_HOSTS=(str, "localhost"),
     DHIS_ENDPOINT=(str, "https://test.hiskenya.org/"),
     DHIS_USERNAME=(str, 'kmhfl_integration'),
-    DHIS_PASSWORD=(str, 'Integration@kmhfl@2019'),
+    DHIS_PASSWORD=(str, ''),
     DHIS_CLIENT_ID=(str, '102'),
     PUSH_TO_DHIS=(bool, True),
-    DHIS_CLIENT_SECRET=(str, '4e9a05722-62f4-3e03-287c-74f5ad1aa5f')
+    DHIS_CLIENT_SECRET=(str, '')
 )
 # env.read_env(os.path.join(BASE_DIR, '.env'))
 
