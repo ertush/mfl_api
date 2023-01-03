@@ -150,6 +150,36 @@ class FilterReportMixin(object):
                 filters=filters
             )
 
+        if report_type == "beds_and_cots_by_keph_level":
+            keph_level_id = self.request.query_params.get(
+                "keph_level", None
+            )
+            filters = (
+                {} if keph_level_id is None
+                else {"keph_level": keph_level_id}
+            )
+            
+            return self._get_beds_and_cots(
+                vals={'keph_level__name': 'keph_level_name', 'keph_level_id': "keph_level"},
+                filters=filters
+            )
+
+        if report_type == "beds_and_cots_by_owner":
+            keph_level_id = self.request.query_params.get(
+                "owner", None
+            )
+            filters = (
+                {} if keph_level_id is None
+                else {"owner": keph_level_id}
+            )
+            
+            return self._get_beds_and_cots(
+                vals={'owner__name': 'owner_name', 'owner_id': "owner"},
+                filters=filters
+            )
+
+        
+
         more_filters_params = self.request.query_params.get("filters", None)
 
         report_config = REPORTS.get(report_type, None)

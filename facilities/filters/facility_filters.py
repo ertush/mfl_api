@@ -424,7 +424,7 @@ class FacilityFilter(CommonFieldsFilterset):
         return qs.filter(number_of_beds__gte=1)
 
     def filter_number_cots(self, qs, name, value):
-        return self.filter(number_of_cots__gte=1)
+        return qs.filter(number_of_cots__gte=1)
 
     id = ListCharFilter(lookup_expr='icontains')
     name = django_filters.CharFilter(lookup_expr='icontains')
