@@ -2624,7 +2624,7 @@ class FacilityService(AbstractBase):
         'CHRIO')
     # For services that do not have options, the service will be linked
     # directly to the
-    service = models.ForeignKey(Service, on_delete=models.PROTECT,)
+    service = models.ForeignKey(Service, related_name='service_id', on_delete=models.PROTECT)
 
     @property
     def service_has_options(self):
@@ -2899,7 +2899,7 @@ class FacilitySpecialist(AbstractBase):
         Facility, related_name='facility_specialists',
         on_delete=models.PROTECT)
 
-    speciality = models.ForeignKey(Speciality, on_delete=models.PROTECT,)
+    speciality = models.ForeignKey(Speciality, related_name='speciality', on_delete=models.PROTECT,)
 
     count = models.IntegerField(
         default=0, 
@@ -3018,7 +3018,8 @@ class FacilityInfrastructure(AbstractBase):
         on_delete=models.PROTECT)
 
     infrastructure = models.ForeignKey(
-        Infrastructure, 
+        Infrastructure,
+        related_name='infrastructure',
         on_delete=models.PROTECT,)
 
     count = models.IntegerField(

@@ -352,15 +352,44 @@ class FacilityContactFilter(CommonFieldsFilterset):
 class FacilityFilter(CommonFieldsFilterset):
 
     def service_filter(self, qs, name, value):
-        categories = value.split(',')
+        services = value.split(',')
         facility_ids = []
 
-        for facility in self.filter():
-            for cat in categories:
+        for facility in qs.filter():
+            for _service in services:
                 service_count = FacilityService.objects.filter(
-                    service__category=cat,
+                    service=_service,
                     facility=facility).count()
                 if service_count > 0:
+                    facility_ids.append(facility.id)
+
+        return qs.filter(id__in=list(set(facility_ids)))
+
+    def infrastructure_filter(self, qs, name, value):
+        infrastructure = value.split(',')
+        facility_ids = []
+
+        for facility in qs.filter():
+            for _infra in infrastructure:
+                infrastructure_count = FacilityInfrastructure.objects.filter(
+                    infrastructure=_infra,
+                    facility=facility).count()
+                if infrastructure_count > 0:
+                    facility_ids.append(facility.id)
+
+        return qs.filter(id__in=list(set(facility_ids)))
+
+
+    def hr_filter(self, qs, name, value):
+        specialities = value.split(',')
+        facility_ids = []
+
+        for facility in qs.filter():
+            for _speciality in specialities:
+                speciality_count = FacilitySpecialist.objects.filter(
+                    speciality=_speciality,
+                    facility=facility).count()
+                if speciality_count > 0:
                     facility_ids.append(facility.id)
 
         return qs.filter(id__in=list(set(facility_ids)))
@@ -474,8 +503,12 @@ class FacilityFilter(CommonFieldsFilterset):
         coerce=strtobool)
     is_approved = django_filters.CharFilter(
         method='filter_approved_facilities')
-    service_category = django_filters.CharFilter(
-        method=service_filter)
+    service = django_filters.CharFilter(
+        method='service_filter')
+    infrastructure = django_filters.CharFilter(
+        method='infrastructure_filter')
+    speciality = django_filters.CharFilter(
+        method='hr_filter')
     has_edits = django_filters.TypedChoiceFilter(
         choices=BOOLEAN_CHOICES,
         coerce=strtobool)
