@@ -96,6 +96,9 @@ class FilterReportMixin(object):
         if report_type == "facility_keph_level_report":
             return self._get_facility_count(keph=True)
 
+        if report_type == 'bed_type_by_count':
+            return self._get_bed_type_by_count()
+
         if report_type == "facility_constituency_report":
             return self._get_facility_constituency_data()
 
@@ -161,6 +164,22 @@ class FilterReportMixin(object):
             
             return self._get_beds_and_cots(
                 vals={'keph_level__name': 'keph_level_name', 'keph_level_id': "keph_level"},
+                filters=filters
+            )
+        
+        # filter by type of bed; icu, hdu, martenity and inpatient 
+
+        if report_type == "beds_and_cots_by_bed_type":
+            icu_beds_id = self.request.query_params.get(
+                "number_of_icu_beds", None
+            )
+            filters = (
+                {} if icu_beds_id is None
+                else {"number_of_icu_beds": icu_beds_id}
+            )
+            
+            return self._get_beds_and_cots(
+                vals={'number_of_icu_beds': 'number_of_icu_beds', 'number_of_icu_beds_id': 'number_of_icu_beds'},
                 filters=filters
             )
 
@@ -626,7 +645,6 @@ class FilterReportMixin(object):
             data.append(data_dict)
         return data, []
 
-
     def _get_facility_count_by_facility_type_details(self):
         county = self.request.query_params.get('county', None)
         sub_county = self.request.query_params.get('sub_county', None)
@@ -682,6 +700,63 @@ class FilterReportMixin(object):
             data.append(data_dict)
         return data, []
 
+    def _get_bed_type_by_count(self):
+        data = []
+        county = self.request.query_params.get('county', None)
+        sub_county = self.request.query_params.get('sub_county', None)
+        ward = self.request.query_params.get('ward', None)
+
+
+        vals = []
+        vals.append(county) if county else None
+        vals.append(sub_county) if sub_county else None
+        vals.append(ward) if ward else None
+
+        for val in vals:
+            try:
+                for c in val.split(','):
+                    uuid.UUID(c)
+            except:
+                raise ValidationError(
+                    {
+                        "Administrative area": [
+                            "The area id provided is"
+                            " in the wrong format"
+                        ]
+                    }
+                )
+
+        admin_area_filter = {}
+        if county:
+            admin_area_filter = {
+                "ward__sub_county__county_id__in": county.split(',')
+            }
+        if sub_county:
+            admin_area_filter = {
+                "ward__sub_county_id__in": sub_county.split(',')
+            }
+        if ward:
+            admin_area_filter = {
+                "ward_id__in": ward.split(',')
+            }
+        data = []
+        for facility in Facility.objects.filter(
+            **admin_area_filter).filter(
+            Q(number_of_icu_beds__gt=0) & Q(number_of_hdu_beds__gt=0)):
+            record = {
+                "facility_id": str(facility.id),
+                "facility_name": facility.name,
+                "facility_code": facility.code,
+                "number_of_icu_beds": facility.number_of_icu_beds,
+                "number_of_hdu_beds": facility.number_of_hdu_beds
+            }
+            data.append(record)
+
+        return data, []
+
+
+
+        
 
 class ReportView(FilterReportMixin, APIView):
 
