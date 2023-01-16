@@ -2899,7 +2899,7 @@ class FacilitySpecialist(AbstractBase):
         Facility, related_name='facility_specialists',
         on_delete=models.PROTECT)
 
-    speciality = models.ForeignKey(Speciality, on_delete=models.PROTECT,)
+    speciality = models.ForeignKey(Speciality, related_name='speciality', on_delete=models.PROTECT,)
 
     count = models.IntegerField(
         default=0, 
