@@ -1223,7 +1223,7 @@ class Facility(SequenceMixin, AbstractBase):
             dhis2_org_unit_id = self.dhis2_api_auth.get_org_unit_id(self.code)
             kmhfl_dhis2_facility_type_mapping = {
                 "20b86171-0c16-47e1-9277-5e773d485c33": "YQK9pleIoeB",
-                "5eb392ac-d10a-40c9-b525-53dac866ef6c": "lTrpyOiOcM6",
+                "5eb392ac-d10a-40c9-b525-53dac866ef6c": "lTrpyOiOcM6", # Replace with 8949eeb0-40b1-43d4-a38d-5d4933dc209f
                 "ccc1600e-9a24-499f-889f-bd9f0bdc4b95": "YQK9pleIoeB",
                 "d8d741b1-21c5-45c8-86d0-a2094bf9bda6": "YQK9pleIoeB",
                 "869118aa-0e97-4f47-b6b7-1f295d109c8f": "YQK9pleIoeB",
@@ -2067,7 +2067,8 @@ class FacilityUpdates(AbstractBase):
                     new_date = datetime.date(year=value.year, month=value.month, day=value.day)
                     value = new_date
                 elif field_name == 'sub_county_id':
-                    value = SubCounty.objects.get(name=field_changed.get('display_value')).id
+                    import string
+                    value = SubCounty.objects.get(name=string.capwords(field_changed.get('display_value'), ' ')).id
                 else:
                     value = field_changed.get("actual_value")
 
