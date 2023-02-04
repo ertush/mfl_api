@@ -39,7 +39,7 @@ def load_missed_facilities():
             try:
                 county = County.objects.filter(name__icontains=county_name)[0]
             except IndexError:
-                import pdb; pdb.set_trace()
+                ; 
 
             print county, record.get('county')
             reg_body = None
@@ -59,8 +59,8 @@ def load_missed_facilities():
             try:
                 operation_status = FacilityStatus.objects.get(name=record.get('operation_status').get('name'))
             except AttributeError:
-                import pdb
-                pdb.set_trace()
+                
+                
 
             facility_data = {
                 "code": int(record.get('code')),
@@ -94,7 +94,7 @@ def load_missed_facilities():
                     try:
                         ward = prob_ward.filter(name__icontains=fac_ward.get('ward'))[0]
                     except:
-                        import pdb;pdb.set_trace()
+                        ;
                     facility_data['ward'] = ward
                     try:
                         Facility.objects.get(code=int(record.get('code')))
@@ -108,7 +108,7 @@ def load_missed_facilities():
                         except:
                             pass
                             
-                            # import pdb; pdb.set_trace()
+                            # ; 
                     break
 
     return len(facs_created)
@@ -117,7 +117,7 @@ def load_missed_facilities():
             # # try:
             # #     Facility(**facility_data).save()
             # # except:
-            # #     import pdb; pdb.set_trace()
+            # #     ; 
             # try:
             #     facility = Facility.objects.get(code=record.get('code'))
             #     facility.county = county
@@ -206,13 +206,13 @@ def map_facility_types():
             try:
                 facility_type_obj = FacilityType.objects.get(name=new_type)
             except FacilityType.DoesNotExist:
-                import pdb
-                pdb.set_trace()
+                
+                
             facility.facility_type = facility_type_obj
             try:
                 facility.save(allow_save=True)
             except:
-                import pdb;pdb.set_trace()
+                ;
 
 
 
