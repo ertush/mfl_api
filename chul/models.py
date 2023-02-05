@@ -496,9 +496,10 @@ class ChuUpdateBuffer(AbstractBase):
                     'facility').get('facility_id')
                 basic_details.pop('facility')
            
+            
             for key, value in basic_details.iteritems():
                 setattr(self.health_unit, key, value)
-            if 'facility' in basic_details.get('basic'):
+            if 'basic' in basic_details:
                 setattr(self.health_unit, 'facility_id', basic_details.get('basic').get('facility'))
             self.health_unit.save()
 

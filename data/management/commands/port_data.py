@@ -59,8 +59,8 @@ class CreateJsonFiles(object):
                 }
             ]
             json_data = template.render(context)  # NOQA
-            # import pdb
-            # pdb.set_trace()
+            # 
+            # 
             # json_file.write(json_data, indent=4)
             json.dump(to_write, json_file, indent=4)
 
@@ -2323,8 +2323,8 @@ def port_data():
                             else:
                                 value = obj[field.get("v1_pos")]
                         except:
-                            import pdb
-                            pdb.set_trace()
+                            
+                            
                         if value:
                             row_data[field.get("v2")] = value
                     else:

@@ -1270,6 +1270,9 @@ class Facility(SequenceMixin, AbstractBase):
                 "93c0fe24-3f12-4be2-b5ff-027e0bd02274": "AaAF5EmS1fk",
                 "c3bab995-0c29-433c-b39c-6b86d6084f5f": "AaAF5EmS1fk",
                 "6cb92834-107c-404a-91fa-cf60b1eb5333": "aRxa6o8GqZN",
+                "2e651780-2ed4-4f8c-9061-6e5acf95d581": "AaAF5EmS1fk",
+                "30af7e3f-cd52-4ca0-b5dc-d8b1040a9808": "AaAF5EmS1fk",
+                "d64bbd8a-4013-463b-a238-c346cee66a92": "AaAF5EmS1fk",
             }
             kmhfl_dhis2_keph_mapping = {
                 "ed23da85-4c92-45af-80fa-9b2123769f49": "FpY8vg4gh46",
@@ -1603,26 +1606,6 @@ class Facility(SequenceMixin, AbstractBase):
             for h_r in hr
         ]
 
-    # @property
-    # def get_facility_humanresources(self):
-    #     """For the same purpose as the get_facility_infra... above"""
-
-    #     import pdb
-    #     pdb.set_trace()
-
-    #     hr = self.facility_humanresources.all()
-
-        
-    #     return [
-    #         {
-    #             "id": h_r.id,
-    #             "name": h_r.speciality.name,
-    #             "count": h_r.count,
-    #             "hr_category": h_r.speciality.category.id,
-    #             "hr_category_name": str(h_r.speciality.category.name),
-    #         }
-    #         for h_r in hr
-    #     ]
 
     @property
     def average_rating(self):
@@ -2067,8 +2050,7 @@ class FacilityUpdates(AbstractBase):
                     new_date = datetime.date(year=value.year, month=value.month, day=value.day)
                     value = new_date
                 elif field_name == 'sub_county_id':
-                    import string
-                    value = SubCounty.objects.get(name=string.capwords(field_changed.get('display_value'), ' ')).id
+                    value = SubCounty.objects.get(id=field_changed.get('actual_value')).id
                 else:
                     value = field_changed.get("actual_value")
 
@@ -3021,7 +3003,7 @@ class FacilityInfrastructure(AbstractBase):
     infrastructure = models.ForeignKey(
         Infrastructure,
         related_name='infrastructure',
-        on_delete=models.PROTECT,)
+            on_delete=models.PROTECT,)
 
     count = models.IntegerField(
         default=0, 
