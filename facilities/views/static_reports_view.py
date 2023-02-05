@@ -34,17 +34,17 @@ class StaticReport(QuerysetFilterMixin, APIView):
             facility__ward=ward).count()
 
     def get_bed_count(self, location):
-        import pdb
+        
         if location:
 
-            pdb.set_trace()
+            
             # for keph in keph_level:
                 # objects.values('Category').distinct()
             facility_beds_details = Facility.objects.values("number_of_cots", "number_of_beds","number_of_hdu_beds", "number_of_icu_beds", "number_of_isolation_beds","number_of_maternity_beds","owner_id","county_id", "facility_type_id","keph_level_id", "sub_county_id","ward_id", ward__sub_county__county=location)  
 
             return "keph_array"
         else:
-            # pdb.set_trace()
+            # 
             counties = County.objects.values("id","name","code")
             facility_beds_details = Facility.objects.values("number_of_cots", "number_of_beds","number_of_hdu_beds", "number_of_icu_beds", "number_of_isolation_beds","number_of_maternity_beds","owner_id","county_id", "facility_type_id","keph_level_id", "sub_county_id","ward_id")  
             counties_beds_array = []

@@ -78,14 +78,13 @@ def load_wards_and_sub_counties_json_file():
             try:
                 county_obj = County.objects.get(name__contains=county_name)
             except:
-                import pdb
-                pdb.set_trace()
+                
             try:
                 constituency_obj = Constituency.objects.get(
                     name=constituency_name, county=county_obj)
             except:
-                import pdb
-                pdb.set_trace()
+                
+                
             try:
                 sub = SubCounty.objects.get(
                     name=sub_county_name.lower(), county=county_obj)
@@ -105,8 +104,8 @@ def load_wards_and_sub_counties_json_file():
                     county_name, constituency_name,
                     sub_county_name, ward_name)
             except:
-                import pdb
-                pdb.set_trace()
+                
+                
 
 
 def delete_unwanted_facilities():
@@ -126,8 +125,8 @@ def delete_unwanted_facilities():
         for fc in FacilityContact.everything.filter(facility=facility):
             for con in Contact.objects.filter(contact=fc.contact):
                 con.delete()
-            import pdb
-            pdb.set_trace()
+            
+            
             fc.delete()
 
         for unit in FacilityUnit.objects.filter(facility=facility):
