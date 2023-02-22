@@ -282,8 +282,6 @@ class CreateFacilityOfficerMixin(object):
         created_contacts = []
 
         for contact in contacts:
-            import pdb
-            pdb.set_trace()
             contact_type = ContactType.objects.get(id=contact.get('contact_type'))
             contact_dict = {
                 "contact_type": contact_type,

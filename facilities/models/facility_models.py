@@ -161,7 +161,7 @@ class DhisAuth(ApiAuthentication):
             # )
 
     def get_parent_id(self, ward_id):
-        print self.session_store[self.oauth2_token_variable_name]
+        print (self.session_store[self.oauth2_token_variable_name])
         r = requests.get(
             settings.DHIS_ENDPOINT+"api/organisationUnits.json",
             auth=(settings.DHIS_USERNAME, settings.DHIS_PASSWORD),
@@ -1223,7 +1223,8 @@ class Facility(SequenceMixin, AbstractBase):
             dhis2_org_unit_id = self.dhis2_api_auth.get_org_unit_id(self.code)
             kmhfl_dhis2_facility_type_mapping = {
                 "20b86171-0c16-47e1-9277-5e773d485c33": "YQK9pleIoeB",
-                "5eb392ac-d10a-40c9-b525-53dac866ef6c": "lTrpyOiOcM6", # Replace with 8949eeb0-40b1-43d4-a38d-5d4933dc209f
+                "5eb392ac-d10a-40c9-b525-53dac866ef6c": "lTrpyOiOcM6",
+                "8949eeb0-40b1-43d4-a38d-5d4933dc209f": "lTrpyOiOcM6",
                 "ccc1600e-9a24-499f-889f-bd9f0bdc4b95": "YQK9pleIoeB",
                 "d8d741b1-21c5-45c8-86d0-a2094bf9bda6": "YQK9pleIoeB",
                 "869118aa-0e97-4f47-b6b7-1f295d109c8f": "YQK9pleIoeB",
