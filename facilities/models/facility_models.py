@@ -161,7 +161,7 @@ class DhisAuth(ApiAuthentication):
             # )
 
     def get_parent_id(self, ward_id):
-        print self.session_store[self.oauth2_token_variable_name]
+        print (self.session_store[self.oauth2_token_variable_name])
         r = requests.get(
             settings.DHIS_ENDPOINT+"api/organisationUnits.json",
             auth=(settings.DHIS_USERNAME, settings.DHIS_PASSWORD),
@@ -1223,9 +1223,11 @@ class Facility(SequenceMixin, AbstractBase):
             dhis2_org_unit_id = self.dhis2_api_auth.get_org_unit_id(self.code)
             kmhfl_dhis2_facility_type_mapping = {
                 "20b86171-0c16-47e1-9277-5e773d485c33": "YQK9pleIoeB",
-                "5eb392ac-d10a-40c9-b525-53dac866ef6c": "lTrpyOiOcM6", # Replace with 8949eeb0-40b1-43d4-a38d-5d4933dc209f
+                "5eb392ac-d10a-40c9-b525-53dac866ef6c": "lTrpyOiOcM6",
+                "8949eeb0-40b1-43d4-a38d-5d4933dc209f": "lTrpyOiOcM6",
                 "ccc1600e-9a24-499f-889f-bd9f0bdc4b95": "YQK9pleIoeB",
                 "d8d741b1-21c5-45c8-86d0-a2094bf9bda6": "YQK9pleIoeB",
+                "85f2099b-a2f8-49f4-9798-0cb48c0875ff": "YQK9pleIoeB",
                 "869118aa-0e97-4f47-b6b7-1f295d109c8f": "YQK9pleIoeB",
                 "a8af148f-b1b6-4eed-9d86-07d4f3135229": "YQK9pleIoeB",
                 "74755372-99ba-4b70-bca8-a583f03990bc": "lTrpyOiOcM6",
@@ -1245,6 +1247,7 @@ class Facility(SequenceMixin, AbstractBase):
                 "188551b7-4f22-4fc4-b07b-f9c9aeeea872": "rhKJPLo27x7",
                 "e5923a48-6b22-42c4-a4e6-6c5a5e8e0b0e": "YQK9pleIoeB",
                 "55d65dd6-5351-4cf4-a6d9-e05ce6d343ab": "mVrepdLAqSD",
+                "87626d3d-fd19-49d9-98da-daca4afe85bf": "mVrepdLAqSD",
                 "79158397-0d87-4d0e-8694-ad680a907a79": "YQK9pleIoeB",
                 "031293d9-fd8a-4682-a91e-a4390d57b0cf": "YQK9pleIoeB",
                 "4369eec8-0416-4e16-b013-e635ce46a02f": "YQK9pleIoeB",
