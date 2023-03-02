@@ -416,6 +416,7 @@ class FacilityListView(QuerysetFilterMixin, generics.ListCreateAPIView):
     county -- A list of comma separated county pks<br>
     constituency -- A list of comma separated constituency pks<br>
     owner -- A list of comma separated owner pks<br>
+    number_of_inpatient_beds -- A list of comma separated integers<br>
     number_of_beds -- A list of comma separated integers<br>
     number_of_cots -- A list of comma separated integers<br>
     open_whole_day -- Boolean True/False<br>

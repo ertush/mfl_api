@@ -84,7 +84,11 @@ urlpatterns = (
         views.FacilityOfficerDetailView.as_view(),
         name='facility_officer_detail'),
 
-    url(r'^dashboard/$', views.DashBoard.as_view(), name='dashboard'),
+    url(r'^dashboard/$', views.DashBoard.as_view(), 
+    name='dashboard'),
+    # url(r'^dashboard/(?P<pk>[^/]+)/$', views.DashBoard.as_view(), 
+    # name='dashboard'),
+    
 
     url(r'^facility_correction_template/(?P<pk>[^/]+)/$',
         views.FacilityCorrectionTemplate.as_view(),
