@@ -1046,6 +1046,10 @@ class Facility(SequenceMixin, AbstractBase):
         default=0,
         help_text="The number of High Dependency Units (HDU) beds"
         " that a facility has e.g 0")
+    number_of_inpatient_beds = models.PositiveIntegerField(
+        default=0,
+        help_text="The number of General In-patient beds"
+        " that a facility has e.g 0")
     # <Additions>
     number_of_maternity_beds = models.PositiveIntegerField(
         default=0,
