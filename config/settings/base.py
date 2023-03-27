@@ -7,7 +7,7 @@ BASE_DIR = os.path.dirname(
 # Override in production via env
 
 env = environ.Env(
-    DATABASE_URL=(str, 'postgres://mfl:mfl@localhost:5433/mfl'),
+    DATABASE_URL=(str, 'postgres://admin:Passw0rd@localhost:5432/testdb'),
     DEBUG=(bool, True),
     FRONTEND_URL=(str, "http://localhost:8062"),
     REALTIME_INDEX=(bool, False),
@@ -47,7 +47,7 @@ DATABASES = {
         'HOST': '127.0.0.1',
         'NAME': 'mfl',
         'PASSWORD': 'mfl@pa55w0rd',
-        'PORT': '5433',
+        'PORT': '5432',
         'USER': 'mfladmin',
     }
 }  # Env should have DATABASE_URL
