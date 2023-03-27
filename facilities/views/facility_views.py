@@ -431,6 +431,7 @@ class FacilityListView(QuerysetFilterMixin, generics.ListCreateAPIView):
     active  -- Boolean is the record active<br>
     deleted -- Boolean is the record deleted<br>
     """
+    
     queryset = Facility.objects.all()
     serializer_class = FacilitySerializer
     filter_class = FacilityFilter
@@ -467,11 +468,12 @@ class FacilityDetailView(
     """
     Retrieves a particular facility
     """
+   
     queryset = Facility.objects.all()
     serializer_class = FacilityDetailSerializer
     validation_errors = {}
 
-    def buffer_contacts(self, update, contacts):
+    def buffer_contacts(self, update, contacts) :
         """
         Prepares the new facility contacts to be saved in the facility
         updates model
