@@ -1,0 +1,144 @@
+{
+  "config": {
+    "forbidOnly": false,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {},
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "c:/Users/TripleM/Desktop/mflLogin/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "c:/Users/TripleM/Desktop/mflLogin/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/?(*.)@(spec|test).*"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "c:/Users/TripleM/Desktop/mflLogin/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "id": "webkit",
+        "name": "webkit",
+        "testDir": "c:/Users/TripleM/Desktop/mflLogin/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/?(*.)@(spec|test).*"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "reporter": [
+      [
+        "dot",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "jsonReport/jsonReport.json"
+        }
+      ],
+      [
+        "html",
+        {
+          "open": "never"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 15000
+    },
+    "configFile": "c:\\Users\\TripleM\\Desktop\\mflLogin\\playwright.config.js",
+    "rootDir": "c:/Users/TripleM/Desktop/mflLogin/tests",
+    "quiet": false,
+    "shard": null,
+    "updateSnapshots": "missing",
+    "version": "1.32.0",
+    "workers": 4,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "login.test.js",
+      "file": "login.test.js",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "test",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "status": "failed",
+                  "duration": 1480,
+                  "error": {
+                    "message": "page.goto: net::ERR_INTERNET_DISCONNECTED at http://admin.kmhfltest.health.go.ke/\n=========================== logs ===========================\nnavigating to \"http://admin.kmhfltest.health.go.ke/\", waiting until \"load\"\n============================================================",
+                    "stack": "Error: page.goto: net::ERR_INTERNET_DISCONNECTED at http://admin.kmhfltest.health.go.ke/\n=========================== logs ===========================\nnavigating to \"http://admin.kmhfltest.health.go.ke/\", waiting until \"load\"\n============================================================\n    at c:\\Users\\TripleM\\Desktop\\mflLogin\\tests\\login.test.js:17:14"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "c:\\Users\\TripleM\\Desktop\\mflLogin\\tests\\login.test.js",
+                        "column": 14,
+                        "line": 17
+                      },
+                      "message": "Error: page.goto: net::ERR_INTERNET_DISCONNECTED at http://admin.kmhfltest.health.go.ke/\n=========================== logs ===========================\nnavigating to \"http://admin.kmhfltest.health.go.ke/\", waiting until \"load\"\n============================================================\n\n\u001b[90m   at \u001b[39mlogin.test.js:17\n\n  15 |\n  16 | test(\"test\", async ({ page }) => {\n> 17 |   await page.goto(\"http://admin.kmhfltest.health.go.ke\");\n     |              ^\n  18 |   await page.getByRole(\"link\", { name: \"Log in\" }).click();\n  19 |   await page.getByPlaceholder(\"you@geemail.com\").click();\n  20 |   await page.getByPlaceholder(\"you@geemail.com\").fill(\"test@mflcountyuser.com\");\n\n\u001b[2m    at c:\\Users\\TripleM\\Desktop\\mflLogin\\tests\\login.test.js:17:14\u001b[22m"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2023-03-24T19:13:59.374Z",
+                  "attachments": [
+                    {
+                      "name": "video",
+                      "contentType": "video/webm",
+                      "path": "c:\\Users\\TripleM\\Desktop\\mflLogin\\test-results\\login-test-chromium\\video.webm"
+                    },
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "c:\\Users\\TripleM\\Desktop\\mflLogin\\test-results\\login-test-chromium\\test-failed-1.png"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "c:\\Users\\TripleM\\Desktop\\mflLogin\\tests\\login.test.js",
+                    "column": 14,
+                    "line": 17
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "087306b8335cdced5c6c-91811b928c3eff4edb4b",
+          "file": "login.test.js",
+          "line": 16,
+          "column": 5
+        }
+      ]
+    }
+  ],
+  "errors": []
+}
