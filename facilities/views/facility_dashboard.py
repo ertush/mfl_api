@@ -405,7 +405,7 @@ class DashBoard(QuerysetFilterMixin, APIView):
                     facility__in=self.get_queryset()).count()
         else:
             if not self.request.query_params.get('ward'):
-                return CommunityHealthUnit.objects.filter(dcreated__gte=period_start, created__lte=period_end).filter(
+                return CommunityHealthUnit.objects.filter(created__gte=period_start, created__lte=period_end).filter(
                     Q(is_approved=False, is_rejected=False) |
                     Q(has_edits=True)).distinct().filter(
                         facility__in=self.get_queryset(),
@@ -476,34 +476,30 @@ class DashBoard(QuerysetFilterMixin, APIView):
         
         user = self.request.user
         county_ = user.county   
-        
+        print(self.request.query_params.get('county'))
         period_start = self.request.query_params.get('datefrom')
         period_end = self.request.query_params.get('dateto') 
         if not period_end:
             period_end=datetime.max
         if not period_start:
-            period_start=datetime.min
-        print(period_start)
+            period_start=datetime.min 
+
         if not self.request.query_params.get('county'):
             county_ = user.county
         else:
             county_ = County.objects.get(id=self.request.query_params.get('county'))
         if not county_ and not self.request.query_params.get('sub_county'):
-            
-            total_facilities = self.get_queryset().filter(created__gte=period_start, created__lte=period_end,).count() 
+            total_facilities = self.get_queryset().filter(created__gte=period_start, created__lte=period_end).count() 
         else:
             if not self.request.query_params.get('ward'):
-                
-                total_facilities = self.get_queryset().filter(created__gte=period_start, created__lte=period_end, ward__sub_county__county=county_, ward__sub_county=self.request.query_params.get('sub_county')).count()
-                
-            else:
-                
+                total_facilities = self.get_queryset().filter(created__gte=period_start, created__lte=period_end, 
+                ward__sub_county__county=county_, ward__sub_county=self.request.query_params.get('sub_county')).count()
+            else: 
                 total_facilities = self.get_queryset().filter(created__gte=period_start, created__lte=period_end,
                     ward__sub_county__county=county_, ward=self.request.query_params.get('ward')).count()
 
         if not county_ and not self.request.query_params.get('sub_county'):
-            total_chus = CommunityHealthUnit.objects.filter(date_established__gte=period_start, date_established__lte=period_end).filter(
-                 facility__in=self.get_queryset()).count()
+            total_chus = CommunityHealthUnit.objects.filter(date_established__gte=period_start, date_established__lte=period_end).filter(facility__in=self.get_queryset()).count()
         else:
             if not self.request.query_params.get('ward'):
                 total_chus = CommunityHealthUnit.objects.filter(date_established__gte=period_start, date_established__lte=period_end).filter(
@@ -513,6 +509,7 @@ class DashBoard(QuerysetFilterMixin, APIView):
                 total_chus = CommunityHealthUnit.objects.filter(date_established__gte=period_start, date_established__lte=period_end).filter(
                     facility__in=self.get_queryset().filter(
                     ward__sub_county__county=county_, ward=self.request.query_params.get('ward'))).count()
+        print(self.request.query_params)
         data = {
             "timeperiod":[{"startdate":period_start},{"enddate":period_end}],
             "keph_level" : self.get_facilities_kephlevel_count(county_,period_start,period_end),
