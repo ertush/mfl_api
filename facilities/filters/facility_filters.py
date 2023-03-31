@@ -454,7 +454,7 @@ class FacilityFilter(CommonFieldsFilterset):
 
     def filter_number_cots(self, qs, name, value):
         return qs.filter(number_of_cots__gte=1)
-
+    
     id = ListCharFilter(lookup_expr='icontains')
     name = django_filters.CharFilter(lookup_expr='icontains')
     code = ListIntegerFilter(lookup_expr='exact')
