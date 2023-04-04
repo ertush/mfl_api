@@ -68,7 +68,7 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
     curative health services
     """
     name = models.CharField(max_length=100)
-    code = SequenceField(unique=True)
+    code = SequenceField(unique=True, null=True)
     facility = models.ForeignKey(
         Facility,
         help_text='The facility on which the health unit is tied to.')
