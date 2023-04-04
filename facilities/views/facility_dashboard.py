@@ -451,6 +451,7 @@ class DashBoard(QuerysetFilterMixin, APIView):
             else:
                 return self.get_queryset().filter(closed_date__gte=period_start, closed_date__lte=period_end, closed=True, ward__sub_county__county=cty, ward=self.request.query_params.get('ward')).count()
 
+
     def get_facilities_kephlevel_count(self,county_name,period_start,period_end):
         """
         Function to get facilities by keph level
@@ -459,7 +460,9 @@ class DashBoard(QuerysetFilterMixin, APIView):
             keph_level = KephLevel.objects.values("id", "name")  
             keph_array = []
             for keph in keph_level:
+
                 keph_count = Facility.objects.filter(created__gte=period_start, created__lte=period_end, keph_level_id=keph.get("id"),ward__sub_county__county=county_name ).count()
+
                 keph_array.append({"name" : keph.get("name"), "count" : keph_count})
             return keph_array
 
@@ -471,7 +474,7 @@ class DashBoard(QuerysetFilterMixin, APIView):
                 keph_array.append({"name" : keph.get("name"), "count" : keph_count})
 
             return keph_array
-       
+
     def get(self, *args, **kwargs):
         
         user = self.request.user
@@ -535,7 +538,7 @@ class DashBoard(QuerysetFilterMixin, APIView):
             "approved_facilities": self.get_facilities_approved_count(county_,period_start,period_end),
 
         }
-
+	
         fields = self.request.query_params.get("fields", None)
        
         if fields:
