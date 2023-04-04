@@ -343,7 +343,7 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
                     "Error!": ["Unable to resolve exact Facility linked to the CHU in DHIS2"]
                 }
             )
-   class Meta(AbstractBase.Meta):
+    class Meta(AbstractBase.Meta):
         unique_together = ('name', 'facility', )
         permissions = (
             (
