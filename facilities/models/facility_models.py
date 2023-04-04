@@ -1048,6 +1048,8 @@ class Facility(SequenceMixin, AbstractBase):
         " that a facility has e.g 0")
     number_of_inpatient_beds = models.PositiveIntegerField(
         default=0,
+	null=True,
+        blank=True,
         help_text="The number of General In-patient beds"
         " that a facility has e.g 0")
     # <Additions>
