@@ -1,19 +1,16 @@
 import json
 import datetime
 import reversion
-import logging
 
 from django.db import models
 from django.core.exceptions import ValidationError
 from django.core import validators
 from django.utils import timezone, encoding
-from django.conf import settings
 
 from common.models import AbstractBase, Contact, SequenceMixin
 from common.fields import SequenceField
 from facilities.models import Facility
 
-LOGGER = logging.getLogger(__name__)
 
 @reversion.register
 @encoding.python_2_unicode_compatible
@@ -71,10 +68,7 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
     curative health services
     """
     name = models.CharField(max_length=100)
-    code = SequenceField(
-        unique=True, editable=False,
-        help_text='A sequential number allocated to each chu',
-        null=True, blank=True)
+    code = SequenceField(unique=True)
     facility = models.ForeignKey(
         Facility,
         help_text='The facility on which the health unit is tied to.')
@@ -84,8 +78,7 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
         help_text='The number of house holds a CHU is in-charge of')
     date_established = models.DateField(default=timezone.now)
     date_operational = models.DateField(null=True, blank=True)
-    is_approved = models.NullBooleanField(
-        blank=True, null=True, help_text='Determines if a chu has been approved')
+    is_approved = models.BooleanField(default=False)
     approval_comment = models.TextField(null=True, blank=True)
     approval_date = models.DateTimeField(null=True, blank=True)
     location = models.CharField(max_length=255, null=True, blank=True)
@@ -240,21 +233,9 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
             return None
 
     def save(self, *args, **kwargs):
-        # new chus that have just been added but not approved yet
-        if not self.code and not self.is_approved:
-            super(CommunityHealthUnit, self).save(*args, **kwargs)
-        # existing chus that were approved previously and have been updated
-        if self.code and self.is_approved:
-            if settings.PUSH_TO_DHIS:
-                self.push_chu_to_dhis2()
-            super(CommunityHealthUnit, self).save(*args, **kwargs)
-        # chus that have just been approved but don't have a code yet
-        # and have not been pushed to DHIS yet
-        if self.is_approved and not self.code:
+        if not self.code:
             self.code = self.generate_next_code_sequence()
-            if settings.PUSH_TO_DHIS:
-                self.push_chu_to_dhis2()
-            super(CommunityHealthUnit, self).save(*args, **kwargs)
+        super(CommunityHealthUnit, self).save(*args, **kwargs)
 
     @property
     def average_rating(self):
@@ -362,8 +343,7 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
                     "Error!": ["Unable to resolve exact Facility linked to the CHU in DHIS2"]
                 }
             )
-
-    class Meta(AbstractBase.Meta):
+   class Meta(AbstractBase.Meta):
         unique_together = ('name', 'facility', )
         permissions = (
             (
