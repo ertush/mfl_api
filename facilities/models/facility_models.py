@@ -1180,6 +1180,7 @@ class Facility(SequenceMixin, AbstractBase):
     closed_date = models.DateTimeField(
         null=True, blank=True, help_text='Date the facility was closed')
     approvalrejection_date = models.DateTimeField(
+        default=null,
         null=True, blank=True, help_text='Date the facility was approved or rejected')
     closing_reason = models.TextField(
         null=True, blank=True, help_text="Reason for closing the facility")
