@@ -464,9 +464,9 @@ class FacilitySerializer(
         source="get_facility_services")
     facility_infrastructure = serializers.ReadOnlyField(
         source="get_facility_infrastructure")
+    facility_contacts = serializers.ReadOnlyField(
+        source="get_facility_contacts")
     facility_humanresources = serializers.ReadOnlyField(
-        source="get_facility_humanresources")
-    facility_specialities = serializers.ReadOnlyField(
         source="get_facility_specialities")
     is_approved = serializers.ReadOnlyField()
     has_edits = serializers.ReadOnlyField()
