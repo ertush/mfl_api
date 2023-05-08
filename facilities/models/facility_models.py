@@ -175,6 +175,7 @@ class DhisAuth(ApiAuthentication):
                 "paging": "false"
             }
         )
+        
         dhis2_facility = r.json()["organisationUnits"]
 
         if len(dhis2_facility) == 0:
@@ -264,6 +265,7 @@ class DhisAuth(ApiAuthentication):
         #     )
 
     def push_facility_updates_to_dhis2(self, org_unit_id, facility_updates_payload):
+        LOGGER.info("[*] facility_updates_payload: {}".format(facility_updates_payload))
         r = requests.put(
             settings.DHIS_ENDPOINT + "api/organisationUnits/"+org_unit_id,
             auth=(settings.DHIS_USERNAME, settings.DHIS_PASSWORD),
@@ -274,6 +276,7 @@ class DhisAuth(ApiAuthentication):
         )
 
         print("Update Facility Response", r.url, r.status_code, r.json())
+        
 
         if r.json()["status"] != "OK":
             raise ValidationError(
@@ -1328,29 +1331,30 @@ class Facility(SequenceMixin, AbstractBase):
             pass
 
     def push_facility_updates(self):
-        pass
-        # if self.approved_national_level:
-        #     from mfl_gis.models import FacilityCoordinates
-        #     import re
-        #     self.dhis2_api_auth.get_oauth2_token()
-        #
-        #     dhis2_parent_id = self.dhis2_api_auth.get_parent_id(self.ward.code)
-        #     dhis2_org_unit_id = self.dhis2_api_auth.get_org_unit_id(self.code)
-        #     new_facility_updates_payload = {
-        #         "code": str(self.code),
-        #         "name": str(self.name),
-        #         "shortName": str(self.name),
-        #         "displayName": str(self.official_name),
-        #         "parent": {
-        #             "id": dhis2_parent_id
-        #         },
-        #         "openingDate": self.facility.date_established.strftime("%Y-%m-%d"),
-        #         "coordinates": self.dhis2_api_auth.format_coordinates(
-        #             re.search(r'\((.*?)\)', str(FacilityCoordinates.objects.values('coordinates')
-        #                                         .get(facility_id=self.id)['coordinates'])).group(1))
-        #     }
-        #
-        #     self.dhis2_api_auth.push_facility_updates_to_dhis2(dhis2_org_unit_id, new_facility_updates_payload)
+        if self.approved_national_level:
+            from mfl_gis.models import FacilityCoordinates
+            import re
+            self.dhis2_api_auth.get_oauth2_token()
+        
+            dhis2_parent_id = self.dhis2_api_auth.get_parent_id(self.ward.code)
+            dhis2_org_unit_id = self.dhis2_api_auth.get_org_unit_id(self.code)
+            new_facility_updates_payload = {
+                "code": str(self.code),
+                "name": str(self.name),
+                "shortName": str(self.name),
+                "displayName": str(self.official_name),
+                "parent": {
+                    "id": dhis2_parent_id
+                },
+                "openingDate": self.facility.date_established.strftime("%Y-%m-%d"),
+                "coordinates": self.dhis2_api_auth.format_coordinates(
+                    re.search(r'\((.*?)\)', str(FacilityCoordinates.objects.values('coordinates')
+                                                .get(facility_id=self.id)['coordinates'])).group(1))
+            }
+        
+            self.dhis2_api_auth.push_facility_updates_to_dhis2(dhis2_org_unit_id, new_facility_updates_payload)
+
+    
 
     def validate_facility_name(self):
         if self.pk:
@@ -2072,7 +2076,8 @@ class FacilityUpdates(AbstractBase):
             self.facility.save(allow_save=True)
             if self.facility.code and self.facility.is_complete and self.facility.approved_national_level:
                 self.facility.push_new_facility(self.facility.code)
-            # self.push_facility_updates()
+            else:
+                self.push_facility_updates()
 
 
     def update_facility_services(self):
@@ -2198,32 +2203,7 @@ class FacilityUpdates(AbstractBase):
                          "approved or canceled before another one is made")
                 raise ValidationError(error)
 
-    def push_facility_updates(self):
-        from mfl_gis.models import FacilityCoordinates
-        import re
-        self.dhis2_api_auth.get_oauth2_token()
-
-        dhis2_parent_id = self.dhis2_api_auth.get_parent_id(self.facility.ward.code)
-        dhis2_org_unit_id = self.dhis2_api_auth.get_org_unit_id(self.facility.code)
-
-        new_facility_updates_payload = {
-            "code": str(self.facility.code),
-            "name": str(self.facility.name),
-            "shortName": str(self.facility.name),
-            "displayName": str(self.facility.official_name),
-            "parent": {
-                "id": dhis2_parent_id
-            },
-            "openingDate": self.facility.date_established.strftime("%Y-%m-%d"),
-            "coordinates": self.dhis2_api_auth.format_coordinates(
-                re.search(r'\((.*?)\)', str(FacilityCoordinates.objects.values('coordinates')
-                                            .get(facility_id=self.facility.id)['coordinates'])).group(1))
-        }
-
-        # print("Names;", "Official Name:", self.facility.official_name, "Name:", self.facility.name)
-        #
-        # print("New Facility Push Payload => ", new_facility_updates_payload)
-        self.dhis2_api_auth.push_facility_updates_to_dhis2(dhis2_org_unit_id, new_facility_updates_payload)
+    
 
     def clean(self, *args, **kwargs):
         self.validate_only_one_update_at_a_time()

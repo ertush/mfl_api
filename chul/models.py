@@ -6,6 +6,7 @@ from django.db import models
 from django.core.exceptions import ValidationError
 from django.core import validators
 from django.utils import timezone, encoding
+from django.conf import settings
 
 from common.models import AbstractBase, Contact, SequenceMixin
 from common.fields import SequenceField
@@ -78,7 +79,7 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
         help_text='The number of house holds a CHU is in-charge of')
     date_established = models.DateField(default=timezone.now)
     date_operational = models.DateField(null=True, blank=True)
-    is_approved = models.BooleanField(default=False)
+    is_approved = models.NullBooleanField(null=True, blank=True)
     approval_comment = models.TextField(null=True, blank=True)
     approval_date = models.DateTimeField(null=True, blank=True)
     location = models.CharField(max_length=255, null=True, blank=True)
@@ -233,9 +234,22 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
             return None
 
     def save(self, *args, **kwargs):
-        if not self.code:
+        # new chus that have just been added but not approved yet
+        if not self.code and not self.is_approved:
+            super(CommunityHealthUnit, self).save(*args, **kwargs)
+        # existing chus that were approved previously and have been updated
+        if self.code and self.is_approved:
+            if settings.PUSH_TO_DHIS:
+                self.push_chu_to_dhis2()
+            super(CommunityHealthUnit, self).save(*args, **kwargs)
+        # chus that have just been approved but don't have a code yet
+        # and have not been pushed to DHIS yet
+        if self.is_approved and not self.code:
             self.code = self.generate_next_code_sequence()
-        super(CommunityHealthUnit, self).save(*args, **kwargs)
+            if settings.PUSH_TO_DHIS:
+                self.push_chu_to_dhis2()
+            super(CommunityHealthUnit, self).save(*args, **kwargs)
+
 
     @property
     def average_rating(self):

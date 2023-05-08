@@ -289,6 +289,13 @@ class MflUser(AbstractBaseUser, PermissionsMixin):
         user_counties = UserCounty.objects.filter(
             user=self, active=True)
         return user_counties[0].county if user_counties else None
+    
+    @property
+    def countyid(self):
+        from common.models import UserCounty
+        user_counties = UserCounty.objects.filter(
+            user=self, active=True)
+        return user_counties[0].county_id if user_counties else None
 
     @property
     def constituency(self):
@@ -303,6 +310,13 @@ class MflUser(AbstractBaseUser, PermissionsMixin):
         user_subs = UserSubCounty.objects.filter(
             user=self, active=True)
         return user_subs[0].sub_county if user_subs else None
+    
+    @property
+    def sub_countyid(self):
+        from common.models import UserSubCounty
+        user_subs = UserSubCounty.objects.filter(
+            user=self, active=True)
+        return user_subs[0].sub_county_id if user_subs else None
 
     @property
     def regulator(self):
