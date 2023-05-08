@@ -161,7 +161,7 @@ class DhisAuth(ApiAuthentication):
             # )
 
     def get_parent_id(self, ward_id):
-        print (self.session_store[self.oauth2_token_variable_name])
+        LOGGER.info("Session_store_token: {}".format(self.session_store[self.oauth2_token_variable_name]))
         r = requests.get(
             settings.DHIS_ENDPOINT+"api/organisationUnits.json",
             auth=(settings.DHIS_USERNAME, settings.DHIS_PASSWORD),
@@ -176,6 +176,7 @@ class DhisAuth(ApiAuthentication):
             }
         )
         
+        LOGGER.info("[>>>>>>>>>>>>] dhsi2_facility_response: {}".format(r.json()))
         dhis2_facility = r.json()["organisationUnits"]
 
         if len(dhis2_facility) == 0:
@@ -188,6 +189,7 @@ class DhisAuth(ApiAuthentication):
             return dhis2_facility[0]["id"]
 
     def push_facility_to_dhis2(self, new_facility_payload, new_facility=True):
+        LOGGER.info("[>>>>>>>>>>>>] new_facility_payload: {}".format(new_facility_payload))
         if new_facility:
             r = requests.post(
                 settings.DHIS_ENDPOINT+"api/organisationUnits",
@@ -199,7 +201,7 @@ class DhisAuth(ApiAuthentication):
                 },
                 json=new_facility_payload
             )
-            LOGGER.info("Create Facility Response: %s" % r.text)
+            LOGGER.info("[>>>>>>>>>] Create Facility Response: %s" % r.text)
         else:
             r = requests.put(
                 settings.DHIS_ENDPOINT + "api/organisationUnits/" + new_facility_payload.pop('id'),
@@ -209,7 +211,7 @@ class DhisAuth(ApiAuthentication):
                 },
                 json=new_facility_payload
             )
-            LOGGER.info("Update Facility Response: %s" % r.text)
+            LOGGER.info("[>>>>>>>>>>] Update Facility Response: %s" % r.text)
         if r.json()["status"] != "OK":
             LOGGER.error('Facility feedback: %s' % r.text)
             raise ValidationError(
@@ -221,6 +223,7 @@ class DhisAuth(ApiAuthentication):
             )
 
     def push_facility_metadata(self, metadata_payload, facility_uid):
+        LOGGER.info("[>>>>>>>>>>] Update Facility Response: {}".format(metadata_payload))
         # Keph Level
         r_keph = requests.post(
             settings.DHIS_ENDPOINT + "api/organisationUnitGroups/" + metadata_payload['keph'] + "/organisationUnits/" + facility_uid,
@@ -2076,8 +2079,8 @@ class FacilityUpdates(AbstractBase):
             self.facility.save(allow_save=True)
             if self.facility.code and self.facility.is_complete and self.facility.approved_national_level:
                 self.facility.push_new_facility(self.facility.code)
-            else:
-                self.push_facility_updates()
+            # else:
+                # self.push_facility_updates()
 
 
     def update_facility_services(self):

@@ -1,6 +1,7 @@
 import json
 import datetime
 import reversion
+import logging
 
 from django.db import models
 from django.core.exceptions import ValidationError
@@ -11,6 +12,10 @@ from django.conf import settings
 from common.models import AbstractBase, Contact, SequenceMixin
 from common.fields import SequenceField
 from facilities.models import Facility
+
+
+LOGGER = logging.getLogger(__name__)
+
 
 
 @reversion.register
@@ -283,7 +288,13 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
             "keph": 'axUnguN4QDh'
         }
 
+        LOGGER.info("[>>>>>>]new_chu_payload: {}".format(new_chu_payload))
+
+        
         if unit_uuid_status[1] == 'retrieved':
+            # import pdb
+            # pdb.set_trace()
+            # LOGGER.info("new_chu_payload: {}".format(new_chu_payload))
             r = requests.put(
                 settings.DHIS_ENDPOINT + "api/organisationUnits/" + new_chu_payload.pop('id'),
                 auth=(settings.DHIS_USERNAME, settings.DHIS_PASSWORD),
@@ -292,8 +303,9 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
                 },
                 json=new_chu_payload
             )
-            print("Update CHU Response", r.url, r.status_code, r.json())
-            LOGGER.info("Update CHU Response: %s" % r.text)
+           
+            LOGGER.info("[>>>>>>>>]Create CHU Response: {}".format(r.json()))
+            LOGGER.info("[>>>>>>>>]Create CHU Response: %s" % r.text)
         else:
             r = requests.post(
                 settings.DHIS_ENDPOINT + "api/organisationUnits",
@@ -304,8 +316,9 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
                 json=new_chu_payload
             )
 
-            print("Create CHU Response", r.url, r.status_code, r.json())
-            LOGGER.info("Create CHU Response: %s" % r.text)
+          
+            LOGGER.info("[>>>>>>>>]Create CHU Response: {}".format(r.json()))
+            LOGGER.info("[>>>>>>>>]Create CHU Response: %s" % r.text)
 
         if r.json()["status"] != "OK":
             LOGGER.error("Failed PUSH: error -> {}".format(r.text))
@@ -332,8 +345,12 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
         LOGGER.info('Metadata CUs pushed successfullly')
 
     def get_facility_dhis2_parent_id(self):
+        LOGGER.info("[>>>>>>] facility: {}".format(str(self.facility.code)))
+
         from facilities.models.facility_models import DhisAuth
         import requests
+
+        #if code in self.facility:
         r = requests.get(
             settings.DHIS_ENDPOINT + "api/organisationUnits.json",
             auth=(settings.DHIS_USERNAME, settings.DHIS_PASSWORD),
@@ -341,7 +358,7 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
                 "Accept": "application/json"
             },
             params={
-                "query": self.facility.code,
+                "query": str(self.facility.code),
                 "fields": "[id,name]",
                 "filter": "level:in:[5]",
                 "paging": "false"
@@ -479,23 +496,19 @@ class ChuUpdateBuffer(AbstractBase):
             raise ValidationError({"__all__": ["Nothing was edited"]})
 
     def update_basic_details(self):
-        if self.basic:
-            basic_details = json.loads(self.basic)
-            if 'status' in basic_details:
-                basic_details['status_id'] = basic_details.get(
-                    'status').get('status_id')
-                basic_details.pop('status')
-            if 'facility' in basic_details:
-                basic_details['facility_id'] = basic_details.get(
-                    'facility').get('facility_id')
-                basic_details.pop('facility')
-           
-            
-            for key, value in basic_details.iteritems():
-                setattr(self.health_unit, key, value)
-            if 'basic' in basic_details:
-                setattr(self.health_unit, 'facility_id', basic_details.get('basic').get('facility'))
-            self.health_unit.save()
+        basic_details = json.loads(self.basic)
+        if 'status' in basic_details:
+            basic_details['status_id'] = basic_details.get(
+                'status').get('status_id')
+            basic_details.pop('status')
+        if 'facility' in basic_details:
+            basic_details['facility_id'] = basic_details.get(
+                'facility').get('facility_id')
+            basic_details.pop('facility')
+
+        for key, value in basic_details.iteritems():
+            setattr(self.health_unit, key, value)
+        self.health_unit.save()
 
     def update_workers(self):
         chews = json.loads(self.workers)
