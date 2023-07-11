@@ -236,11 +236,12 @@ class Ward(AdministrativeUnitBase):
     constituency = models.ForeignKey(
         Constituency,
         help_text="The constituency where the ward is located.",
-        on_delete=models.PROTECT)
+        on_delete=models.PROTECT, db_column="constituency_id")
+    
     sub_county = models.ForeignKey(
-        SubCounty, null=True, blank=True,
+        SubCounty, 
         help_text='The sub-county where the ward is located',
-        on_delete=models.PROTECT)
+        on_delete=models.PROTECT, db_column="sub_county_id")
 
     def __str__(self):
         return self.name

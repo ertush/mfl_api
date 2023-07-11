@@ -165,7 +165,7 @@ class WardSerializer(AbstractFieldsMixin, GeoModelSerializer):
     county_name = serializers.ReadOnlyField(source="constituency.county.name")
     constituency_name = serializers.ReadOnlyField(source="constituency.name")
     sub_county_name = serializers.ReadOnlyField(source="sub_county.name")
-    sub_county = serializers.CharField(source='sub_county.id')
+    # sub_county = serializers.CharField()
 
     class Meta(AbstractFieldsMixin.Meta):
         model = Ward
