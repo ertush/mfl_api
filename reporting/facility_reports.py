@@ -119,6 +119,33 @@ class FilterReportMixin(object):
 
         if report_type == "gis":
             return self._get_gis_report()
+        
+        # New Report....
+        if report_type == "beds_and_cots_by_all_hierachies":
+            county_id = self.request.query_params.get("county", None)
+            constituency_id = self.request.query_params.get(
+                "constituency", None
+            )
+            
+            filters = {}
+          
+            if county_id  is None:
+                   
+                   filters["ward__sub_county__county"]= county_id
+            
+            if constituency_id  is None:
+                    
+                    filters["ward__sub_county"]=constituency_id
+            
+
+            return self._get_all_hierachies_beds_and_cots(vals={
+              'ward__sub_county__county__name': 'county_name',
+               'ward__sub_county__county': 'county',
+               'ward__sub_county__name': 'sub_county_name',
+               'ward__sub_county': 'sub_county',
+               'ward__name': 'ward_name', 
+               'ward': "ward"
+            }, filters=filters)
 
         if report_type == "beds_and_cots_by_county":
             return self._get_beds_and_cots({
@@ -372,6 +399,7 @@ class FilterReportMixin(object):
 
         return data, []
 
+
     def _get_beds_and_cots(self, vals={}, filters={}):
         fields = vals.keys()
         assert len(fields) == 2
@@ -390,6 +418,32 @@ class FilterReportMixin(object):
                 'beds': p['beds'],
                 vals[fields[0]]: p[fields[0]],
                 vals[fields[1]]: p[fields[1]]
+            } for p in items
+        ], {"total_cots": total_cots, "total_beds": total_beds}
+    
+    # new report format
+    def _get_all_hierachies_beds_and_cots(self, vals={}, filters={}):
+        fields = vals.keys()
+        
+        items = Facility.objects.values(*fields).filter(**filters).annotate(
+            cots=Sum('number_of_cots'), beds=Sum('number_of_beds')
+        ).order_by()
+
+        total_cots, total_beds = functools.reduce(
+            lambda x, y: (x[0] + y['cots'], x[1] + y['beds']),
+            items, (0, 0)
+        )
+
+        return [
+            {
+                'cots': p['cots'],
+                'beds': p['beds'],
+                vals[fields[0]]: p[fields[0]],
+                vals[fields[1]]: p[fields[1]],
+                vals[fields[2]]: p[fields[2]],
+                vals[fields[3]]: p[fields[3]],
+                vals[fields[4]]: p[fields[4]],
+                vals[fields[5]]: p[fields[5]]
             } for p in items
         ], {"total_cots": total_cots, "total_beds": total_beds}
 
