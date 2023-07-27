@@ -39,10 +39,10 @@ def load_missed_facilities():
             try:
                 county = County.objects.filter(name__icontains=county_name)[0]
             except IndexError:
-                ; 
+            
 
-            print county, record.get('county')
-            reg_body = None
+                print( county, record.get('county'))
+                reg_body = None
 
             if record.get('regulatory_body'):
                 try:
@@ -62,17 +62,17 @@ def load_missed_facilities():
                 
                 
 
-            facility_data = {
-                "code": int(record.get('code')),
-                "name": record.get('name'),
-                "created": pytz.utc.localize(parser.parse(record.get('created'))),
-                "owner": owner,
-                "facility_type": facility_type,
-                "operation_status": operation_status,
-                "county": county,
-                "created_by": user,
-                "updated_by": user
-            }
+                facility_data = {
+                    "code": int(record.get('code')),
+                    "name": record.get('name'),
+                    "created": pytz.utc.localize(parser.parse(record.get('created'))),
+                    "owner": owner,
+                    "facility_type": facility_type,
+                    "operation_status": operation_status,
+                    "county": county,
+                    "created_by": user,
+                    "updated_by": user
+                }
 
             if reg_body:
                 facility_data['regulatory_body'] = reg_body
@@ -94,17 +94,17 @@ def load_missed_facilities():
                     try:
                         ward = prob_ward.filter(name__icontains=fac_ward.get('ward'))[0]
                     except:
-                        ;
-                    facility_data['ward'] = ward
+                        
+                        facility_data['ward'] = ward
                     try:
                         Facility.objects.get(code=int(record.get('code')))
-                        print "facility exists"
+                        print( "facility exists")
                     except Facility.DoesNotExist:
 
                         try:
                             facility= Facility(**facility_data).save()
                             facs_created.append(facility)
-                            print facility
+                            print (facility)
                         except:
                             pass
                             
@@ -206,13 +206,15 @@ def map_facility_types():
             try:
                 facility_type_obj = FacilityType.objects.get(name=new_type)
             except FacilityType.DoesNotExist:
+                try:
+                    facility.save(allow_save=True)
+                except:
+                    print("not ok")
                 
                 
-            facility.facility_type = facility_type_obj
-            try:
-                facility.save(allow_save=True)
-            except:
-                ;
+                
+                
+            
 
 
 
@@ -266,7 +268,7 @@ def remove_invalid_and_unknown_status():
     for facility in Facility.objects.filter(operation_status__name__in=['Invalid', 'Unknown']):
             facility.operation_status = closed
             facility.save(allow_save=True)
-            print facility
+            print (facility)
 
 def undelete_facility_types():
     from facilities.models import FacilityType
@@ -294,7 +296,7 @@ def remove_invalid_and_unknown_status():
     for facility in Facility.objects.filter(closed=True):
             facility.operation_status = closed
             facility.save(allow_save=True)
-            print facility
+            print( facility)
 
 
 def fix_closed_approved_facilities():

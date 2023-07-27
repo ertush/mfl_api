@@ -1,4 +1,4 @@
-#!/home/felix/Desktop/mfl_api/venv/bin/python2
+#!/home/justus/REPOS/mfl_api/venv/bin/python
 from django.core import management
 
 if __name__ == "__main__":

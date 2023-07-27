@@ -7,9 +7,9 @@ BASE_DIR = os.path.dirname(
 # Override in production via env
 
 env = environ.Env(
-    DATABASE_URL=(str, 'postgres://mfl:mfl@localhost:5432/mfl_testing'),
+    DATABASE_URL=(str, 'postgres://postgres:test@localhost:5432/mfl'),
     DEBUG=(bool, True),
-    FRONTEND_URL=(str, "http://localhost:8062"),
+    FRONTEND_URL=(str, "http://localhost:8000"),
     REALTIME_INDEX=(bool, False),
     HTTPS_ENABLED=(bool, False),
     SECRET_KEY=(str, 'p!ci1&ni8u98vvd#%18yp)aqh+m_8o565g*@!8@1wb$j#pj4d8'),
@@ -44,13 +44,20 @@ ENV_DB = env.db()
 DATABASES = {
     'default': {
         'ENGINE': 'django.contrib.gis.db.backends.postgis',
-        'HOST': ENV_DB['HOST'],
-        'NAME': ENV_DB['NAME'],
-        'PASSWORD': ENV_DB['PASSWORD'],
-        'PORT': ENV_DB['PORT'],
-        'USER': ENV_DB['USER'],
+        'HOST': '127.0.0.1',
+        'NAME': 'mfl',
+        'PASSWORD': 'test',
+        'PORT': '5432',
+        'USER': 'postgres',
     }
 }  # Env should have DATABASE_URL
+
+# 'ENGINE': 'django.contrib.gis.db.backends.postgis',
+#         'HOST': 'api.kmhfltest.health.go.ke',
+#         'NAME': 'mfl_testing',
+#         'PASSWORD': 'mfl',
+#         'PORT': '5432',
+#         'USER': 'mfl',
 MIDDLEWARE = (
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.cache.UpdateCacheMiddleware',
