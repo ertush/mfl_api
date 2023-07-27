@@ -1,4 +1,4 @@
-#!/home/felix/Desktop/mfl_api/venv/bin/python2
+#!/home/justus/REPOS/mfl_api/venv/bin/python
 
 # $Id: rst2latex.py 5905 2009-04-16 12:04:49Z milde $
 # Author: David Goodger <goodger@python.org>

@@ -1,4 +1,4 @@
-#!/home/felix/Desktop/mfl_api/venv/bin/python2
+#!/home/justus/REPOS/mfl_api/venv/bin/python
 
 # $Id: rst2xetex.py 7847 2015-03-17 17:30:47Z milde $
 # Author: Guenter Milde
