@@ -673,6 +673,8 @@ class FilteringSummariesView(views.APIView):
             'owner_type': (OwnerType, ('id', 'name')),
             'owner': (Owner, ('id', 'name', 'owner_type')),
             'service': (Service, ('id', 'name', 'category')),
+            'chul_human_resource':(chu_models.CommunityHealthWorker,('id','first_name','last_name','health_unit_id')),
+            'chul_all':(chu_models.CommunityHealthUnit,('id','name','facility_id')),
             'keph_level': (KephLevel, ('id', 'name')),
             'infrastructure': (Infrastructure, ('id', 'name', 'category')),
             'job_title': (JobTitle, ('id', 'name'))
