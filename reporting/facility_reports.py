@@ -20,7 +20,7 @@ from common.constants import TRUTH_NESS, FALSE_NESS
 from common.models import (
     County, Constituency, Ward, SubCounty
 )
-from chul.models import CommunityHealthUnit, Status
+from chul.models import CommunityHealthUnit, Status,CHUService,CHUServiceLink
 from mfl_gis.models import FacilityCoordinates
 
 from .report_config import REPORTS
@@ -1404,7 +1404,7 @@ class CommunityHealthUnitReport(APIView):
                 data.append(chu)
         return data, self.queryset.count()
 
-    # new CHUL report 
+    # new CHUL report functionality/status
     def get_status_report_all_hierachies(self, filters={}):
         status = Status.objects.values('id','name')
         annotate_dict = {}  # Initialize the dictionary outside the loop
@@ -1423,7 +1423,29 @@ class CommunityHealthUnitReport(APIView):
         ).order_by()
         
         return items, []
+
+    # new CHUL report services
+    def get_services_report_all_hierachies(self, filters={}):
+        service = CHUService.objects.values('id','name')
+        annotate_dict = {}  # Initialize the dictionary outside the loop
+  
+        annotate_dict = {reg['name']: Sum(Case(When(service_id=reg['id'], then=1), output_field=IntegerField(), default=0)) for reg in service}
+                        
+        items = CHUServiceLink.objects.values(
+        'health_unit__facility__ward__sub_county__county__name',
+        'health_unit__facility__ward__sub_county__name',
+        'health_unit__facility__ward__name',
+        'health_unit__facility__ward__sub_county__county',
+        'health_unit__facility__ward',
+
+    
+        ).filter(**filters).annotate(
+           **annotate_dict
+        ).order_by()
         
+        return items, []        
+
+
     def get(self, *args, **kwargs):
         county = self.request.query_params.get('county', None)
         constituency = self.request.query_params.get('constituency', None)
@@ -1452,7 +1474,28 @@ class CommunityHealthUnitReport(APIView):
                 "results": report_data[0]
             }
             return Response(data)
-        
+
+
+        if report_type == 'chul_services_all_hierachies':
+            county_id = self.request.query_params.get("county", None)
+            constituency_id = self.request.query_params.get(
+                "constituency", None
+            )
+            
+            filters = {}
+            
+            if county_id is not None:
+                filters["ward__sub_county__county__id"] = county_id
+            if constituency_id is not None:
+                filters["ward__sub_county__id"] = constituency_id
+            report_data = self.get_services_report_all_hierachies(filters=filters)
+
+            data = {
+                "total": report_data[1],
+                "results": report_data[0]
+            }
+            return Response(data)        
+
         if report_type == 'constituency' and county:
             report_data = self.get_constituency_reports(county=county)
 
