@@ -282,7 +282,7 @@ class CreateFacilityOfficerMixin(object):
         created_contacts = []
 
         for contact in contacts:
-            contact_type = ContactType.objects.get(id=contact.get('type'))
+            contact_type = ContactType.objects.get(id=contact.get('contact_type'))
             contact_dict = {
                 "contact_type": contact_type,
                 "contact": contact.get('contact')
@@ -293,7 +293,7 @@ class CreateFacilityOfficerMixin(object):
                 contact_dict = self._inject_creating_user(contact_dict)
                 contact_dict = self._inject_creating_user(contact_dict)
                 created_contacts.append(Contact.objects.create(**contact_dict))
-
+        
         return created_contacts
 
     def _create_facility_officer(self, data):

@@ -83,8 +83,8 @@ class Command(BaseCommand):
         #         JobTitle.objects.get(name=jt)
         #     except JobTitle.DoesNotExist:
         #         print jt
-        # import pdb
-        # pdb.set_trace()
+        # 
+        # 
         f_type_name = f_type.split('\n')
         print len(f_type_name)
         print FacilityType.objects.count()

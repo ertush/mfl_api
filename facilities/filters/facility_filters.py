@@ -352,15 +352,44 @@ class FacilityContactFilter(CommonFieldsFilterset):
 class FacilityFilter(CommonFieldsFilterset):
 
     def service_filter(self, qs, name, value):
-        categories = value.split(',')
+        services = value.split(',')
         facility_ids = []
 
-        for facility in self.filter():
-            for cat in categories:
+        for facility in qs.filter():
+            for _service in services:
                 service_count = FacilityService.objects.filter(
-                    service__category=cat,
+                    service=_service,
                     facility=facility).count()
                 if service_count > 0:
+                    facility_ids.append(facility.id)
+
+        return qs.filter(id__in=list(set(facility_ids)))
+
+    def infrastructure_filter(self, qs, name, value):
+        infrastructure = value.split(',')
+        facility_ids = []
+
+        for facility in qs.filter():
+            for _infra in infrastructure:
+                infrastructure_count = FacilityInfrastructure.objects.filter(
+                    infrastructure=_infra,
+                    facility=facility).count()
+                if infrastructure_count > 0:
+                    facility_ids.append(facility.id)
+
+        return qs.filter(id__in=list(set(facility_ids)))
+
+
+    def hr_filter(self, qs, name, value):
+        specialities = value.split(',')
+        facility_ids = []
+
+        for facility in qs.filter():
+            for _speciality in specialities:
+                speciality_count = FacilitySpecialist.objects.filter(
+                    speciality=_speciality,
+                    facility=facility).count()
+                if speciality_count > 0:
                     facility_ids.append(facility.id)
 
         return qs.filter(id__in=list(set(facility_ids)))
@@ -415,8 +444,8 @@ class FacilityFilter(CommonFieldsFilterset):
             return qs.exclude(id__in=[facility.id for facility in incomplete])
 
     def facilities_pending_approval(self, qs, name, value):
-        incomplete = qs.filter(code=not None)
-        incomplete_facility_ids = [facility.id for facility in incomplete]
+        fac_pend_appr = qs.filter(code=not None)
+        fac_pend_appr_facility_ids = [facility.id for facility in fac_pend_appr]
         if value in TRUTH_NESS:
             return qs.filter(
                 Q(
@@ -427,12 +456,12 @@ class FacilityFilter(CommonFieldsFilterset):
                 Q(
                     Q(rejected=False),
                     Q(has_edits=True) | Q(approved=None,rejected=False))
-            ).exclude(id__in=incomplete_facility_ids)
+            ).exclude(id__in=fac_pend_appr_facility_ids)
         else:
             return qs.filter(
                 Q(rejected=True) |
                 Q(has_edits=False) & Q(approved=None)
-            ).exclude(id__in=incomplete_facility_ids)
+            ).exclude(id__in=fac_pend_appr_facility_ids)
 
     def filter_national_rejected(self, qs, name, value):
         rejected_national = qs.filter(rejected=False,code=None,
@@ -447,8 +476,8 @@ class FacilityFilter(CommonFieldsFilterset):
         return qs.filter(number_of_beds__gte=1)
 
     def filter_number_cots(self, qs, name, value):
-        return self.filter(number_of_cots__gte=1)
-
+        return qs.filter(number_of_cots__gte=1)
+    
     id = ListCharFilter(lookup_expr='icontains')
     name = django_filters.CharFilter(lookup_expr='icontains')
     code = ListIntegerFilter(lookup_expr='exact')
@@ -497,8 +526,12 @@ class FacilityFilter(CommonFieldsFilterset):
         coerce=strtobool)
     is_approved = django_filters.CharFilter(
         method='filter_approved_facilities')
-    service_category = django_filters.CharFilter(
-        method=service_filter)
+    service = django_filters.CharFilter(
+        method='service_filter')
+    infrastructure = django_filters.CharFilter(
+        method='infrastructure_filter')
+    speciality = django_filters.CharFilter(
+        method='hr_filter')
     has_edits = django_filters.TypedChoiceFilter(
         choices=BOOLEAN_CHOICES,
         coerce=strtobool)

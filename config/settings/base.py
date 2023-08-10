@@ -7,7 +7,7 @@ BASE_DIR = os.path.dirname(
 # Override in production via env
 
 env = environ.Env(
-    DATABASE_URL=(str, 'postgres://mfl:mfl@localhost:5432/mfl'),
+    DATABASE_URL=(str, 'postgres://mfl:mfl@localhost:5432/mfl_testing'),
     DEBUG=(bool, True),
     FRONTEND_URL=(str, "http://localhost:8062"),
     REALTIME_INDEX=(bool, False),
@@ -532,4 +532,3 @@ DHIS_USERNAME = env('DHIS_USERNAME')
 DHIS_PASSWORD = env('DHIS_PASSWORD')
 DHIS_CLIENT_ID = env('DHIS_CLIENT_ID')
 DHIS_CLIENT_SECRET = env('DHIS_CLIENT_SECRET')
-

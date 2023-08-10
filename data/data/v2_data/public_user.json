@@ -1,31 +1,30 @@
-
 [
     {
         "model": "users.MflUser",
         "unique_fields": ["email", "username"],
         "records": [
             {
-            "email": "public@mfltest.slade360.co.ke",
-            "first_name": "public",
-            "last_name": "public",
-            "username": "public",
-            "password": "pbkdf2_sha256$20000$GNbf5V4TQWle$5kZ1rWEDy1exGZ155vbPVi/+pcXNaKoDDVKbK1fqypk=",
-            "is_staff": false,
-            "is_national": true,
-            "is_superuser": false,
-            "employee_number": 10004
-
-        },
-        {
+                "email": "public@mfltest.slade360.co.ke",
+                "first_name": "public",
+                "last_name": "public",
+                "username": "public",
+                "password": "pbkdf2_sha256$20000$GNbf5V4TQWle$5kZ1rWEDy1exGZ155vbPVi/+pcXNaKoDDVKbK1fqypk=",
+                "is_staff": false,
+                "is_national": true,
+                "is_superuser": false,
+                "employee_number": 10004
+            },
+            {
                 "email": "national_admin@mfltest.slade360.co.ke",
                 "first_name": "Emmanuel",
-                "last_name": "Wafula ",
+                "last_name": "Wafula",
                 "username": "national_admin",
                 "password": "pbkdf2_sha256$20000$8rjWrKD18ZSr$sdZfWENiCopRe066hDZLLlHjJIf2U+63060ZJl5Kj1M=",
                 "is_staff": true,
                 "is_national": true,
                 "is_superuser": false,
                 "employee_number": 10001
-        },
-    ]
-}
+            }
+        ]
+    }
+]

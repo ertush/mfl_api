@@ -217,6 +217,22 @@ class QuerysetFilterMixin(object):
             self.queryset = self.queryset.filter(
                 regulatory_body=self.request.user.regulator)
 
+    def filter_for_infrastructure(self):
+        if self.request.user.has_perm("facilities.view_infrastructure") \
+            is False and ('infrastructure' in [
+                field.name for field in
+                self.queryset.model._meta.get_fields()]):
+            self.queryset = self.queryset.filter(infrastructure=self.request.infrastructure)
+
+
+    def filter_for_services(self):
+        if self.request.user.has_perm("facilities.view_facilityservice") \
+            is False and ('service' in [
+                field.name for field in
+                self.queryset.model._meta.get_fields()]):
+            self.queryset = self.queryset.filter(service=self.request.service)
+
+
     def get_queryset(self, *args, **kwargs):
         custom_queryset = kwargs.pop('custom_queryset', None)
         if hasattr(custom_queryset, 'count'):
@@ -231,6 +247,8 @@ class QuerysetFilterMixin(object):
         self.filter_rejected_facilities()
         self.filter_closed_facilities()
         self.filter_approved_facilities()
+        self.filter_for_infrastructure()
+        self.filter_for_services()
 
         return self.queryset
 
@@ -398,6 +416,7 @@ class FacilityListView(QuerysetFilterMixin, generics.ListCreateAPIView):
     county -- A list of comma separated county pks<br>
     constituency -- A list of comma separated constituency pks<br>
     owner -- A list of comma separated owner pks<br>
+    number_of_inpatient_beds -- A list of comma separated integers<br>
     number_of_beds -- A list of comma separated integers<br>
     number_of_cots -- A list of comma separated integers<br>
     open_whole_day -- Boolean True/False<br>
@@ -412,6 +431,7 @@ class FacilityListView(QuerysetFilterMixin, generics.ListCreateAPIView):
     active  -- Boolean is the record active<br>
     deleted -- Boolean is the record deleted<br>
     """
+    
     queryset = Facility.objects.all()
     serializer_class = FacilitySerializer
     filter_class = FacilityFilter
@@ -448,11 +468,12 @@ class FacilityDetailView(
     """
     Retrieves a particular facility
     """
+   
     queryset = Facility.objects.all()
     serializer_class = FacilityDetailSerializer
     validation_errors = {}
 
-    def buffer_contacts(self, update, contacts):
+    def buffer_contacts(self, update, contacts) :
         """
         Prepares the new facility contacts to be saved in the facility
         updates model

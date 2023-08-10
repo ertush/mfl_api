@@ -1,0 +1,3 @@
+build-essentials
+python-dev
+

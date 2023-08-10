@@ -70,21 +70,21 @@ def move_facitlies_to_correct_ward(file_path=None):
             try:
                 county = County.objects.filter(name__icontains=county_name)[0]
             except IndexError:
-                import pdb; pdb.set_trace()
+                ; 
 
             prob_ward = Ward.objects.filter(constituency__county=county)
             try:
                 ward = prob_ward.filter(name__icontains=record.get('ward'))[0]
             except IndexError:
-                import pdb
-                pdb.set_trace()
+                
+                
             fac.ward = ward
             print county, ward
             try:
                 fac.save(allow_save=True)
             except:
-                import pdb
-                pdb.set_trace()
+                
+                
 
 
 def determine_facilites_already_in_system():

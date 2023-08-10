@@ -161,7 +161,7 @@ class DhisAuth(ApiAuthentication):
             # )
 
     def get_parent_id(self, ward_id):
-        print self.session_store[self.oauth2_token_variable_name]
+        print (self.session_store[self.oauth2_token_variable_name])
         r = requests.get(
             settings.DHIS_ENDPOINT+"api/organisationUnits.json",
             auth=(settings.DHIS_USERNAME, settings.DHIS_PASSWORD),
@@ -1047,6 +1047,10 @@ class Facility(SequenceMixin, AbstractBase):
         default=0,
         help_text="The number of High Dependency Units (HDU) beds"
         " that a facility has e.g 0")
+    number_of_inpatient_beds = models.PositiveIntegerField(
+        default=0,
+        help_text="The number of General In-patient beds"
+        " that a facility has e.g 0")
     # <Additions>
     number_of_maternity_beds = models.PositiveIntegerField(
         default=0,
@@ -1176,6 +1180,8 @@ class Facility(SequenceMixin, AbstractBase):
         ' the regulator')
     closed_date = models.DateTimeField(
         null=True, blank=True, help_text='Date the facility was closed')
+    approvalrejection_date = models.DateTimeField(
+        null=True, blank=True, help_text='Date the facility was approved or rejected')
     closing_reason = models.TextField(
         null=True, blank=True, help_text="Reason for closing the facility")
     date_established = models.DateField(
@@ -1251,7 +1257,7 @@ class Facility(SequenceMixin, AbstractBase):
                 "87626d3d-fd19-49d9-98da-daca4afe85bf": "mVrepdLAqSD",
                 "79158397-0d87-4d0e-8694-ad680a907a79": "YQK9pleIoeB",
                 "031293d9-fd8a-4682-a91e-a4390d57b0cf": "YQK9pleIoeB",
-		        "4369eec8-0416-4e16-b013-e635ce46a02f": "YQK9pleIoeB",
+                "4369eec8-0416-4e16-b013-e635ce46a02f": "YQK9pleIoeB",
             }
             kmhfl_dhis2_ownership_mapping = {
                 "d45541f8-3b3d-475b-94f4-17741d468135": "aRxa6o8GqZN",
@@ -1518,6 +1524,7 @@ class Facility(SequenceMixin, AbstractBase):
     def get_facility_services(self):
         """Digests the facility_services for the sake of frontend."""
         services = self.facility_services.all()
+
         return [
             {
                 "id": service.id,
@@ -1540,7 +1547,9 @@ class Facility(SequenceMixin, AbstractBase):
     @property
     def get_facility_contacts(self):
         """For the same purpose as the get_facility_services above"""
+      
         contacts = self.facility_contacts.all()
+
         return [
             {
                 "id": contact.id,
@@ -1555,14 +1564,14 @@ class Facility(SequenceMixin, AbstractBase):
     def get_facility_infrastructure(self):
         """For the same purpose as the get_facility_contacts above"""
         infra = self.facility_infrastructure.all()
+
         return [
             {
                 "id": inf.id,
-                "infrastructure_id": inf.id,
-                "name": inf.name,
-                "infrastructure_name": inf.name,
-                "infrastructure_category": inf.category.id,
-                "infrastructure_category_name": str(inf.category.name),
+                "name": inf.infrastructure.name,
+                "count":inf.count,
+                "infrastructure_category": inf.infrastructure.category.id,
+                "infrastructure_category_name": str(inf.infrastructure.category.name),
             }
             for inf in infra
         ]
@@ -1582,6 +1591,7 @@ class Facility(SequenceMixin, AbstractBase):
             }
             for h_r in hr
         ]
+
 
 
 
@@ -2586,7 +2596,7 @@ class FacilityService(AbstractBase):
         'CHRIO')
     # For services that do not have options, the service will be linked
     # directly to the
-    service = models.ForeignKey(Service, on_delete=models.PROTECT,)
+    service = models.ForeignKey(Service, related_name='service_id', on_delete=models.PROTECT)
 
     @property
     def service_has_options(self):
@@ -2861,7 +2871,7 @@ class FacilitySpecialist(AbstractBase):
         Facility, related_name='facility_specialists',
         on_delete=models.PROTECT)
 
-    speciality = models.ForeignKey(Speciality, on_delete=models.PROTECT,)
+    speciality = models.ForeignKey(Speciality, related_name='speciality', on_delete=models.PROTECT,)
 
     count = models.IntegerField(
         default=0, 
@@ -2980,8 +2990,9 @@ class FacilityInfrastructure(AbstractBase):
         on_delete=models.PROTECT)
 
     infrastructure = models.ForeignKey(
-        Infrastructure, 
-        on_delete=models.PROTECT,)
+        Infrastructure,
+        related_name='infrastructure',
+            on_delete=models.PROTECT,)
 
     count = models.IntegerField(
         default=0, 
