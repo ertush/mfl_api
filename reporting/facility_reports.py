@@ -823,20 +823,22 @@ class FilterReportMixin(object):
     def _get_facility_count_owner(self, vals={}, filters={}):   
         fields = vals.keys()
         
-        regulatory_body = Owner.objects.values('id','name')
+        owners = Owner.objects.values('id','name')
+        ownerTypes = OwnerType.objects.values('id','name')
         annotate_dict = {}  # Initialize the dictionary outside the loop
+        annotate_dict2 = {}
   
-        annotate_dict = {reg['name']: Sum(Case(When(owner_id=reg['id'], then=1), output_field=IntegerField(), default=0)) for reg in regulatory_body}
+        annotate_dict = {reg['name']: Sum(Case(When(owner_id=reg['id'], then=1), output_field=IntegerField(), default=0)) for reg in owners}
+        annotate_dict2 = {reg['name']: Sum(Case(When(owner_id=reg['id'], then=1), output_field=IntegerField(), default=0)) for reg in ownerTypes}
                         
         items = Facility.objects.values(
             'ward__sub_county__county__name',  
             'ward__sub_county__county', 
-                  
             *fields
-        ).filter(**filters).annotate(
-           **annotate_dict
-        ).order_by()
+        ).filter(**filters).annotate(**annotate_dict)
         
+        items = items.annotate(**annotate_dict2).order_by() 
+            
         return items, [] 
 
     # New report facility type
