@@ -15,7 +15,7 @@ from facilities.models import (
     Facility,
     FacilityType,
     KephLevel,
-    FacilityUpgrade, OwnerType, Owner,RegulatingBody)
+    FacilityUpgrade, OwnerType, Owner,RegulatingBody,Service,ServiceCategory,FacilityService,Infrastructure,InfrastructureCategory)
 from common.constants import TRUTH_NESS, FALSE_NESS
 from common.models import (
     County, Constituency, Ward, SubCounty
@@ -202,6 +202,27 @@ class FilterReportMixin(object):
             'ward': 'ward'
             }, filters=filters)
 
+        # New report Format Facility services and service category
+        if report_type == 'facility_services_report_all_hierachies':
+            county_id = self.request.query_params.get('county', None)
+            constituency_id = self.request.query_params.get(
+                'constituency', None
+            )
+            
+            filters = {}
+            
+            if county_id is not None:
+                filters['ward__sub_county__county__id'] = county_id
+            if constituency_id is not None:
+                filters['ward__sub_county__id'] = constituency_id
+        
+            return self._get_facility_services(vals={
+                'ward__sub_county__name': 'sub_county_name',
+            'ward__sub_county': 'sub_county',
+            'ward__name': 'ward_name', 
+            'ward': 'ward'
+            }, filters=filters)
+
         # New report Format facility owner 
         if report_type == 'facility_owner_report_all_hierachies':
             county_id = self.request.query_params.get('county', None)
@@ -222,7 +243,11 @@ class FilterReportMixin(object):
             'ward__name': 'ward_name', 
             'ward': 'ward'
             }, filters=filters)
-            
+        
+        
+        # new report Format Facility services
+        if report_type == 'facility_services_report_all_hierachies':
+            return self._get_facility_service()           
             
         if report_type == 'facility_count_by_sub_county':
             return self._get_facility_sub_county_data()
@@ -862,6 +887,28 @@ class FilterReportMixin(object):
         
         return items, []     
 
+
+    # New report faciity service
+    def _get_facility_services(self, vals={},filters={}):
+        fields = vals.keys()
+        services = Service.objects.values('id','name','category_id','category_id__name')
+        annotation ={}
+        annotation2 ={}
+        
+        annotation = {reg['name']:Sum(Case(When(service_id=reg['id'],then=1), output_field=IntegerField(),default=0) )for reg in services}
+        annotation2 = {reg['category_id__name']:Sum(Case(When(service_id__category=reg['category_id'],then=1),output_field=IntegerField(),default=0)) for reg in services}
+
+        items = FacilityService.objects.values(
+        'facility__ward__sub_county__county__name',
+        'facility__ward__sub_county__name',
+        'facility__ward__name',
+        'facility__ward',
+        ).filter(**filters).annotate(**annotation)
+        
+        items = items.annotate(**annotation2).order_by() 
+            
+        return items, [] 
+    
     def _get_facility_count(self, category=True, f_type=False, keph=False):
         county = self.request.query_params.get('county', None)
         sub_county = self.request.query_params.get('sub_county', None)
