@@ -15,7 +15,7 @@ from facilities.models import (
     Facility,
     FacilityType,
     KephLevel,
-    FacilityUpgrade, OwnerType, Owner,RegulatingBody)
+    FacilityUpgrade, OwnerType, Owner,RegulatingBody,Service,FacilityInfrastructure,FacilityService,Infrastructure)
 from common.constants import TRUTH_NESS, FALSE_NESS
 from common.models import (
     County, Constituency, Ward, SubCounty
@@ -54,7 +54,7 @@ class FilterReportMixin(object):
         requested_filters = report_config.get(
             'extra_filters')[more_filters[0]]
         requested_filters_filter_field_name = requested_filters.get(
-            "filter_field_name")
+            'filter_field_name')
         filtering_dict = self._build_dict_filter(
             requested_filters_filter_field_name, more_filters[1])
 
@@ -83,268 +83,302 @@ class FilterReportMixin(object):
         return data
 
     def get_report_data(self, *args, **kwargs):
-        """Route reports based on report_type param."""
+        '''Route reports based on report_type param.'''
         report_type = self.request.query_params.get(
-            "report_type", "facility_count_by_county")
-        if report_type == "facility_count_by_facility_type_detailed":
+            'report_type', 'facility_count_by_county')
+        if report_type == 'facility_count_by_facility_type_detailed':
             return self._get_facility_type_data()
 
-        if report_type == "facility_count_by_county":
+        if report_type == 'facility_count_by_county':
             return self._get_facility_count_by_county()
 
-        if report_type == "facility_keph_level_report":
+        if report_type == 'facility_keph_level_report':
             return self._get_facility_count(keph=True)
         
         # New facility report Facility
-        if report_type == "facility_report_all_hierachies":
-            county_id = self.request.query_params.get("county", None)
+        if report_type == 'facility_report_all_hierachies':
+            county_id = self.request.query_params.get('county', None)
             constituency_id = self.request.query_params.get(
-                "constituency", None
+                'constituency', None
             )
             
             filters = {}
             
             if county_id is not None:
-                filters["ward__sub_county__county__id"] = county_id
+                filters['ward__sub_county__county__id'] = county_id
             if constituency_id is not None:
-                filters["ward__sub_county__id"] = constituency_id
+                filters['ward__sub_county__id'] = constituency_id
         
             return self._get_facility_report_all_hierachies(vals={
                 'ward__sub_county__name': 'sub_county_name',
                'ward__sub_county': 'sub_county',
                'ward__name': 'ward_name', 
-               'ward': "ward"
+               'ward': 'ward'
             }, filters=filters)
         
         # New facility multi report
-        if report_type == "all_facility_details":
+        if report_type == 'all_facility_details':
             
-            county_id = self.request.query_params.get("county", None)
+            county_id = self.request.query_params.get('county', None)
             constituency_id = self.request.query_params.get(
-                "constituency", None
+                'constituency', None
             )
             
             filters = {}
             
             if county_id is not None:
-                filters["ward__sub_county__county__id"] = county_id
+                filters['ward__sub_county__county__id'] = county_id
             if constituency_id is not None:
-                filters["ward__sub_county__id"] = constituency_id
+                filters['ward__sub_county__id'] = constituency_id
         
             return self._get_all_facility_details(vals={
                 'ward__sub_county__name': 'sub_county_name',
                'ward__sub_county': 'sub_county',
                'ward__name': 'ward_name', 
-               'ward': "ward"
+               'ward': 'ward'
             }, filters=filters)
-        
-        # New Chul report, facility lowest level
-        if report_type == "chul_facility_level_report":
-            return self._get_chul_report_facility_level()
-        
-        
-        # new report format, ward level lowest level
-        if report_type == "chul_ward_level_report":
-            return self._get_chul_report_ward_level()        
+      
         
         # New report format keph levels
-        if report_type == "facility_keph_level_report_all_hierachies":
-            county_id = self.request.query_params.get("county", None)
+        if report_type == 'facility_keph_level_report_all_hierachies':
+            county_id = self.request.query_params.get('county', None)
             constituency_id = self.request.query_params.get(
-                "constituency", None
+                'constituency', None
             )
             
             filters = {}
             
             if county_id is not None:
-                filters["ward__sub_county__county__id"] = county_id
+                filters['ward__sub_county__county__id'] = county_id
             if constituency_id is not None:
-                filters["ward__sub_county__id"] = constituency_id
+                filters['ward__sub_county__id'] = constituency_id
             return self._get_facility_count_keph_level(vals={
                 'ward__sub_county__name': 'sub_county_name',
             'ward__sub_county': 'sub_county',
             'ward__name': 'ward_name', 
-            'ward': "ward"
+            'ward': 'ward'
             }, filters=filters)
 
     
         # New report Format regulatory body
-        if report_type == "facility_regulatory_body_report_all_hierachies":
-            county_id = self.request.query_params.get("county", None)
+        if report_type == 'facility_regulatory_body_report_all_hierachies':
+            county_id = self.request.query_params.get('county', None)
             constituency_id = self.request.query_params.get(
-                "constituency", None
+                'constituency', None
             )
             
             filters = {}
             
             if county_id is not None:
-                filters["ward__sub_county__county__id"] = county_id
+                filters['ward__sub_county__county__id'] = county_id
             if constituency_id is not None:
-                filters["ward__sub_county__id"] = constituency_id
+                filters['ward__sub_county__id'] = constituency_id
         
             return self._get_facility_count_regulatory_body(vals={
                 'ward__sub_county__name': 'sub_county_name',
             'ward__sub_county': 'sub_county',
             'ward__name': 'ward_name', 
-            'ward': "ward"
+            'ward': 'ward'
             }, filters=filters)
             
         # New report Format Facility Type 
-        if report_type == "facility_type_report_all_hierachies":
-            county_id = self.request.query_params.get("county", None)
+        if report_type == 'facility_type_report_all_hierachies':
+            county_id = self.request.query_params.get('county', None)
             constituency_id = self.request.query_params.get(
-                "constituency", None
+                'constituency', None
             )
             
             filters = {}
             
             if county_id is not None:
-                filters["ward__sub_county__county__id"] = county_id
+                filters['ward__sub_county__county__id'] = county_id
             if constituency_id is not None:
-                filters["ward__sub_county__id"] = constituency_id
+                filters['ward__sub_county__id'] = constituency_id
         
             return self._get_facility_count_facility_type(vals={
                 'ward__sub_county__name': 'sub_county_name',
             'ward__sub_county': 'sub_county',
             'ward__name': 'ward_name', 
-            'ward': "ward"
+            'ward': 'ward'
             }, filters=filters)
 
-        # New report Format facility owner 
-        if report_type == "facility_owner_report_all_hierachies":
-            county_id = self.request.query_params.get("county", None)
+        # New report Format Facility services and service category
+        if report_type == 'facility_services_report_all_hierachies':
+            county_id = self.request.query_params.get('county', None)
             constituency_id = self.request.query_params.get(
-                "constituency", None
+                'constituency', None
             )
             
             filters = {}
             
             if county_id is not None:
-                filters["ward__sub_county__county__id"] = county_id
+                filters['ward__sub_county__county__id'] = county_id
             if constituency_id is not None:
-                filters["ward__sub_county__id"] = constituency_id
+                filters['ward__sub_county__id'] = constituency_id
+        
+            return self._get_facility_services(vals={
+                'ward__sub_county__name': 'sub_county_name',
+            'ward__sub_county': 'sub_county',
+            'ward__name': 'ward_name', 
+            'ward': 'ward'
+            }, filters=filters)
+            
+        # New report Format Facility infrastructure and infrastructure category
+        if report_type == 'facility_infrastructure_report_all_hierachies':
+            county_id = self.request.query_params.get('county', None)
+            constituency_id = self.request.query_params.get(
+                'constituency', None
+            )
+            
+            filters = {}
+            
+            if county_id is not None:
+                filters['ward__sub_county__county__id'] = county_id
+            if constituency_id is not None:
+                filters['ward__sub_county__id'] = constituency_id
+        
+            return self._get_facility_infrustructure(vals={
+                'ward__sub_county__name': 'sub_county_name',
+            'ward__sub_county': 'sub_county',
+            'ward__name': 'ward_name', 
+            'ward': 'ward'
+            }, filters=filters)
+    
+        # New report Format facility owner 
+        if report_type == 'facility_owner_report_all_hierachies':
+            county_id = self.request.query_params.get('county', None)
+            constituency_id = self.request.query_params.get(
+                'constituency', None
+            )
+            
+            filters = {}
+            
+            if county_id is not None:
+                filters['ward__sub_county__county__id'] = county_id
+            if constituency_id is not None:
+                filters['ward__sub_county__id'] = constituency_id
         
             return self._get_facility_count_owner(vals={
                 'ward__sub_county__name': 'sub_county_name',
             'ward__sub_county': 'sub_county',
             'ward__name': 'ward_name', 
-            'ward': "ward"
+            'ward': 'ward'
             }, filters=filters)
-            
-            
-        if report_type == "facility_count_by_sub_county":
+        
+
+        if report_type == 'facility_count_by_sub_county':
             return self._get_facility_sub_county_data()
 
-        if report_type == "individual_facility_beds_and_cots":
+        if report_type == 'individual_facility_beds_and_cots':
             return self._get_facilities_beds_and_cots()
 
-        if report_type == "facility_count_by_owner_category":
+        if report_type == 'facility_count_by_owner_category':
             return self._get_facility_count(category=True)
 
-        if report_type == "facility_count_by_owner":
+        if report_type == 'facility_count_by_owner':
             return self._get_facility_count(category=False)
 
-        if report_type == "facility_count_by_facility_type":
+        if report_type == 'facility_count_by_facility_type':
             return self._get_facility_count_by_facility_type()
 
-        if report_type == "facility_count_by_facility_type_details":
+        if report_type == 'facility_count_by_facility_type_details':
             return self._get_facility_count_by_facility_type_details()
 
-        if report_type == "gis":
+        if report_type == 'gis':
             return self._get_gis_report()
         
         # New Report format (beds and cots filter)
-        if report_type == "beds_and_cots_by_all_hierachies":
-            county_id = self.request.query_params.get("county", None)
+        if report_type == 'beds_and_cots_by_all_hierachies':
+            county_id = self.request.query_params.get('county', None)
             constituency_id = self.request.query_params.get(
-                "constituency", None
+                'constituency', None
             )
             
             filters = {}
             
             if county_id is not None:
-                filters["ward__sub_county__county__id"] = county_id
+                filters['ward__sub_county__county__id'] = county_id
             if constituency_id is not None:
-                filters["ward__sub_county__id"] = constituency_id
+                filters['ward__sub_county__id'] = constituency_id
         
             return self._get_beds_and_cots_all_hierachies(vals={
                 'ward__sub_county__name': 'sub_county_name',
                'ward__sub_county': 'sub_county',
                'ward__name': 'ward_name', 
-               'ward': "ward"
+               'ward': 'ward'
             }, filters=filters)
 
-        if report_type == "beds_and_cots_by_county":
+        if report_type == 'beds_and_cots_by_county':
             return self._get_beds_and_cots({
                 'ward__sub_county__county__name': 'county_name',
                 'ward__sub_county__county': 'county'
             })
 
-        if report_type == "beds_and_cots_by_constituency":
-            county_id = self.request.query_params.get("county", None)
+        if report_type == 'beds_and_cots_by_constituency':
+            county_id = self.request.query_params.get('county', None)
             filters = (
                 {} if county_id is None
-                else {"ward__sub_county__county": county_id}
+                else {'ward__sub_county__county': county_id}
             )
             return self._get_beds_and_cots(vals={
                 'ward__sub_county__name': 'sub_county_name',
                 'ward__sub_county': 'sub_county'
             }, filters=filters)
 
-        if report_type == "beds_and_cots_by_ward":
+        if report_type == 'beds_and_cots_by_ward':
             constituency_id = self.request.query_params.get(
-                "constituency", None
+                'constituency', None
             )
             filters = (
                 {} if constituency_id is None
-                else {"ward__sub_county": constituency_id}
+                else {'ward__sub_county': constituency_id}
             )
             return self._get_beds_and_cots(
-                vals={'ward__name': 'ward_name', 'ward': "ward"},
+                vals={'ward__name': 'ward_name', 'ward': 'ward'},
                 filters=filters
             )
 
-        if report_type == "beds_and_cots_by_keph_level":
+        if report_type == 'beds_and_cots_by_keph_level':
             keph_level_id = self.request.query_params.get(
-                "keph_level", None
+                'keph_level', None
             )
             filters = (
                 {} if keph_level_id is None
-                else {"keph_level": keph_level_id}
+                else {'keph_level': keph_level_id}
             )
             
             return self._get_beds_and_cots(
-                vals={'keph_level__name': 'keph_level_name', 'keph_level_id': "keph_level"},
+                vals={'keph_level__name': 'keph_level_name', 'keph_level_id': 'keph_level'},
                 filters=filters
             )
 
-        if report_type == "beds_and_cots_by_owner":
+        if report_type == 'beds_and_cots_by_owner':
             keph_level_id = self.request.query_params.get(
-                "owner", None
+                'owner', None
             )
             filters = (
                 {} if keph_level_id is None
-                else {"owner": keph_level_id}
+                else {'owner': keph_level_id}
             )
             
             return self._get_beds_and_cots(
-                vals={'owner__name': 'owner_name', 'owner_id': "owner"},
+                vals={'owner__name': 'owner_name', 'owner_id': 'owner'},
                 filters=filters
             )
 
         
 
-        more_filters_params = self.request.query_params.get("filters", None)
+        more_filters_params = self.request.query_params.get('filters', None)
 
         report_config = REPORTS.get(report_type, None)
         if report_config is None:
-            raise NotFound(detail="Report not found.")
+            raise NotFound(detail='Report not found.')
 
-        group_by = report_config.get("group_by")
+        group_by = report_config.get('group_by')
         app_label, model_name = report_config.get(
-            "filter_fields").get("model").split('.')
+            'filter_fields').get('model').split('.')
         filter_field_name = report_config.get(
-            "filter_fields").get("filter_field_name")
+            'filter_fields').get('filter_field_name')
         model = apps.get_model(app_label, model_name)
         model_instances = model.objects.all()
 
@@ -353,9 +387,9 @@ class FilterReportMixin(object):
                 report_config, more_filters_params, model)
 
         return_instance_name = report_config.get(
-            "filter_fields").get("return_field")[0]
+            'filter_fields').get('return_field')[0]
         return_count_name = report_config.get(
-            "filter_fields").get("return_field")[1]
+            'filter_fields').get('return_field')[1]
         if group_by:
             pass
         else:
@@ -365,8 +399,8 @@ class FilterReportMixin(object):
         return data, self.queryset.count()
 
     def _get_facility_type_data(self):
-        owner_category = self.request.query_params.get("owner_category")
-        facility_type = self.request.query_params.get("facility_type")
+        owner_category = self.request.query_params.get('owner_category')
+        facility_type = self.request.query_params.get('facility_type')
 
         data = []
 
@@ -384,9 +418,9 @@ class FilterReportMixin(object):
 
                 data.append(
                     {
-                        "county": county.name,
-                        "facility_type": facility_type.name,
-                        "number_of_facilities": count
+                        'county': county.name,
+                        'facility_type': facility_type.name,
+                        'number_of_facilities': count
                     }
                 )
 
@@ -395,7 +429,7 @@ class FilterReportMixin(object):
         return data, totals
 
     def _get_facility_keph_level_data(self):
-        owner_category = self.request.query_params.get("owner_category")
+        owner_category = self.request.query_params.get('owner_category')
 
         data = []
 
@@ -412,18 +446,18 @@ class FilterReportMixin(object):
                         owner__owner_type=owner_category).count()
 
                 data.append({
-                    "county": county.name,
-                    # "sub county":'sample sub county',
-                    # "ward":'sample ward',
-                    # "level 1":'leavel 1',
-                    # "level 1":'leavel 2',
-                    # "level 1":'leavel 3',
-                    # "level 1":'leavel 4',
-                    # "level 1":'leavel 5',
-                    # "level 1":'leavel 1',
+                    'county': county.name,
+                    # 'sub county':'sample sub county',
+                    # 'ward':'sample ward',
+                    # 'level 1':'leavel 1',
+                    # 'level 1':'leavel 2',
+                    # 'level 1':'leavel 3',
+                    # 'level 1':'leavel 4',
+                    # 'level 1':'leavel 5',
+                    # 'level 1':'leavel 1',
 
-                    "keph_level": level.name,
-                    "number_of_facilities": count
+                    'keph_level': level.name,
+                    'number_of_facilities': count
                 })
 
         totals = []
@@ -431,7 +465,7 @@ class FilterReportMixin(object):
 
 
     def _get_facility_constituency_data(self):
-        owner_category = self.request.query_params.get("owner_category")
+        owner_category = self.request.query_params.get('owner_category')
 
         data = []
 
@@ -446,9 +480,9 @@ class FilterReportMixin(object):
                         owner__owner_type=owner_category).count()
 
                 data.append({
-                    "county": county.name,
-                    "constituency": const.name,
-                    "number_of_facilities": count
+                    'county': county.name,
+                    'constituency': const.name,
+                    'number_of_facilities': count
                 })
 
             totals = []
@@ -468,9 +502,9 @@ class FilterReportMixin(object):
                 count = Facility.objects.filter(
                     ward__sub_county__county=county).count()
                 data_dict = {
-                    "number_of_facilities": count,
-                    "county_id": str(county.id),
-                    "county": county.name,
+                    'number_of_facilities': count,
+                    'county_id': str(county.id),
+                    'county': county.name,
                 }
                 data.append(data_dict)
 
@@ -480,9 +514,9 @@ class FilterReportMixin(object):
                 count = Facility.objects.filter(
                     ward__sub_county=sub_county).count()
                 data_dict = {
-                    "number_of_facilities": count,
-                    "sub_county_id": str(sub_county.id),
-                    "sub_county": sub_county.name,
+                    'number_of_facilities': count,
+                    'sub_county_id': str(sub_county.id),
+                    'sub_county': sub_county.name,
                 }
                 data.append(data_dict)
 
@@ -492,9 +526,9 @@ class FilterReportMixin(object):
                 count = Facility.objects.filter(
                     ward=ward).count()
                 data_dict = {
-                    "number_of_facilities": count,
-                    "ward": ward.name,
-                    "ward_id": str(ward.id)
+                    'number_of_facilities': count,
+                    'ward': ward.name,
+                    'ward_id': str(ward.id)
                 }
                 data.append(data_dict)
 
@@ -509,28 +543,28 @@ class FilterReportMixin(object):
         if county:
             county = County.objects.get(id=county)
             queryset_filter = {
-                "ward__sub_county__county": county
+                'ward__sub_county__county': county
             }
         if sub_county:
             sub_county = SubCounty.objects.get(id=sub_county)
             queryset_filter = {
-                "ward__sub_county": sub_county
+                'ward__sub_county': sub_county
             }
         if ward:
             ward = Ward.objects.get(id=ward)
             queryset_filter = {
-                "ward": ward
+                'ward': ward
             }
 
         for facility in Facility.objects.filter(
                 **queryset_filter).filter(
                 Q(number_of_beds__gt=0) | Q(number_of_cots__gt=0)):
             record = {
-                "facility_id": str(facility.id),
-                "facility_name": facility.name,
-                "facility_code": facility.code,
-                "number_of_beds": facility.number_of_beds,
-                "number_of_cots": facility.number_of_cots
+                'facility_id': str(facility.id),
+                'facility_name': facility.name,
+                'facility_code': facility.code,
+                'number_of_beds': facility.number_of_beds,
+                'number_of_cots': facility.number_of_cots
             }
             data.append(record)
 
@@ -556,7 +590,7 @@ class FilterReportMixin(object):
                 vals[fields[0]]: p[fields[0]],
                 vals[fields[1]]: p[fields[1]]
             } for p in items
-        ], {"total_cots": total_cots, "total_beds": total_beds}
+        ], {'total_cots': total_cots, 'total_beds': total_beds}
         
         # Get the total number of facilities
     
@@ -579,7 +613,7 @@ class FilterReportMixin(object):
         #     total_cots += item['cots']
         #     total_beds += item['beds']
 
-        return list(items), {"total_cots": total_cots, "total_beds": total_beds}
+        return list(items), {'total_cots': total_cots, 'total_beds': total_beds}
         # items = Facility.objects.values( 
         #        'name',                         
         #     # 'number_of_beds',
@@ -604,7 +638,7 @@ class FilterReportMixin(object):
         # total_facilities=0
     
 
-        # return list(items),{"total facilities",total_facilities}
+        # return list(items),{'total facilities',total_facilities}
     
     
     def _get_facility_report_all_hierachies(self, vals={},filters={}):
@@ -637,11 +671,11 @@ class FilterReportMixin(object):
                 count = item.get(keph_level_id, 0)
                 keph_level_counts[keph_level_id] = count
 
-            result_key = "{}_{}_{}".format(ward_sub_county_name, ward_sub_county_county_name, ward_name)
+            result_key = '{}_{}_{}'.format(ward_sub_county_name, ward_sub_county_county_name, ward_name)
             result[result_key] = {
-                "ward__sub_county__name": ward_sub_county_name,
-                "ward__sub_county__county__name": ward_sub_county_county_name,
-                "ward__name": ward_name,
+                'ward__sub_county__name': ward_sub_county_name,
+                'ward__sub_county__county__name': ward_sub_county_county_name,
+                'ward__name': ward_name,
             }
 
             result[result_key].update(keph_level_counts)  # Update the dictionary
@@ -679,7 +713,7 @@ class FilterReportMixin(object):
             total_cots += item['cots']
             total_beds += item['beds']
 
-        return list(items), {"total_cots": total_cots, "total_beds": total_beds}
+        return list(items), {'total_cots': total_cots, 'total_beds': total_beds}
 
     def _get_facility_count_by_county(self):
         data = []
@@ -689,21 +723,21 @@ class FilterReportMixin(object):
         obj_filter_param = {}
         area = None
         model = County
-        facility_filter_str = "ward__sub_county__county"
+        facility_filter_str = 'ward__sub_county__county'
 
         if county:
             obj_filter_param = {
-                "county_id__in": county.split(',')
+                'county_id__in': county.split(',')
             }
             model = SubCounty
-            facility_filter_str = "ward__sub_county"
+            facility_filter_str = 'ward__sub_county'
 
         if sub_county:
             obj_filter_param = {
-                "sub_county_id__in": sub_county.split(',')
+                'sub_county_id__in': sub_county.split(',')
             }
             model = Ward
-            facility_filter_str = "ward"
+            facility_filter_str = 'ward'
 
         for area in model.objects.filter(**obj_filter_param):
             facility_filter = {
@@ -712,9 +746,9 @@ class FilterReportMixin(object):
             fac_count = Facility.objects.filter(
                 **facility_filter).count()
             data_dict = {
-                "area_name": area.name,
-                "area_id": str(area.id),
-                "number_of_facilities": fac_count
+                'area_name': area.name,
+                'area_id': str(area.id),
+                'number_of_facilities': fac_count
             }
             data.append(data_dict)
 
@@ -726,9 +760,9 @@ class FilterReportMixin(object):
             fac_count = Facility.objects.filter(
                 ward__sub_county__county=county).count()
             data_dict = {
-                "county_name": county.name,
-                "county_id": str(county.id),
-                "number_of_facilities": fac_count
+                'county_name': county.name,
+                'county_id': str(county.id),
+                'number_of_facilities': fac_count
             }
             data.append(data_dict)
 
@@ -770,17 +804,17 @@ class FilterReportMixin(object):
         if any([county, sub_county, constituency, ward, True]):
             for fac in  queryset:
                 record = OrderedDict()
-                record["facility_code"] = fac.facility.code
-                record["facility_name"] = fac.facility.name
-                record["facility_county"] = fac.facility.ward.constituency.county.name
-                record["facility_ward"] = fac.facility.ward.name
-                record["facility_constituency"] = fac.facility.ward.constituency.name
-                record["facility_lat"] = fac.coordinates[1]
-                record["facility_long"] =  fac.coordinates[0]
-                record["facility_id"] = fac.facility.id
+                record['facility_code'] = fac.facility.code
+                record['facility_name'] = fac.facility.name
+                record['facility_county'] = fac.facility.ward.constituency.county.name
+                record['facility_ward'] = fac.facility.ward.name
+                record['facility_constituency'] = fac.facility.ward.constituency.name
+                record['facility_lat'] = fac.coordinates[1]
+                record['facility_long'] =  fac.coordinates[0]
+                record['facility_id'] = fac.facility.id
 
                 if fac.facility.ward.sub_county:
-                    record["facility_sub_county"] = fac.facility.ward.sub_county.name
+                    record['facility_sub_county'] = fac.facility.ward.sub_county.name
                 cords.append(record)
 
 
@@ -831,20 +865,22 @@ class FilterReportMixin(object):
     def _get_facility_count_owner(self, vals={}, filters={}):   
         fields = vals.keys()
         
-        regulatory_body = Owner.objects.values('id','name')
+        owners = Owner.objects.values('id','name')
+        ownerTypes = OwnerType.objects.values('id','name')
         annotate_dict = {}  # Initialize the dictionary outside the loop
+        annotate_dict2 = {}
   
-        annotate_dict = {reg['name']: Sum(Case(When(owner_id=reg['id'], then=1), output_field=IntegerField(), default=0)) for reg in regulatory_body}
+        annotate_dict = {reg['name']: Sum(Case(When(owner_id=reg['id'], then=1), output_field=IntegerField(), default=0)) for reg in owners}
+        annotate_dict2 = {reg['name']: Sum(Case(When(owner_id=reg['id'], then=1), output_field=IntegerField(), default=0)) for reg in ownerTypes}
                         
         items = Facility.objects.values(
             'ward__sub_county__county__name',  
             'ward__sub_county__county', 
-                  
             *fields
-        ).filter(**filters).annotate(
-           **annotate_dict
-        ).order_by()
+        ).filter(**filters).annotate(**annotate_dict)
         
+        items = items.annotate(**annotate_dict2).order_by() 
+            
         return items, [] 
 
     # New report facility type
@@ -868,6 +904,50 @@ class FilterReportMixin(object):
         
         return items, []     
 
+
+    # New report faciity service
+    def _get_facility_services(self, vals={},filters={}):
+        fields = vals.keys()
+        services = Service.objects.values('id','name','category_id','category_id__name')
+        annotation ={}
+        annotation2 ={}
+        
+        annotation = {reg['name']:Sum(Case(When(service_id=reg['id'],then=1), output_field=IntegerField(),default=0) )for reg in services}
+        annotation2 = {reg['category_id__name']:Sum(Case(When(service_id__category=reg['category_id'],then=1),output_field=IntegerField(),default=0)) for reg in services}
+
+        items = FacilityService.objects.values(
+        'facility__ward__sub_county__county__name',
+        'facility__ward__sub_county__name',
+        'facility__ward__name',
+        'facility__ward',
+        ).filter(**filters).annotate(**annotation)
+        
+        items = items.annotate(**annotation2).order_by() 
+            
+        return items, [] 
+ 
+ 
+    # New Facility report infrastructure
+    def _get_facility_infrustructure(self, vals={}, filters={}):       
+        fields = vals.keys()
+        infrastructure = Infrastructure.objects.values('id','name','category_id','category_id__name')
+        annotation ={}
+        annotation2 ={}
+        
+        annotation = {reg['name']:Sum(Case(When(infrastructure_id=reg['id'],then=1), output_field=IntegerField(),default=0) )for reg in infrastructure}
+        annotation2 = {reg['category_id__name']:Sum(Case(When(infrastructure_id__category=reg['category_id'],then=1),output_field=IntegerField(),default=0)) for reg in infrastructure}
+
+        items = FacilityInfrastructure.objects.values(
+        'facility__ward__sub_county__county__name',
+        'facility__ward__sub_county__name',
+        'facility__ward__name',
+        'facility__ward',
+        ).filter(**filters).annotate(**annotation)
+        
+        items = items.annotate(**annotation2).order_by() 
+            
+        return items, [] 
+          
     def _get_facility_count(self, category=True, f_type=False, keph=False):
         county = self.request.query_params.get('county', None)
         sub_county = self.request.query_params.get('sub_county', None)
@@ -885,9 +965,9 @@ class FilterReportMixin(object):
             except:
                 raise ValidationError(
                     {
-                        "Administrative area": [
-                            "The area id provided is"
-                            " in the wrong format"
+                        'Administrative area': [
+                            'The area id provided is'
+                            ' in the wrong format'
                         ]
                     }
                 )
@@ -901,45 +981,45 @@ class FilterReportMixin(object):
         admin_area_filter = {}
         if county:
             admin_area_filter = {
-                "ward__sub_county__county_id__in": county.split(',')
+                'ward__sub_county__county_id__in': county.split(',')
             }
         if sub_county:
             admin_area_filter = {
-                "ward__sub_county_id__in": sub_county.split(',')
+                'ward__sub_county_id__in': sub_county.split(',')
             }
         if ward:
             admin_area_filter = {
-                "ward_id__in": ward.split(',')
+                'ward_id__in': ward.split(',')
             }
         data = []
 
         for owner in owner_model.objects.all():
             if category:
                 owner_filter = {
-                    "owner__owner_type": owner
+                    'owner__owner_type': owner
                 }
                 field_name = 'owner_category'
             else:
                 owner_filter = {
-                    "owner": owner
+                    'owner': owner
                 }
                 field_name = 'owner'
             if f_type:
                 owner_filter = {
-                    "facility_type": owner
+                    'facility_type': owner
                 }
                 field_name = 'type_category'
 
             if keph:
                 owner_filter = {
-                    "keph_level": owner
+                    'keph_level': owner
                 }
                 field_name = 'keph_level'
 
             data_dict = {
                 field_name: owner.name,
-                "id": str(owner.id),
-                "number_of_facilities": Facility.objects.filter(
+                'id': str(owner.id),
+                'number_of_facilities': Facility.objects.filter(
                     **owner_filter).filter(
                     **admin_area_filter).count()
             }
@@ -963,9 +1043,9 @@ class FilterReportMixin(object):
             except:
                 raise ValidationError(
                     {
-                        "Administrative area": [
-                            "The area id provided is"
-                            " in the wrong format"
+                        'Administrative area': [
+                            'The area id provided is'
+                            ' in the wrong format'
                         ]
                     }
                 )
@@ -973,23 +1053,23 @@ class FilterReportMixin(object):
         admin_area_filter = {}
         if county:
             admin_area_filter = {
-                "ward__sub_county__county_id__in": county.split(',')
+                'ward__sub_county__county_id__in': county.split(',')
             }
         if sub_county:
             admin_area_filter = {
-                "ward__sub_county_id__in": sub_county.split(',')
+                'ward__sub_county_id__in': sub_county.split(',')
             }
         if ward:
             admin_area_filter = {
-                "ward_id__in": ward.split(',')
+                'ward_id__in': ward.split(',')
             }
         data = []
         for ft in FacilityType.objects.filter(parent__isnull=True):
             ft_children=  FacilityType.objects.filter(parent=ft)
             data_dict = {
                     'type_category': ft.name,
-                    "id": str(ft.id),
-                    "number_of_facilities": Facility.objects.filter(
+                    'id': str(ft.id),
+                    'number_of_facilities': Facility.objects.filter(
                         facility_type__in=ft_children).filter(
                         **admin_area_filter).count()
                 }
@@ -1015,9 +1095,9 @@ class FilterReportMixin(object):
             except:
                 raise ValidationError(
                     {
-                        "Administrative area": [
-                            "The area id provided is"
-                            " in the wrong format"
+                        'Administrative area': [
+                            'The area id provided is'
+                            ' in the wrong format'
                         ]
                     }
                 )
@@ -1025,15 +1105,15 @@ class FilterReportMixin(object):
         admin_area_filter = {}
         if county:
             admin_area_filter = {
-                "ward__sub_county__county_id__in": county.split(',')
+                'ward__sub_county__county_id__in': county.split(',')
             }
         if sub_county:
             admin_area_filter = {
-                "ward__sub_county_id__in": sub_county.split(',')
+                'ward__sub_county_id__in': sub_county.split(',')
             }
         if ward:
             admin_area_filter = {
-                "ward_id__in": ward.split(',')
+                'ward_id__in': ward.split(',')
             }
         data = []
 
@@ -1046,9 +1126,9 @@ class FilterReportMixin(object):
         
         for ward in wards:
             ward_data = {
-                "ward__sub_county__name": ward.sub_county.county.name,
-                "ward__sub_county__county__name": ward.sub_county.name,
-                "ward__name": ward.name,
+                'ward__sub_county__name': ward.sub_county.county.name,
+                'ward__sub_county__county__name': ward.sub_county.name,
+                'ward__name': ward.name,
             }
             
             facility_counts = []
@@ -1058,8 +1138,8 @@ class FilterReportMixin(object):
                     facility_type=ft, ward=ward).count()
                 facility_count = {
                     'type_category': ft.name,
-                    "id": str(ft.id),
-                    "number_of_facilities": count
+                    'id': str(ft.id),
+                    'number_of_facilities': count
                 }
                 facility_counts.append(facility_count)
             
@@ -1075,8 +1155,8 @@ class ReportView(FilterReportMixin, APIView):
         data, totals = self.get_report_data()
 
         return Response(data={
-            "results": data,
-            "total": totals
+            'results': data,
+            'total': totals
         })
 
 
@@ -1123,14 +1203,14 @@ class FacilityUpgradeDowngrade(APIView):
                 facility_count = changed_facilities.filter(
                     ward__constituency__county=county).count()
                 data = {
-                    "area": county.name,
-                    "area_id": county.id,
-                    "changes": facility_count
+                    'area': county.name,
+                    'area_id': county.id,
+                    'changes': facility_count
                 }
                 results.append(data)
             return Response(data={
-                "total_number_of_changes": len(facilities_ids),
-                "results": results
+                'total_number_of_changes': len(facilities_ids),
+                'results': results
             })
         if county and not sub_county:
             results = []
@@ -1138,39 +1218,39 @@ class FacilityUpgradeDowngrade(APIView):
                 facility_count = changed_facilities.filter(
                     ward__sub_county=sub).count()
                 data = {
-                    "area": sub.name,
-                    "area_id": sub.id,
-                    "changes": facility_count
+                    'area': sub.name,
+                    'area_id': sub.id,
+                    'changes': facility_count
                 }
                 results.append(data)
             return Response(data={
-                "total_number_of_changes": len(facilities_ids),
-                "results": results
+                'total_number_of_changes': len(facilities_ids),
+                'results': results
             })
 
         if county and sub_county:
             results = []
             sub_counties = sub_county.split(',')
             ward_filter = {
-                "sub_county_id__in": sub_counties
+                'sub_county_id__in': sub_counties
             }
             if ward:
                 wards = ward.split(',')
                 ward_filter = {
-                    "id__in": wards
+                    'id__in': wards
                 }
             for ward in Ward.objects.filter(**ward_filter):
                 facility_count = changed_facilities.filter(
                     ward=ward).count()
                 data = {
-                    "area": ward.name,
-                    "area_id": ward.id,
-                    "changes": facility_count
+                    'area': ward.name,
+                    'area_id': ward.id,
+                    'changes': facility_count
                 }
                 results.append(data)
             return Response(data={
-                "total_number_of_changes": len(facilities_ids),
-                "results": results
+                'total_number_of_changes': len(facilities_ids),
+                'results': results
             })
 
         if not county:
@@ -1179,23 +1259,23 @@ class FacilityUpgradeDowngrade(APIView):
             for facility in facilities:
                 latest_facility_change = FacilityUpgrade.objects.filter(facility=facility)[0]
                 data = {
-                    "name": facility.name,
-                    "code": facility.code,
-                    "current_keph_level":
+                    'name': facility.name,
+                    'code': facility.code,
+                    'current_keph_level':
                         latest_facility_change.keph_level.name,
-                    "previous_keph_level":
+                    'previous_keph_level':
                         latest_facility_change.current_keph_level_name,
-                    "previous_facility_type":
+                    'previous_facility_type':
                         latest_facility_change.current_facility_type_name,
-                    "current_facility_type":
+                    'current_facility_type':
                         latest_facility_change.facility_type.name,
-                    "reason": latest_facility_change.reason.reason
+                    'reason': latest_facility_change.reason.reason
                 }
                 records.append(data)
 
             return Response(data={
-                "total_facilities_changed": len(facilities),
-                "results": records
+                'total_facilities_changed': len(facilities),
+                'results': records
             })
 
 
@@ -1221,11 +1301,11 @@ class CommunityHealthUnitReport(APIView):
 
             data.append(
                 {
-                    "county_name": county.name,
-                    "county_id": county.id,
-                    "number_of_units": chu_count,
-                    "chvs": total_chvs,
-                    "chews": total_chews
+                    'county_name': county.name,
+                    'county_id': county.id,
+                    'number_of_units': chu_count,
+                    'chvs': total_chvs,
+                    'chews': total_chews
                 }
             )
         return data, total_chus
@@ -1251,11 +1331,11 @@ class CommunityHealthUnitReport(APIView):
 
             data.append(
                 {
-                    "constituency_name": const.name,
-                    "constituency_id": const.id,
-                    "number_of_units": chu_count,
-                    "chvs": total_chvs,
-                    "chews": total_chews
+                    'constituency_name': const.name,
+                    'constituency_id': const.id,
+                    'number_of_units': chu_count,
+                    'chvs': total_chvs,
+                    'chews': total_chews
                 }
             )
         return data, total_chus
@@ -1282,11 +1362,11 @@ class CommunityHealthUnitReport(APIView):
 
             data.append(
                 {
-                    "sub_county_name": sub.name,
-                    "sub_county_id": sub.id,
-                    "number_of_units": chu_count,
-                    "chvs": total_chvs,
-                    "chews": total_chews
+                    'sub_county_name': sub.name,
+                    'sub_county_id': sub.id,
+                    'number_of_units': chu_count,
+                    'chvs': total_chvs,
+                    'chews': total_chews
                 }
             )
         return data, total_chus
@@ -1299,8 +1379,7 @@ class CommunityHealthUnitReport(APIView):
 
         total_chus = 0
         for ward in wards:
-            chus = queryset.filter(
-                facility__ward=ward)
+            chus = queryset.filter(facility__ward=ward)
             chu_count = chus.count()
             total_chus += chu_count
 
@@ -1313,12 +1392,11 @@ class CommunityHealthUnitReport(APIView):
 
             data.append(
                 {
-                    "ward_name": ward.name,
-                    "ward_id": ward.id,
-                    "number_of_units": chu_count,
-                    "chvs": total_chvs,
-                    "chews": total_chews
-
+                    'ward_name': ward.name,
+                    'ward_id': ward.id,
+                    'number_of_units': chu_count,
+                    'chvs': total_chvs,
+                    'chews': total_chews,
                 }
             )
         return data, total_chus
@@ -1369,7 +1447,7 @@ class CommunityHealthUnitReport(APIView):
 
         if status_id:
             status_filter = {
-                "id__in": status_id.split(',')
+                'id__in': status_id.split(',')
             }
         if not chu_list:
             for status in Status.objects.filter(**status_filter):
@@ -1378,28 +1456,28 @@ class CommunityHealthUnitReport(APIView):
                 total_chus += chu_count
                 data.append(
                     {
-                        "status_name": status.name,
-                        "id": str(status.id),
-                        "number_of_units": chu_count
+                        'status_name': status.name,
+                        'id': str(status.id),
+                        'number_of_units': chu_count
                     }
                 )
         else:
             if status_id:
                 status_filter = {
-                    "status_id__in": status_id.split(',')
+                    'status_id__in': status_id.split(',')
                 }
             for chu in self.queryset.filter(**status_filter):
                 chu = {
-                    "name": chu.name,
-                    "id": str(chu.id),
-                    "code": chu.code,
-                    "facility_name": chu.facility.name,
-                    "county": chu.facility.ward.constituency.county.name,
-                    "sub_county": chu.facility.ward.constituency.name,
-                    "ward": chu.facility.ward.name,
-                    "date_established": chu.date_established.isoformat(),
-                    "status": chu.status.name,
-                    "number_of_chvs": chu.number_of_chvs
+                    'name': chu.name,
+                    'id': str(chu.id),
+                    'code': chu.code,
+                    'facility_name': chu.facility.name,
+                    'county': chu.facility.ward.constituency.county.name,
+                    'sub_county': chu.facility.ward.constituency.name,
+                    'ward': chu.facility.ward.name,
+                    'date_established': chu.date_established.isoformat(),
+                    'status': chu.status.name,
+                    'number_of_chvs': chu.number_of_chvs
                 }
                 data.append(chu)
         return data, self.queryset.count()
@@ -1445,6 +1523,38 @@ class CommunityHealthUnitReport(APIView):
         
         return items, []        
 
+    # new CHUL report  count chus
+    def get_count_report_all_hierarchies(self, queryset=queryset):
+        data = []
+        wards = Ward.objects.all()
+
+        total_chus = 0
+        for ward in wards:
+            chus = queryset.filter(facility__ward=ward)
+            chu_count = chus.count()
+            total_chus += chu_count
+
+            total_chvs = 0
+            total_chews = 0
+
+            for chu in chus:
+                total_chews += chu.health_unit_workers.count()
+                total_chvs += chu.number_of_chvs
+
+            data.append(
+                {
+                    'ward_name': ward.name,
+                    'ward_id': ward.id,
+                    'number_of_units': chu_count,
+                    'chvs': total_chvs,
+                    'chews': total_chews,
+                    'county': ward.sub_county.county.name,
+                    'sub county': ward.sub_county.name,
+
+                }
+            )
+        return data, total_chus
+
 
     def get(self, *args, **kwargs):
         county = self.request.query_params.get('county', None)
@@ -1455,53 +1565,63 @@ class CommunityHealthUnitReport(APIView):
         last_quarter = self.request.query_params.get('last_quarter', None)
         chu_list = self.request.query_params.get('chu_list', False)
         
+        # New report chul status ward level
         if report_type == 'chul_status_all_hierachies':
-            county_id = self.request.query_params.get("county", None)
+            county_id = self.request.query_params.get('county', None)
             constituency_id = self.request.query_params.get(
-                "constituency", None
+                'constituency', None
             )
             
             filters = {}
             
             if county_id is not None:
-                filters["ward__sub_county__county__id"] = county_id
+                filters['ward__sub_county__county__id'] = county_id
             if constituency_id is not None:
-                filters["ward__sub_county__id"] = constituency_id
+                filters['ward__sub_county__id'] = constituency_id
             report_data = self.get_status_report_all_hierachies(filters=filters)
 
             data = {
-                "total": report_data[1],
-                "results": report_data[0]
+                'total': report_data[1],
+                'results': report_data[0]
             }
             return Response(data)
 
-
+        # New report chul services ward level
         if report_type == 'chul_services_all_hierachies':
-            county_id = self.request.query_params.get("county", None)
+            county_id = self.request.query_params.get('county', None)
             constituency_id = self.request.query_params.get(
-                "constituency", None
+                'constituency', None
             )
             
             filters = {}
             
             if county_id is not None:
-                filters["ward__sub_county__county__id"] = county_id
+                filters['ward__sub_county__county__id'] = county_id
             if constituency_id is not None:
-                filters["ward__sub_county__id"] = constituency_id
+                filters['ward__sub_county__id'] = constituency_id
             report_data = self.get_services_report_all_hierachies(filters=filters)
 
             data = {
-                "total": report_data[1],
-                "results": report_data[0]
+                'total': report_data[1],
+                'results': report_data[0]
             }
             return Response(data)        
 
+        # New report count chul at facility level
+        if report_type == 'chul_count_all_hierachies':
+            report_data = self.get_count_report_all_hierarchies()
+            data = {
+                'total': report_data[1],
+                'results': report_data[0]
+            }
+            return Response(data)
+ 
         if report_type == 'constituency' and county:
             report_data = self.get_constituency_reports(county=county)
 
             data = {
-                "total": report_data[1],
-                "results": report_data[0]
+                'total': report_data[1],
+                'results': report_data[0]
             }
             return Response(data)
 
@@ -1509,40 +1629,40 @@ class CommunityHealthUnitReport(APIView):
             report_data = self.get_sub_county_reports(county=county)
 
             data = {
-                "total": report_data[1],
-                "results": report_data[0]
+                'total': report_data[1],
+                'results': report_data[0]
             }
             return Response(data)
 
         if report_type == 'constituency' and not county:
             report_data = self.get_constituency_reports()
             data = {
-                "total": report_data[1],
-                "results": report_data[0]
+                'total': report_data[1],
+                'results': report_data[0]
             }
             return Response(data)
 
         if report_type == 'ward' and not constituency:
             report_data = self.get_ward_reports()
             data = {
-                "total": report_data[1],
-                "results": report_data[0]
+                'total': report_data[1],
+                'results': report_data[0]
             }
             return Response(data)
 
         if report_type == 'ward' and constituency:
             report_data = self.get_ward_reports(constituency=constituency)
             data = {
-                "total": report_data[1],
-                "results": report_data[0]
+                'total': report_data[1],
+                'results': report_data[0]
             }
             return Response(data)
 
         if report_type == 'ward' and chu_list:
             report_data = self.get_status_report()
             data = {
-                "total": report_data[1],
-                "results": report_data[0]
+                'total': report_data[1],
+                'results': report_data[0]
             }
             return Response(data)
 
@@ -1550,8 +1670,8 @@ class CommunityHealthUnitReport(APIView):
         if last_quarter and county and not constituency:
             report_data = self.get_date_established_report(county=county)
             data = {
-                "total": report_data[1],
-                "results": report_data[0]
+                'total': report_data[1],
+                'results': report_data[0]
             }
             return Response(data)
 
@@ -1559,16 +1679,16 @@ class CommunityHealthUnitReport(APIView):
             report_data = self.get_date_established_report(
                 constituency=constituency)
             data = {
-                "total": report_data[1],
-                "results": report_data[0]
+                'total': report_data[1],
+                'results': report_data[0]
             }
             return Response(data)
 
         if last_quarter and not county and not constituency:
             report_data = self.get_date_established_report()
             data = {
-                "total": report_data[1],
-                "results": report_data[0]
+                'total': report_data[1],
+                'results': report_data[0]
             }
             return Response(data)
 
@@ -1576,22 +1696,22 @@ class CommunityHealthUnitReport(APIView):
             if not chu_list:
                 report_data = self.get_status_report()
                 data = {
-                    "total": report_data[1],
-                    "results": report_data[0]
+                    'total': report_data[1],
+                    'results': report_data[0]
                 }
             else:
                 report_data = self.get_status_report(chu_list=True)
                 data = {
-                    "total": report_data[1],
-                    "results": report_data[0]
+                    'total': report_data[1],
+                    'results': report_data[0]
                 }
             return Response(data)
 
         if report_type == 'status' and county and not constituency and not sub_county:
             report_data = self.get_status_report(county=county)
             data = {
-                "total": report_data[1],
-                "results": report_data[0]
+                'total': report_data[1],
+                'results': report_data[0]
             }
             return Response(data)
 
@@ -1599,8 +1719,8 @@ class CommunityHealthUnitReport(APIView):
 
             report_data = self.get_status_report(constituency=constituency)
             data = {
-                "total": report_data[1],
-                "results": report_data[0]
+                'total': report_data[1],
+                'results': report_data[0]
             }
             return Response(data)
 
@@ -1608,8 +1728,8 @@ class CommunityHealthUnitReport(APIView):
 
             report_data = self.get_status_report(sub_county=sub_county)
             data = {
-                "total": report_data[1],
-                "results": report_data[0]
+                'total': report_data[1],
+                'results': report_data[0]
             }
             return Response(data)
 
@@ -1617,13 +1737,13 @@ class CommunityHealthUnitReport(APIView):
 
             report_data = self.get_status_report(ward=ward)
             data = {
-                "total": report_data[1],
-                "results": report_data[0]
+                'total': report_data[1],
+                'results': report_data[0]
             }
             return Response(data)
 
         data = {
-            "total": self.get_county_reports()[1],
-            "results": self.get_county_reports()[0]
+            'total': self.get_county_reports()[1],
+            'results': self.get_county_reports()[0]
         }
         return Response(data)
