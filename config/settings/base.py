@@ -7,9 +7,9 @@ BASE_DIR = os.path.dirname(
 # Override in production via env
 
 env = environ.Env(
-    DATABASE_URL=(str, 'postgres://postgres:test@localhost:5432/mfl'),
+    DATABASE_URL=(str, 'postgres://mfl:mfl@localhost:5432/mfl_testing'),
     DEBUG=(bool, True),
-    FRONTEND_URL=(str, "http://localhost:8000"),
+    FRONTEND_URL=(str, "http://localhost:8062"),
     REALTIME_INDEX=(bool, False),
     HTTPS_ENABLED=(bool, False),
     SECRET_KEY=(str, 'p!ci1&ni8u98vvd#%18yp)aqh+m_8o565g*@!8@1wb$j#pj4d8'),
@@ -23,14 +23,13 @@ env = environ.Env(
     ADMINS=(str, "admin:admin@example.com,"),
     SERVER_EMAIL=(str, "root@localhost"),
     ALLOWED_HOSTS=(str, "localhost"),
-    DHIS_ENDPOINT=(str, "https://test.hiskenya.org/"),
+    DHIS_ENDPOINT=(str, "https://hiskenya.org/"),
     DHIS_USERNAME=(str, 'kmhfl_integration'),
     DHIS_PASSWORD=(str, ''),
-    DHIS_CLIENT_ID=(str, '102'),
-    PUSH_TO_DHIS=(bool, True),
-    DHIS_CLIENT_SECRET=(str, '')
+    DHIS_CLIENT_ID=(str, 'KMHFL'),
+    DHIS_CLIENT_SECRET=(str, '65df9a025-31df-079d-14d5-a01e08ea947')
 )
-# env.read_env(os.path.join(BASE_DIR, '.env'))
+env.read_env(os.path.join(BASE_DIR, '.env'))
 
 ADMINS = tuple(
     tuple(name.split(':')) for name in env('ADMINS').split(',') if name != ''
@@ -44,20 +43,13 @@ ENV_DB = env.db()
 DATABASES = {
     'default': {
         'ENGINE': 'django.contrib.gis.db.backends.postgis',
-        'HOST': '127.0.0.1',
-        'NAME': 'mfl',
-        'PASSWORD': 'test',
-        'PORT': '5432',
-        'USER': 'postgres',
+        'HOST': ENV_DB['HOST'],
+        'NAME': ENV_DB['NAME'],
+        'PASSWORD': ENV_DB['PASSWORD'],
+        'PORT': ENV_DB['PORT'],
+        'USER': ENV_DB['USER'],
     }
 }  # Env should have DATABASE_URL
-
-# 'ENGINE': 'django.contrib.gis.db.backends.postgis',
-#         'HOST': 'api.kmhfltest.health.go.ke',
-#         'NAME': 'mfl_testing',
-#         'PASSWORD': 'mfl',
-#         'PORT': '5432',
-#         'USER': 'mfl',
 MIDDLEWARE = (
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.cache.UpdateCacheMiddleware',
@@ -402,10 +394,6 @@ SEARCH = {
                     "fields": ["name"]
                 },
                 {
-                    "name": "FacilityAdmissionStatus",
-                    "fields": ["name"]
-                },
-                {
                     "name": "FacilityType",
                     "fields": ["name"]
                 },
@@ -544,4 +532,3 @@ DHIS_USERNAME = env('DHIS_USERNAME')
 DHIS_PASSWORD = env('DHIS_PASSWORD')
 DHIS_CLIENT_ID = env('DHIS_CLIENT_ID')
 DHIS_CLIENT_SECRET = env('DHIS_CLIENT_SECRET')
-
