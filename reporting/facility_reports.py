@@ -871,7 +871,7 @@ class FilterReportMixin(object):
         annotate_dict2 = {}
   
         annotate_dict = {reg['name']: Sum(Case(When(owner_id=reg['id'], then=1), output_field=IntegerField(), default=0)) for reg in owners}
-        annotate_dict2 = {reg['name']: Sum(Case(When(owner_id=reg['id'], then=1), output_field=IntegerField(), default=0)) for reg in ownerTypes}
+        annotate_dict2 = {reg['name']: Sum(Case(When(owner_id__owner_type_id=reg['id'], then=1), output_field=IntegerField(), default=0)) for reg in ownerTypes}
                         
         items = Facility.objects.values(
             'ward__sub_county__county__name',  
@@ -879,7 +879,7 @@ class FilterReportMixin(object):
             *fields
         ).filter(**filters).annotate(**annotate_dict)
         
-        items = items.annotate(**annotate_dict2).order_by() 
+        items = items.annotate(**annotate_dict2) 
             
         return items, [] 
 
