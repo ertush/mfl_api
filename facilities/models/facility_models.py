@@ -161,7 +161,7 @@ class DhisAuth(ApiAuthentication):
             # )
 
     def get_parent_id(self, ward_id):
-        print self.session_store[self.oauth2_token_variable_name]
+        # print self.session_store[self.oauth2_token_variable_name]
         r = requests.get(
             settings.DHIS_ENDPOINT+"api/organisationUnits.json",
             auth=(settings.DHIS_USERNAME, settings.DHIS_PASSWORD),
@@ -264,8 +264,9 @@ class DhisAuth(ApiAuthentication):
         #     )
 
     def push_facility_updates_to_dhis2(self, org_unit_id, facility_updates_payload):
+        LOGGER.info('Org_unit_id => {}'.format(org_unit_id))
         r = requests.put(
-            settings.DHIS_ENDPOINT + "api/organisationUnits/"+org_unit_id,
+            settings.DHIS_ENDPOINT + "api/organisationUnits/"+org_unit_id[0],
             auth=(settings.DHIS_USERNAME, settings.DHIS_PASSWORD),
             headers={
                 "Accept": "application/json"
@@ -1224,8 +1225,10 @@ class Facility(SequenceMixin, AbstractBase):
             kmhfl_dhis2_facility_type_mapping = {
                 "20b86171-0c16-47e1-9277-5e773d485c33": "YQK9pleIoeB",
                 "5eb392ac-d10a-40c9-b525-53dac866ef6c": "lTrpyOiOcM6",
+                "8949eeb0-40b1-43d4-a38d-5d4933dc209f": "lTrpyOiOcM6", 
                 "ccc1600e-9a24-499f-889f-bd9f0bdc4b95": "YQK9pleIoeB",
                 "d8d741b1-21c5-45c8-86d0-a2094bf9bda6": "YQK9pleIoeB",
+                "85f2099b-a2f8-49f4-9798-0cb48c0875ff": "YQK9pleIoeB",
                 "869118aa-0e97-4f47-b6b7-1f295d109c8f": "YQK9pleIoeB",
                 "a8af148f-b1b6-4eed-9d86-07d4f3135229": "YQK9pleIoeB",
                 "74755372-99ba-4b70-bca8-a583f03990bc": "lTrpyOiOcM6",
@@ -1245,6 +1248,7 @@ class Facility(SequenceMixin, AbstractBase):
                 "188551b7-4f22-4fc4-b07b-f9c9aeeea872": "rhKJPLo27x7",
                 "e5923a48-6b22-42c4-a4e6-6c5a5e8e0b0e": "YQK9pleIoeB",
                 "55d65dd6-5351-4cf4-a6d9-e05ce6d343ab": "mVrepdLAqSD",
+                "87626d3d-fd19-49d9-98da-daca4afe85bf": "mVrepdLAqSD",
                 "79158397-0d87-4d0e-8694-ad680a907a79": "YQK9pleIoeB",
                 "031293d9-fd8a-4682-a91e-a4390d57b0cf": "YQK9pleIoeB",
 		"4369eec8-0416-4e16-b013-e635ce46a02f": "YQK9pleIoeB",
@@ -1270,6 +1274,9 @@ class Facility(SequenceMixin, AbstractBase):
                 "93c0fe24-3f12-4be2-b5ff-027e0bd02274": "AaAF5EmS1fk",
                 "c3bab995-0c29-433c-b39c-6b86d6084f5f": "AaAF5EmS1fk",
                 "6cb92834-107c-404a-91fa-cf60b1eb5333": "aRxa6o8GqZN",
+                "2e651780-2ed4-4f8c-9061-6e5acf95d581": "AaAF5EmS1fk",
+                "30af7e3f-cd52-4ca0-b5dc-d8b1040a9808": "AaAF5EmS1fk",
+                "d64bbd8a-4013-463b-a238-c346cee66a92": "AaAF5EmS1fk", 
             }
             kmhfl_dhis2_keph_mapping = {
                 "ed23da85-4c92-45af-80fa-9b2123769f49": "FpY8vg4gh46",
@@ -1311,30 +1318,7 @@ class Facility(SequenceMixin, AbstractBase):
         else:
             pass
 
-    def push_facility_updates(self):
-        pass
-        # if self.approved_national_level:
-        #     from mfl_gis.models import FacilityCoordinates
-        #     import re
-        #     self.dhis2_api_auth.get_oauth2_token()
-        #
-        #     dhis2_parent_id = self.dhis2_api_auth.get_parent_id(self.ward.code)
-        #     dhis2_org_unit_id = self.dhis2_api_auth.get_org_unit_id(self.code)
-        #     new_facility_updates_payload = {
-        #         "code": str(self.code),
-        #         "name": str(self.name),
-        #         "shortName": str(self.name),
-        #         "displayName": str(self.official_name),
-        #         "parent": {
-        #             "id": dhis2_parent_id
-        #         },
-        #         "openingDate": self.facility.date_established.strftime("%Y-%m-%d"),
-        #         "coordinates": self.dhis2_api_auth.format_coordinates(
-        #             re.search(r'\((.*?)\)', str(FacilityCoordinates.objects.values('coordinates')
-        #                                         .get(facility_id=self.id)['coordinates'])).group(1))
-        #     }
-        #
-        #     self.dhis2_api_auth.push_facility_updates_to_dhis2(dhis2_org_unit_id, new_facility_updates_payload)
+   
 
     def validate_facility_name(self):
         if self.pk:
@@ -2060,15 +2044,15 @@ class FacilityUpdates(AbstractBase):
                     value = new_date
                 elif field_name == 'sub_county_id':
                     print('field_name error', field_changed.get('display_value'))
-                    value = SubCounty.objects.get(name=field_changed.get('display_value')).id
+                    value = SubCounty.objects.get(name=field_changed.get('actual_value')).id
                 else:
                     value = field_changed.get("actual_value")
 
                 setattr(self.facility, field_name, value)
             self.facility.save(allow_save=True)
-            if self.facility.code and self.facility.is_complete and self.facility.approved_national_level:
-                self.facility.push_new_facility(self.facility.code)
-            # self.push_facility_updates()
+            #if self.facility.code and self.facility.is_complete and self.facility.approved_national_level:
+            #    self.facility.push_new_facility(self.facility.code)
+            self.push_facility_updates()
 
 
     def update_facility_services(self):
