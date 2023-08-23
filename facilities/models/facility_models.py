@@ -264,7 +264,7 @@ class DhisAuth(ApiAuthentication):
         #     )
 
     def push_facility_updates_to_dhis2(self, org_unit_id, facility_updates_payload):
-     
+        LOGGER.info('Org_unit_id => {}'.format(org_unit_id))
         r = requests.put(
             settings.DHIS_ENDPOINT + "api/organisationUnits/"+org_unit_id[0],
             auth=(settings.DHIS_USERNAME, settings.DHIS_PASSWORD),
@@ -275,8 +275,6 @@ class DhisAuth(ApiAuthentication):
         )
 
         print("Update Facility Response", r.url, r.status_code, r.json())
-        LOGGER.info('Response: /api/organisationUnits/{} => {}; Payload: {}'.format(org_unit_id[0], r.json(), facility_updates_payload))
-
 
         if r.json()["status"] != "OK":
             raise ValidationError(
