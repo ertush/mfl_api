@@ -264,7 +264,6 @@ class DhisAuth(ApiAuthentication):
         #     )
 
     def push_facility_updates_to_dhis2(self, org_unit_id, facility_updates_payload):
-        LOGGER.info('Org_unit_id => {}'.format(org_unit_id))
         r = requests.put(
             settings.DHIS_ENDPOINT + "api/organisationUnits/"+org_unit_id[0],
             auth=(settings.DHIS_USERNAME, settings.DHIS_PASSWORD),
@@ -275,6 +274,8 @@ class DhisAuth(ApiAuthentication):
         )
 
         print("Update Facility Response", r.url, r.status_code, r.json())
+        LOGGER.info('[>>>>>>>>>>>>>] Org_unit_id: {} \n payload: {} \n response: {}'.format(org_unit_id, facility_updates_payload, r.json()))
+
 
         if r.json()["status"] != "OK":
             raise ValidationError(
@@ -2044,7 +2045,7 @@ class FacilityUpdates(AbstractBase):
                     value = new_date
                 elif field_name == 'sub_county_id':
                     print('field_name error', field_changed.get('display_value'))
-                    value = SubCounty.objects.get(name=field_changed.get('actual_value')).id
+                    value = SubCounty.objects.get(id=field_changed.get('actual_value')).id
                 else:
                     value = field_changed.get("actual_value")
 
