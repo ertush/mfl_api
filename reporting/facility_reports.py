@@ -15,7 +15,7 @@ from facilities.models import (
     Facility,
     FacilityType,
     KephLevel,
-    FacilityUpgrade, OwnerType, Owner,RegulatingBody,Service,FacilityInfrastructure,FacilityService,Infrastructure)
+    FacilityUpgrade, OwnerType, Owner,RegulatingBody,Service,FacilityInfrastructure,FacilityService,Infrastructure,FacilitySpecialist,Speciality,SpecialityCategory)
 from common.constants import TRUTH_NESS, FALSE_NESS
 from common.models import (
     County, Constituency, Ward, SubCounty
@@ -264,8 +264,50 @@ class FilterReportMixin(object):
             'ward__name': 'ward_name', 
             'ward': 'ward'
             }, filters=filters)
-        
 
+        # New report Format facility speciality/human resource
+        if report_type == 'facility_human_resource_report_all_hierachies':
+            county_id = self.request.query_params.get('county', None)
+            constituency_id = self.request.query_params.get(
+                'constituency', None
+            )
+            
+            filters = {}
+            
+            if county_id is not None:
+                filters['facility_id__ward__sub_county__county__id'] = county_id
+            if constituency_id is not None:
+                filters['facility_id__ward__sub_county__id'] = constituency_id
+        
+            return self._get_facility_count_speciality(vals={
+            'facility_id__ward__sub_county__name': 'sub_county_name',
+            'facility_id__ward__sub_county': 'sub_county',
+            'facility_id__ward__name': 'ward_name', 
+            'facility_id__ward': 'ward'
+            }, filters=filters)
+                
+        # New report Format facility speciality/human resource category
+        if report_type == 'facility_human_resource_category_report_all_hierachies':
+            county_id = self.request.query_params.get('county', None)
+            constituency_id = self.request.query_params.get(
+                'constituency', None
+            )
+            
+            filters = {}
+            
+            if county_id is not None:
+                filters['facility_id__ward__sub_county__county__id'] = county_id
+            if constituency_id is not None:
+                filters['facility_id__ward__sub_county__id'] = constituency_id
+        
+            return self._get_facility_count_speciality_category(vals={
+            'facility_id__ward__sub_county__name': 'sub_county_name',
+            'facility_id__ward__sub_county': 'sub_county',
+            'facility_id__ward__name': 'ward_name', 
+            'facility_id__ward': 'ward'
+            }, filters=filters)
+            
+            
         if report_type == 'facility_count_by_sub_county':
             return self._get_facility_sub_county_data()
 
@@ -880,6 +922,50 @@ class FilterReportMixin(object):
         ).filter(**filters).annotate(**annotate_dict)
         
         items = items.annotate(**annotate_dict2) 
+            
+        return items, [] 
+
+    # new report facility specialty/Human Resource
+    def _get_facility_count_speciality(self, vals={}, filters={}):   
+        fields = vals.keys()
+        
+        specialty = Speciality.objects.values('id','name')
+        specialtyCat = Speciality.objects.values('category_id','category_id__name')
+        annotate_dict = {}  # Initialize the dictionary outside the loop
+        annotate_dict2 = {}
+  
+        annotate_dict = {reg['name']: Sum(Case(When(speciality_id=reg['id'], then=1), output_field=IntegerField(), default=0)) for reg in specialty}
+        # annotate_dict2 = {reg['category_id__name']: Sum(Case(When(speciality_id__category_id=reg['category_id'], then=1), output_field=IntegerField(), default=0)) for reg in specialtyCat}
+                        
+        items = FacilitySpecialist.objects.values(
+            'facility_id__ward__sub_county__county__name',  
+            'facility_id__ward__sub_county__county', 
+            *fields
+        ).filter(**filters).annotate(**annotate_dict)
+        
+        # items = items.annotate(**annotate_dict2) 
+            
+        return items, [] 
+
+    # new report facility specialty/Human Resource Category
+    def _get_facility_count_speciality_category(self, vals={}, filters={}):   
+        fields = vals.keys()
+        
+        specialty = Speciality.objects.values('id','name')
+        specialtyCat = Speciality.objects.values('category_id','category_id__name')
+        annotate_dict = {}  # Initialize the dictionary outside the loop
+        annotate_dict2 = {}
+  
+        # annotate_dict = {reg['name']: Sum(Case(When(speciality_id=reg['id'], then=1), output_field=IntegerField(), default=0)) for reg in specialty}
+        annotate_dict2 = {reg['category_id__name']: Sum(Case(When(speciality_id__category_id=reg['category_id'], then=1), output_field=IntegerField(), default=0)) for reg in specialtyCat}
+                        
+        items = FacilitySpecialist.objects.values(
+            'facility_id__ward__sub_county__county__name',  
+            'facility_id__ward__sub_county__county', 
+            *fields
+        ).filter(**filters).annotate(**annotate_dict2)
+        
+        # items = items.annotate(**annotate_dict2) 
             
         return items, [] 
 
