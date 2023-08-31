@@ -1,6 +1,7 @@
 import json
 import datetime
 import reversion
+import logging
 
 from django.db import models
 from django.core.exceptions import ValidationError
@@ -10,6 +11,9 @@ from django.utils import timezone, encoding
 from common.models import AbstractBase, Contact, SequenceMixin
 from common.fields import SequenceField
 from facilities.models import Facility
+
+
+LOGGER = logging.getLogger(__name__)
 
 
 @reversion.register
@@ -383,6 +387,7 @@ class ChuUpdateBuffer(AbstractBase):
                 setattr(self.health_unit, key, value)
             if 'basic' in basic_details:
                 setattr(self.health_unit, 'facility_id', basic_details.get('basic').get('facility'))
+            LOGGER.info("[>>>>>> FacilityId]: {}, [>>>>>>>>>> HealthUnit]: {}".format(basic_details.get('basic'), self.health_unit))
             self.health_unit.save()
 
     def update_workers(self):
