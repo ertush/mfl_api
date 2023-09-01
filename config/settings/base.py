@@ -37,7 +37,7 @@ ADMINS = tuple(
 SERVER_EMAIL = env('SERVER_EMAIL')
 
 
-DEBUG = env('DEBUG')
+DEBUG = True #env('DEBUG')
 SECRET_KEY = env('SECRET_KEY')
 ENV_DB = env.db()
 DATABASES = {

@@ -778,7 +778,7 @@ class FilterReportMixin(object):
         paginate = self.request.query_params.get('paginate', True)
 
         queryset = FacilityCoordinates.objects.all()
-        paginator = Paginator(queryset, 30)
+        paginator = Paginator(queryset, 1000)
 
         if paginate:
             queryset = paginator.page(1)

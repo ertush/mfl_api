@@ -6,6 +6,8 @@ from rest_framework.exceptions import ValidationError
 from common.serializers import AbstractFieldsMixin, ContactSerializer
 from common.models import Contact, ContactType
 
+import logging
+
 from .models import (
     CommunityHealthUnit,
     CommunityHealthWorker,
@@ -17,6 +19,10 @@ from .models import (
     ChuUpdateBuffer,
     CHUServiceLink
 )
+
+
+LOGGER = logging.getLogger(__name__)
+
 
 
 class CHUServiceLinkSerializer(
@@ -155,6 +161,7 @@ class CommunityHealthUnitSerializer(
             services = json.dumps(services)
             update.services = services
 
+        
         if contacts:
             for contact in contacts:
                 contact_type = ContactType.objects.get(
@@ -164,6 +171,7 @@ class CommunityHealthUnitSerializer(
             contacts = json.dumps(contacts)
 
             update.contacts = contacts
+
         update.save()
 
     def _ensure_all_chew_required_provided(self, chew):

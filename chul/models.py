@@ -9,11 +9,14 @@ from django.core import validators
 from django.utils import timezone, encoding
 from django.conf import settings
 
+
 from common.models import AbstractBase, Contact, SequenceMixin
 from common.fields import SequenceField
 from facilities.models import Facility
 
+
 LOGGER = logging.getLogger(__name__)
+
 
 @reversion.register
 @encoding.python_2_unicode_compatible
@@ -71,10 +74,7 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
     curative health services
     """
     name = models.CharField(max_length=100)
-    code = SequenceField(
-        unique=True, editable=False,
-        help_text='A sequential number allocated to each chu',
-        null=True, blank=True)
+    code = SequenceField(unique=True)
     facility = models.ForeignKey(
         Facility,
         help_text='The facility on which the health unit is tied to.')
@@ -84,8 +84,7 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
         help_text='The number of house holds a CHU is in-charge of')
     date_established = models.DateField(default=timezone.now)
     date_operational = models.DateField(null=True, blank=True)
-    is_approved = models.NullBooleanField(
-        blank=True, null=True, help_text='Determines if a chu has been approved')
+    is_approved = models.BooleanField(default=False)
     approval_comment = models.TextField(null=True, blank=True)
     approval_date = models.DateTimeField(null=True, blank=True)
     location = models.CharField(max_length=255, null=True, blank=True)
@@ -255,14 +254,9 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
             if settings.PUSH_TO_DHIS:
                 self.push_chu_to_dhis2()
             super(CommunityHealthUnit, self).save(*args, **kwargs)
-
-    @property
-    def average_rating(self):
-        return self.chu_ratings.aggregate(r=models.Avg('rating'))['r'] or 0
-
-    @property
-    def rating_count(self):
-        return self.chu_ratings.count()
+        # if not self.code:
+        #     self.code = self.generate_next_code_sequence()
+        # super(CommunityHealthUnit, self).save(*args, **kwargs)
 
     def push_chu_to_dhis2(self):
         from facilities.models.facility_models import DhisAuth
@@ -336,6 +330,7 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
         )
         LOGGER.info('Metadata CUs pushed successfullly')
 
+
     def get_facility_dhis2_parent_id(self):
         from facilities.models.facility_models import DhisAuth
         import requests
@@ -362,6 +357,18 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
                     "Error!": ["Unable to resolve exact Facility linked to the CHU in DHIS2"]
                 }
             )
+
+
+
+
+
+    @property
+    def average_rating(self):
+        return self.chu_ratings.aggregate(r=models.Avg('rating'))['r'] or 0
+
+    @property
+    def rating_count(self):
+        return self.chu_ratings.count()
 
     class Meta(AbstractBase.Meta):
         unique_together = ('name', 'facility', )
@@ -485,23 +492,22 @@ class ChuUpdateBuffer(AbstractBase):
             raise ValidationError({"__all__": ["Nothing was edited"]})
 
     def update_basic_details(self):
-        if self.basic:
-            basic_details = json.loads(self.basic)
-            if 'status' in basic_details:
-                basic_details['status_id'] = basic_details.get(
-                    'status').get('status_id')
-                basic_details.pop('status')
-            if 'facility' in basic_details:
-                basic_details['facility_id'] = basic_details.get(
-                    'facility').get('facility_id')
-                basic_details.pop('facility')
-           
-            
-            for key, value in basic_details.iteritems():
-                setattr(self.health_unit, key, value)
-            if 'basic' in basic_details:
-                setattr(self.health_unit, 'facility_id', basic_details.get('basic').get('facility'))
-            self.health_unit.save()
+        basic_details = json.loads(self.basic)
+        if 'status' in basic_details:
+            basic_details['status_id'] = basic_details.get(
+                'status').get('status_id')
+            basic_details.pop('status')
+        if 'facility' in basic_details:
+            basic_details['facility_id'] = basic_details.get(
+                'facility').get('facility_id')
+            basic_details.pop('facility')
+        
+        
+        for key, value in basic_details.iteritems():
+            setattr(self.health_unit, key, value)
+
+
+        self.health_unit.save()
 
     def update_workers(self):
         chews = json.loads(self.workers)
@@ -554,6 +560,7 @@ class ChuUpdateBuffer(AbstractBase):
                 'contact_type_id': contact['contact_type_id'],
                 'contact': contact['contact']
             }
+
             try:
                 contact_obj = Contact.objects.get(**contact_data)
             except Contact.DoesNotExist:
@@ -614,6 +621,7 @@ class ChuUpdateBuffer(AbstractBase):
 
     def __str__(self):
         return self.health_unit.name
+
 
 
 class CHUServiceLink(AbstractBase):
