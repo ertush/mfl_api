@@ -7,6 +7,8 @@ from django.db import models
 from django.core.exceptions import ValidationError
 from django.core import validators
 from django.utils import timezone, encoding
+from django.conf import settings
+
 
 from common.models import AbstractBase, Contact, SequenceMixin
 from common.fields import SequenceField
@@ -237,9 +239,128 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
             return None
 
     def save(self, *args, **kwargs):
-        if not self.code:
+        # new chus that have just been added but not approved yet
+        if not self.code and not self.is_approved:
+            super(CommunityHealthUnit, self).save(*args, **kwargs)
+        # existing chus that were approved previously and have been updated
+        if self.code and self.is_approved:
+            if settings.PUSH_TO_DHIS:
+                self.push_chu_to_dhis2()
+            super(CommunityHealthUnit, self).save(*args, **kwargs)
+        # chus that have just been approved but don't have a code yet
+        # and have not been pushed to DHIS yet
+        if self.is_approved and not self.code:
             self.code = self.generate_next_code_sequence()
-        super(CommunityHealthUnit, self).save(*args, **kwargs)
+            if settings.PUSH_TO_DHIS:
+                self.push_chu_to_dhis2()
+            super(CommunityHealthUnit, self).save(*args, **kwargs)
+        # if not self.code:
+        #     self.code = self.generate_next_code_sequence()
+        # super(CommunityHealthUnit, self).save(*args, **kwargs)
+
+    def push_chu_to_dhis2(self):
+        from facilities.models.facility_models import DhisAuth
+        import requests
+        dhisauth = DhisAuth()
+        dhisauth.get_oauth2_token()
+        facility_dhis_id = self.get_facility_dhis2_parent_id()
+        unit_uuid_status = dhisauth.get_org_unit_id(self.code)
+        unit_uuid = unit_uuid_status[0]
+        new_chu_payload = {
+            "id": unit_uuid,
+            "code": str(self.code),
+            "name": str(self.name),
+            "shortName": str(self.name),
+            "displayName": str(self.name),
+            "parent": {
+                "id": facility_dhis_id
+            },
+            "openingDate": self.date_operational.strftime("%Y-%m-%d"),
+        }
+        
+        metadata_payload = {
+            "keph": 'axUnguN4QDh'
+        }
+
+        if unit_uuid_status[1] == 'retrieved':
+            r = requests.put(
+                settings.DHIS_ENDPOINT + "api/organisationUnits/" + new_chu_payload.pop('id'),
+                auth=(settings.DHIS_USERNAME, settings.DHIS_PASSWORD),
+                headers={
+                    "Accept": "application/json"
+                },
+                json=new_chu_payload
+            )
+            print("Update CHU Response", r.url, r.status_code, r.json())
+            LOGGER.info("Update CHU Response: %s" % r.text)
+        else:
+            r = requests.post(
+                settings.DHIS_ENDPOINT + "api/organisationUnits",
+                auth=(settings.DHIS_USERNAME, settings.DHIS_PASSWORD),
+                headers={
+                    "Accept": "application/json"
+                },
+                json=new_chu_payload
+            )
+
+            print("Create CHU Response", r.url, r.status_code, r.json())
+            LOGGER.info("Create CHU Response: %s" % r.text)
+
+        if r.json()["status"] != "OK":
+            LOGGER.error("Failed PUSH: error -> {}".format(r.text))
+            raise ValidationError(
+                {
+                    "Error!": ["An error occured while pushing Community Unit to DHIS2. This is may be caused by the "
+                               "existance of an organisation unit with as similar name as to the one you are creating. "
+                               "Or some specific information like codes are not unique"]
+                }
+            )
+        self.push_chu_metadata(metadata_payload, unit_uuid)
+
+    def push_chu_metadata(self, metadata_payload, chu_uid):
+        # Keph Level
+        import requests
+        r_keph = requests.post(
+            settings.DHIS_ENDPOINT + "api/organisationUnitGroups/" + metadata_payload[
+                'keph'] + "/organisationUnits/" + chu_uid,
+            auth=(settings.DHIS_USERNAME, settings.DHIS_PASSWORD),
+            headers={
+                "Accept": "application/json"
+            },
+        )
+        LOGGER.info('Metadata CUs pushed successfullly')
+
+
+    def get_facility_dhis2_parent_id(self):
+        from facilities.models.facility_models import DhisAuth
+        import requests
+        r = requests.get(
+            settings.DHIS_ENDPOINT + "api/organisationUnits.json",
+            auth=(settings.DHIS_USERNAME, settings.DHIS_PASSWORD),
+            headers={
+                "Accept": "application/json"
+            },
+            params={
+                "query": self.facility.code,
+                "fields": "[id,name]",
+                "filter": "level:in:[5]",
+                "paging": "false"
+            }
+        )
+
+        if len(r.json()["organisationUnits"]) is 1:
+            if r.json()["organisationUnits"][0]["id"]:
+                return r.json()["organisationUnits"][0]["id"]
+        else:
+            raise ValidationError(
+                {
+                    "Error!": ["Unable to resolve exact Facility linked to the CHU in DHIS2"]
+                }
+            )
+
+
+
+
 
     @property
     def average_rating(self):
@@ -371,24 +492,22 @@ class ChuUpdateBuffer(AbstractBase):
             raise ValidationError({"__all__": ["Nothing was edited"]})
 
     def update_basic_details(self):
-        if self.basic:
-            basic_details = json.loads(self.basic)
-            if 'status' in basic_details:
-                basic_details['status_id'] = basic_details.get(
-                    'status').get('status_id')
-                basic_details.pop('status')
-            if 'facility' in basic_details:
-                basic_details['facility_id'] = basic_details.get(
-                    'facility').get('facility_id')
-                basic_details.pop('facility')
-           
-            
-            for key, value in basic_details.iteritems():
-                setattr(self.health_unit, key, value)
-            if 'basic' in basic_details:
-                setattr(self.health_unit, 'facility_id', basic_details.get('basic').get('facility'))
-            LOGGER.info("[>>>>>> FacilityId]: {}, [>>>>>>>>>> HealthUnit]: {}".format(basic_details.get('basic'), self.health_unit))
-            self.health_unit.save()
+        basic_details = json.loads(self.basic)
+        if 'status' in basic_details:
+            basic_details['status_id'] = basic_details.get(
+                'status').get('status_id')
+            basic_details.pop('status')
+        if 'facility' in basic_details:
+            basic_details['facility_id'] = basic_details.get(
+                'facility').get('facility_id')
+            basic_details.pop('facility')
+        
+        
+        for key, value in basic_details.iteritems():
+            setattr(self.health_unit, key, value)
+
+
+        self.health_unit.save()
 
     def update_workers(self):
         chews = json.loads(self.workers)
@@ -441,6 +560,7 @@ class ChuUpdateBuffer(AbstractBase):
                 'contact_type_id': contact['contact_type_id'],
                 'contact': contact['contact']
             }
+
             try:
                 contact_obj = Contact.objects.get(**contact_data)
             except Contact.DoesNotExist:
