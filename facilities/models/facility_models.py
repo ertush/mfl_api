@@ -200,15 +200,26 @@ class DhisAuth(ApiAuthentication):
             )
             LOGGER.info("Create Facility Response: %s" % r.text)
         else:
-            r = requests.put(
+            facility = requests.get(
                 settings.DHIS_ENDPOINT + "api/organisationUnits/" + new_facility_payload.pop('id'),
                 auth=(settings.DHIS_USERNAME, settings.DHIS_PASSWORD),
                 headers={
                     "Accept": "application/json"
-                },
-                json=new_facility_payload
+                }
+
+
             )
-            LOGGER.info("Update Facility Response: %s" % r.text)
+
+            if facility.json()['id'] == new_facility_payload.pop('id'):
+                r = requests.put(
+                    settings.DHIS_ENDPOINT + "api/organisationUnits/" + new_facility_payload.pop('id'),
+                    auth=(settings.DHIS_USERNAME, settings.DHIS_PASSWORD),
+                    headers={
+                        "Accept": "application/json"
+                    },
+                    json=new_facility_payload
+                )
+                LOGGER.info("Update Facility Response: %s" % r.text)
         if r.json()["status"] != "OK":
             LOGGER.error('Facility feedback: %s' % r.text)
             raise ValidationError(
@@ -278,11 +289,19 @@ class DhisAuth(ApiAuthentication):
 
 
         if r.json()["status"] != "OK":
-            raise ValidationError(
-                {
-                    "Error!": ["Unable to push facility updates to DHIS2"]
-                }
-            )
+            r = requests.post(
+            settings.DHIS_ENDPOINT + "api/organisationUnits/",
+            auth=(settings.DHIS_USERNAME, settings.DHIS_PASSWORD),
+            headers={
+                "Accept": "application/json"
+            },
+            json=facility_updates_payload
+        )
+            # raise ValidationError(
+            #     {
+            #         "Error!": ["Unable to push facility updates to DHIS2"]
+            #     }
+            # )
 
     def format_coordinates(self, str_coordinates):
         coordinates_str_list = str_coordinates.split(" ")
@@ -1226,7 +1245,8 @@ class Facility(SequenceMixin, AbstractBase):
             kmhfl_dhis2_facility_type_mapping = {
                 "20b86171-0c16-47e1-9277-5e773d485c33": "YQK9pleIoeB",
                 "5eb392ac-d10a-40c9-b525-53dac866ef6c": "lTrpyOiOcM6",
-                "8949eeb0-40b1-43d4-a38d-5d4933dc209f": "lTrpyOiOcM6", 
+                "8949eeb0-40b1-43d4-a38d-5d4933dc209f": "lTrpyOiOcM6",
+                "0b7f9699-6024-4813-8801-38f188c834f5": "lTrpyOiOcM6",
                 "ccc1600e-9a24-499f-889f-bd9f0bdc4b95": "YQK9pleIoeB",
                 "d8d741b1-21c5-45c8-86d0-a2094bf9bda6": "YQK9pleIoeB",
                 "85f2099b-a2f8-49f4-9798-0cb48c0875ff": "YQK9pleIoeB",
@@ -2187,6 +2207,12 @@ class FacilityUpdates(AbstractBase):
         dhis2_parent_id = self.dhis2_api_auth.get_parent_id(self.facility.ward.code)
         dhis2_org_unit_id = self.dhis2_api_auth.get_org_unit_id(self.facility.code)
 
+        coordinates = self.dhis2_api_auth.format_coordinates(
+                re.search(r'\((.*?)\)', str(FacilityCoordinates.objects.values('coordinates')
+                                            .get(facility_id=self.facility.id)['coordinates'])).group(1))
+        
+        LOGGER.error('[>>>>>Info] coordinates: {}, FacilityCoordinatesObj: {}'.format(coordinates, FacilityCoordinates.objects.values('coordinates')
+                                            .get(facility_id=self.facility.id)['coordinates']))
         new_facility_updates_payload = {
             "code": str(self.facility.code),
             "name": str(self.facility.name),
@@ -2196,14 +2222,12 @@ class FacilityUpdates(AbstractBase):
                 "id": dhis2_parent_id
             },
             "openingDate": self.facility.date_established.strftime("%Y-%m-%d"),
-            "coordinates": self.dhis2_api_auth.format_coordinates(
-                re.search(r'\((.*?)\)', str(FacilityCoordinates.objects.values('coordinates')
-                                            .get(facility_id=self.facility.id)['coordinates'])).group(1))
+            "coordinates": coordinates
         }
 
         # print("Names;", "Official Name:", self.facility.official_name, "Name:", self.facility.name)
         #
-        # print("New Facility Push Payload => ", new_facility_updates_payload)
+        print("New Facility Push Payload => ", new_facility_updates_payload)
         self.dhis2_api_auth.push_facility_updates_to_dhis2(dhis2_org_unit_id, new_facility_updates_payload)
 
     def clean(self, *args, **kwargs):
