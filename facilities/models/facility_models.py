@@ -980,6 +980,24 @@ class FacilityExportExcelMaterialView(models.Model):
     service_names = ArrayField(
         models.UUIDField(null=True, blank=True), null=True, blank=True
     )
+    infrastructure = ArrayField(
+        models.UUIDField(null=True, blank=True), null=True, blank=True
+    )
+    infrastructure_names = ArrayField(
+        models.UUIDField(null=True, blank=True), null=True, blank=True
+    )
+    infrastructure_categories = ArrayField(
+        models.UUIDField(null=True, blank=True), null=True, blank=True
+    )
+    speciality = ArrayField(
+        models.UUIDField(null=True, blank=True), null=True, blank=True
+    )
+    speciality_names = ArrayField(
+        models.UUIDField(null=True, blank=True), null=True, blank=True
+    )
+    speciality_categories = ArrayField(
+        models.UUIDField(null=True, blank=True), null=True, blank=True
+    )
     approved = models.BooleanField(default=False)
     is_public_visible = models.BooleanField(default=False)
     created = models.DateTimeField()

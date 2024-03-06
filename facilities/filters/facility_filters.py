@@ -100,7 +100,8 @@ class FacilityExportExcelMaterialViewFilter(django_filters.FilterSet):
 
     class Meta(CommonFieldsFilterset.Meta):
         model = FacilityExportExcelMaterialView
-        exclude = ('services', 'categories', 'service_names', )
+        exclude = ('services', 'categories', 'service_names', 'infrastructure', 'infrastructure_names',
+                   'infrastructure_categories', 'speciality', 'speciality_names', 'speciality_categories')
 
 
 class RegulatorSyncFilter(CommonFieldsFilterset):
