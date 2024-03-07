@@ -1,6 +1,7 @@
 from __future__ import unicode_literals
 import json
 
+from django.contrib.gis.geos import Point
 from django.db import transaction
 from django.utils import six
 from rest_framework import serializers
@@ -39,11 +40,24 @@ class BufferCooridinatesMixin(object):
             facility, 'id') else facility
 
         coordinates = []
+
+
+
         if isinstance(validated_data.get('coordinates'), six.string_types):
             coordinates = json.loads(validated_data.get('coordinates'))
 
         if isinstance(validated_data.get('coordinates'), dict):
             coordinates = validated_data.get('coordinates')
+
+        
+        if isinstance(validated_data.get('coordinates'), Point):
+            pointx = validated_data['coordinates'].x
+            pointy = validated_data['coordinates'].y
+            coordinates = {
+                'coordinates': [pointx, pointy]
+            }
+
+
 
         facility_update = self.get_facility_update(facility)
 
@@ -150,6 +164,11 @@ class FacilityCoordinateSimpleSerializer(
 
     @transaction.atomic
     def update(self, instance, validated_data):
+        
+        coordinates_data = validated_data.get('coordinates')['coordinates']
+        point = Point(x=coordinates_data[0], y=coordinates_data[1])
+        validated_data['coordinates'] = point
+
         facility = instance.facility
         if facility.approved:
             FacilityCoordinates(**validated_data).clean()

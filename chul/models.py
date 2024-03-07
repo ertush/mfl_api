@@ -244,7 +244,7 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
         # and have not been pushed to DHIS yet
         if self.is_approved and not self.code:
             self.code = self.generate_next_code_sequence()
-	    if settings.PUSH_TO_DHIS:
+        if settings.PUSH_TO_DHIS:
                 self.push_chu_to_dhis2()
         super(CommunityHealthUnit, self).save(*args, **kwargs)
 
