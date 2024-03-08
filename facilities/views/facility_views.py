@@ -218,9 +218,7 @@ class QuerysetFilterMixin(object):
                 regulatory_body=self.request.user.regulator)
 
     def filter_for_infrastructure(self):
-        if self.request.user and ('infrastructure' in [
-                field.name for field in
-                self.queryset.model._meta.get_fields()]):
+        if self.request.user and hasattr(self.request, 'infrastruture'):
         # if self.request.user.has_perm("facilities.view_infrastructure") \
         #     is False and ('infrastructure' in [
         #         field.name for field in
@@ -236,9 +234,7 @@ class QuerysetFilterMixin(object):
             self.queryset = self.queryset.filter(service=self.request.service)
 
     def filter_for_speciality(self):
-        if self.request.user and ('speciality' in [
-                field.name for field in
-                self.queryset.model._meta.get_fields()]):
+        if self.request.user and hasattr(self.request, 'speciality'):
         # if self.request.user.has_perm("facilities.view_facilityservice") \
         #     is False and ('service' in [
         #         field.name for field in
@@ -261,7 +257,7 @@ class QuerysetFilterMixin(object):
         self.filter_closed_facilities()
         self.filter_approved_facilities()
         self.filter_for_infrastructure()
-        # self.filter_for_speciality()
+        self.filter_for_speciality()
         self.filter_for_services()
 
 
