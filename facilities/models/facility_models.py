@@ -987,7 +987,7 @@ class FacilityExportExcelMaterialView(models.Model):
         models.CharField(null=True, blank=True), null=True, blank=True
     )
     infrastructure_categories = ArrayField(
-        models.CharField(null=True, blank=True), null=True, blank=True
+        models.UUIDField(null=True, blank=True), null=True, blank=True
     )
     speciality = ArrayField(
         models.UUIDField(null=True, blank=True), null=True, blank=True
@@ -996,7 +996,7 @@ class FacilityExportExcelMaterialView(models.Model):
         models.CharField(null=True, blank=True), null=True, blank=True
     )
     speciality_categories = ArrayField(
-        models.CharField(null=True, blank=True), null=True, blank=True
+        models.UUIDField(null=True, blank=True), null=True, blank=True
     )
     approved = models.BooleanField(default=False)
     is_public_visible = models.BooleanField(default=False)
