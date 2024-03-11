@@ -202,15 +202,26 @@ class DhisAuth(ApiAuthentication):
             )
             LOGGER.info("Create Facility Response: %s" % r.text)
         else:
-            r = requests.put(
+            facility = requests.get(
                 settings.DHIS_ENDPOINT + "api/organisationUnits/" + new_facility_payload.pop('id'),
                 auth=(settings.DHIS_USERNAME, settings.DHIS_PASSWORD),
                 headers={
                     "Accept": "application/json"
-                },
-                json=new_facility_payload
+                }
+
+
             )
-            LOGGER.info("Update Facility Response: %s" % r.text)
+
+            if facility.json()['id'] == new_facility_payload.pop('id'):
+                r = requests.put(
+                    settings.DHIS_ENDPOINT + "api/organisationUnits/" + new_facility_payload.pop('id'),
+                    auth=(settings.DHIS_USERNAME, settings.DHIS_PASSWORD),
+                    headers={
+                        "Accept": "application/json"
+                    },
+                    json=new_facility_payload
+                )
+                LOGGER.info("Update Facility Response: %s" % r.text)
         if r.json()["status"] != "OK":
             LOGGER.error('Facility feedback: %s' % r.text)
             raise ValidationError(
@@ -279,11 +290,14 @@ class DhisAuth(ApiAuthentication):
         LOGGER.info("PUSH_FACILITY_UPDATES_STATUS_CODE => {}".format(r.json()["status"]))
 
         if r.json()["status"] != "OK":
-            raise ValidationError(
-                {
-                    "Error!": ["Unable to push facility updates to DHIS2"]
-                }
-            )
+            r = requests.post(
+            settings.DHIS_ENDPOINT + "api/organisationUnits/",
+            auth=(settings.DHIS_USERNAME, settings.DHIS_PASSWORD),
+            headers={
+                "Accept": "application/json"
+            },
+            json=facility_updates_payload
+        )
 
     def format_coordinates(self, str_coordinates):
         coordinates_str_list = str_coordinates.split(" ")
