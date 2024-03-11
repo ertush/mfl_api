@@ -165,7 +165,7 @@ class FacilityCoordinateSimpleSerializer(
     @transaction.atomic
     def update(self, instance, validated_data):
         
-        coordinates_data = validated_data.get('coordinates')["coordinates"]
+        coordinates_data = validated_data.get('coordinates')['coordinates']
         point = Point(x=coordinates_data[0], y=coordinates_data[1])
         validated_data['coordinates'] = point
 
