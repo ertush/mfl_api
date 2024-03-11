@@ -659,7 +659,7 @@ class FacilityDetailView(
         """
         for contact in officer_in_charge['contacts']:
             contact['contact_type_name'] = ContactType.objects.get(
-                id=contact.get('type')).name
+                id=contact.get('contact_type')).name
         return officer_in_charge
 
     def populate_officer_incharge_job_title(self, officer_in_charge):
