@@ -169,9 +169,12 @@ class FacilityCoordinateSimpleSerializer(
     @transaction.atomic
     def update(self, instance, validated_data):
         
-        coordinates_data = json.loads(validated_data.get('coordinates')).coordinates
+        coordinates_dict = json.loads(validated_data.get('coordinates')) 
+
+        coordinates_data = coordinates_dict['coordinates'] if 'coordinates' in coordinates_dict else [None, None]
+
         
-        LOGGER.error("Coordinates Data: ", coordinates_data)
+        LOGGER.info("Coordinates Data: ", coordinates_data)
 
         point = Point(x=coordinates_data[0], y=coordinates_data[1])
         validated_data['coordinates'] = point
