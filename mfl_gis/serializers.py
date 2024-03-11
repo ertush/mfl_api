@@ -19,7 +19,11 @@ from .models import (
 )
 
 from facilities.models import FacilityUpdates
+import logging
 
+
+
+LOGGER = logging.getLogger(__name__)
 
 class BufferCooridinatesMixin(object):
 
@@ -165,7 +169,14 @@ class FacilityCoordinateSimpleSerializer(
     @transaction.atomic
     def update(self, instance, validated_data):
         
+<<<<<<< HEAD
         coordinates_data = validated_data.get('coordinates')['coordinates']
+=======
+        coordinates_data = validated_data.get('coordinates')
+
+        LOGGER.info("Coordinates Data: ", coordinates_data)
+
+>>>>>>> faca50c4 (Added logging to mfl_gis/serializer.py)
         point = Point(x=coordinates_data[0], y=coordinates_data[1])
         validated_data['coordinates'] = point
 
