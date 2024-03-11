@@ -2215,7 +2215,7 @@ class FacilityUpdates(AbstractBase):
                                             .get(facility_id=self.facility.id)['coordinates'])).group(1))
             }
         else:
-            error = ("DHIS 2 Parent ID could not be found")
+            error = {"Error": "DHIS 2 Parent ID could not be found"}
             raise ValidationError(error)
 
             # print("Names;", "Official Name:", self.facility.official_name, "Name:", self.facility.name)
