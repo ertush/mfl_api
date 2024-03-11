@@ -177,6 +177,8 @@ class DhisAuth(ApiAuthentication):
         )
         dhis2_facility = r.json()["organisationUnits"]
 
+        dhis2_facility = dhis2_facility if "id" in dhis2_facility[0] else [{"id": None}]
+
         if len(dhis2_facility) == 0:
             raise ValidationError(
                 {
@@ -2198,7 +2200,8 @@ class FacilityUpdates(AbstractBase):
         dhis2_parent_id = self.dhis2_api_auth.get_parent_id(self.facility.ward.code)
         dhis2_org_unit_id = self.dhis2_api_auth.get_org_unit_id(self.facility.code)
 
-        new_facility_updates_payload = {
+        if dhis2_parent_id is not None:
+            new_facility_updates_payload = {
             "code": str(self.facility.code),
             "name": str(self.facility.name),
             "shortName": str(self.facility.name),
@@ -2210,13 +2213,16 @@ class FacilityUpdates(AbstractBase):
             "coordinates": self.dhis2_api_auth.format_coordinates(
                 re.search(r'\((.*?)\)', str(FacilityCoordinates.objects.values('coordinates')
                                             .get(facility_id=self.facility.id)['coordinates'])).group(1))
-        }
+            }
+        else:
+            error = ("DHIS 2 Parent ID could not be found")
+            raise ValidationError(error)
 
-        # print("Names;", "Official Name:", self.facility.official_name, "Name:", self.facility.name)
-        #
-        # print("New Facility Push Payload => ", new_facility_updates_payload)
+            # print("Names;", "Official Name:", self.facility.official_name, "Name:", self.facility.name)
+            #
+            # print("New Facility Push Payload => ", new_facility_updates_payload)
         
-        self.dhis2_api_auth.push_facility_updates_to_dhis2(dhis2_org_unit_id, new_facility_updates_payload)
+            self.dhis2_api_auth.push_facility_updates_to_dhis2(dhis2_org_unit_id, new_facility_updates_payload)
 
     def clean(self, *args, **kwargs):
         self.validate_only_one_update_at_a_time()
