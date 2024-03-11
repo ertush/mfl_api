@@ -170,7 +170,7 @@ class DhisAuth(ApiAuthentication):
             },
             params={
                 "query": "KE_Ward_" + str(ward_id),
-                "fields": "[id,name]",
+                "fields": "id,name",
                 "filter": "level:in:[4]",
                 "paging": "false"
             }
@@ -179,10 +179,10 @@ class DhisAuth(ApiAuthentication):
 
         dhis2_facility = dhis2_facility if "id" in dhis2_facility[0] else [{"id": None}]
 
-        if len(dhis2_facility) == 0:
+        if dhis2_facility[0]["id"] is None:
             raise ValidationError(
                 {
-                    "Error!": ["Unable to resolve exact parent of the new facility in DHIS2"]
+                    "Error!": ["Unable to resolve exact parent of the facility in DHIS2"]
                 }
             )
         else:
@@ -2215,7 +2215,7 @@ class FacilityUpdates(AbstractBase):
                                             .get(facility_id=self.facility.id)['coordinates'])).group(1))
             }
         else:
-            error = {"Error": "DHIS 2 Parent ID could not be found"}
+            error = {"Error": "DHIS 2 parent ID could not be found"}
             raise ValidationError(error)
 
             # print("Names;", "Official Name:", self.facility.official_name, "Name:", self.facility.name)
