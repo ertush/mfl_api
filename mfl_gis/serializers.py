@@ -169,7 +169,9 @@ class FacilityCoordinateSimpleSerializer(
     @transaction.atomic
     def update(self, instance, validated_data):
         
-        coordinates_data = validated_data.get('coordinates').coordinates
+        #coordinates_data = validated_data.get('coordinates').coordinates
+
+        coordinates_data = self.request.coordinates.coordinates
 
         LOGGER.info("Coordinates Data: ", coordinates_data)
 
