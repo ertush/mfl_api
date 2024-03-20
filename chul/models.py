@@ -244,7 +244,7 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
         # and have not been pushed to DHIS yet
         if self.is_approved and not self.code:
             self.code = self.generate_next_code_sequence()
-	    if settings.PUSH_TO_DHIS:
+        if settings.PUSH_TO_DHIS:
                 self.push_chu_to_dhis2()
         super(CommunityHealthUnit, self).save(*args, **kwargs)
 
@@ -478,23 +478,23 @@ class ChuUpdateBuffer(AbstractBase):
             raise ValidationError({"__all__": ["Nothing was edited"]})
 
     def update_basic_details(self):
-        if self.basic:
-            basic_details = json.loads(self.basic)
-            if 'status' in basic_details:
-                basic_details['status_id'] = basic_details.get(
-                    'status').get('status_id')
-                basic_details.pop('status')
-            if 'facility' in basic_details:
-                basic_details['facility_id'] = basic_details.get(
-                    'facility').get('facility_id')
-                basic_details.pop('facility')
-           
-            
-            for key, value in basic_details.iteritems():
-                setattr(self.health_unit, key, value)
-            if 'basic' in basic_details:
-                setattr(self.health_unit, 'facility_id', basic_details.get('basic').get('facility'))
-            self.health_unit.save()
+        # Because the basic property of ChuUpdateBuffer receives {"basic": {"facilities": <facility_id>}"}
+        basic_details = json.loads(self.basic.basic)
+        if 'status' in basic_details:
+            basic_details['status_id'] = basic_details.get(
+                'status').get('status_id')
+            basic_details.pop('status')
+        if 'facility' in basic_details:
+            basic_details['facility_id'] = basic_details.get(
+                'facility').get('facility_id')
+            basic_details.pop('facility')
+        
+        
+        for key, value in basic_details.iteritems():
+            setattr(self.health_unit, key, value)
+        if 'basic' in basic_details:
+            setattr(self.health_unit, 'facility_id', basic_details.get('basic').get('facility'))
+        self.health_unit.save()
 
     def update_workers(self):
         chews = json.loads(self.workers)
