@@ -1,8 +1,9 @@
 import functools
+import json
 import uuid
 
 from datetime import timedelta
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 from django.apps import apps
 from django.db.models import Sum, Case, When, IntegerField,Count,ExpressionWrapper,Q,F
 from django.utils import timezone
@@ -14,7 +15,7 @@ from rest_framework.exceptions import NotFound, ValidationError
 from facilities.models import (
     Facility,
     FacilityType,
-    KephLevel,
+    KephLevel, Speciality, FacilitySpecialist,
     FacilityUpgrade, OwnerType, Owner,RegulatingBody,Service,FacilityInfrastructure,FacilityService,Infrastructure)
 from common.constants import TRUTH_NESS, FALSE_NESS
 from common.models import (
@@ -86,6 +87,8 @@ class FilterReportMixin(object):
         '''Route reports based on report_type param.'''
         report_type = self.request.query_params.get(
             'report_type', 'facility_count_by_county')
+        report_groupby = self.request.query_params.get(
+            'report_groupby', 'county')
         if report_type == 'facility_count_by_facility_type_detailed':
             return self._get_facility_type_data()
 
@@ -243,6 +246,27 @@ class FilterReportMixin(object):
             'ward__name': 'ward_name', 
             'ward': 'ward'
             }, filters=filters)
+
+        # New report format for facility human resource category
+        if report_type == 'facility_human_resource_category_report_all_hierachies':
+            county_id = self.request.query_params.get('county', None)
+            constituency_id = self.request.query_params.get(
+                'constituency', None
+            )
+
+            filters = {}
+
+            if county_id is not None:
+                filters['ward__sub_county__county__id'] = county_id
+            if constituency_id is not None:
+                filters['ward__sub_county__id'] = constituency_id
+
+            return self._get_facility_humanresource(vals={
+                'ward__sub_county__name': 'sub_county_name',
+                'ward__sub_county': 'sub_county',
+                'ward__name': 'ward_name',
+                'ward': 'ward'
+            }, filters=filters)
     
         # New report Format facility owner 
         if report_type == 'facility_owner_report_all_hierachies':
@@ -304,9 +328,10 @@ class FilterReportMixin(object):
             return self._get_beds_and_cots_all_hierachies(vals={
                 'ward__sub_county__name': 'sub_county_name',
                'ward__sub_county': 'sub_county',
-               'ward__name': 'ward_name', 
+               'ward__name': 'ward_name',
                'ward': 'ward'
-            }, filters=filters)
+            }, filters=filters, groupby=report_groupby)
+
 
         if report_type == 'beds_and_cots_by_county':
             return self._get_beds_and_cots({
@@ -685,12 +710,15 @@ class FilterReportMixin(object):
      # New report format (beds and cots)
        
     # new report beds and cots
-    def _get_beds_and_cots_all_hierachies(self, vals={}, filters={}):
+    def _get_beds_and_cots_all_hierachies(self, vals={}, filters={}, groupby=''):
         fields = vals.keys()
-        
         items = Facility.objects.values(
             'ward__sub_county__county__name',  
-            'ward__sub_county__county', 
+            'ward__sub_county__county',
+            'ward__sub_county__name',
+            'ward__sub_county',
+            'ward__name',
+            'ward',
                   
             *fields
         ).filter(**filters).annotate(
@@ -706,6 +734,42 @@ class FilterReportMixin(object):
             maternity_theaters=Sum('number_of_maternity_theatres'),
         ).order_by()
 
+        county_totals = {}
+
+        for item in items:
+            groubyvalue = item['ward__sub_county__county__name']
+            if groupby == 'county':
+                groubyvalue=item['ward__sub_county__county__name']
+            if groupby == 'subcounty':
+                groubyvalue=item['ward__sub_county__name']
+            if groupby == 'ward':
+                groubyvalue=item['ward__name']
+            if groubyvalue not in county_totals:
+                county_totals[groubyvalue] = {
+                    'total_cots': item['cots'],
+                    'total_beds': item['beds'],
+                    'total_maternity_beds': item['maternity_beds'],
+                    'total_isolation_beds': item['isolation_beds'],
+                    'total_hdu_beds': item['hdu_beds'],
+                    'total_icu_beds': item['icu_beds'],
+                    'total_emergency_casualty_beds': item['emergency_casualty_beds'],
+                    'total_inpatient_beds': item['inpatient_beds'],
+                    'total_general_theaters': item['general_theaters'],
+                    'total_maternity_theaters': item['maternity_theaters'],
+                    # Add more properties here...
+                }
+            else:
+                county_totals[groubyvalue]['total_cots'] += item['cots']
+                county_totals[groubyvalue]['total_beds'] += item['beds']
+                county_totals[groubyvalue]['total_maternity_beds'] += item['maternity_beds']
+                county_totals[groubyvalue]['total_isolation_beds'] += item['isolation_beds']
+                county_totals[groubyvalue]['total_hdu_beds'] += item['hdu_beds']
+                county_totals[groubyvalue]['total_icu_beds'] += item['icu_beds']
+                county_totals[groubyvalue]['total_emergency_casualty_beds'] += item['emergency_casualty_beds']
+                county_totals[groubyvalue]['total_inpatient_beds'] += item['inpatient_beds']
+                county_totals[groubyvalue]['total_general_theaters'] += item['general_theaters']
+                county_totals[groubyvalue]['total_maternity_theaters'] += item['maternity_theaters']
+                # Increment other properties accordingly
 
         total_cots, total_beds = 0, 0
 
@@ -713,7 +777,7 @@ class FilterReportMixin(object):
             total_cots += item['cots']
             total_beds += item['beds']
 
-        return list(items), {'total_cots': total_cots, 'total_beds': total_beds}
+        return {'groupedby':groupby,'results':county_totals}, {'total_cots': total_cots, 'total_beds': total_beds}
 
     def _get_facility_count_by_county(self):
         data = []
@@ -946,8 +1010,31 @@ class FilterReportMixin(object):
         
         items = items.annotate(**annotation2).order_by() 
             
-        return items, [] 
-          
+        return items, []
+
+    def _get_facility_humanresource(self, vals={}, filters={}):
+        fields = vals.keys()
+        speciality = Speciality.objects.values('id', 'name', 'category_id', 'category_id__name')
+        annotation = {}
+        annotation2 = {}
+
+        annotation = {
+            reg['name']: Sum(Case(When(speciality_id=reg['id'], then=1), output_field=IntegerField(), default=0))
+            for reg in speciality}
+        annotation2 = {reg['category_id__name']: Sum(
+            Case(When(speciality_id__category=reg['category_id'], then=1), output_field=IntegerField(), default=0))
+                       for reg in speciality}
+
+        items = FacilitySpecialist.objects.values(
+            'facility__ward__sub_county__county__name',
+            'facility__ward__sub_county__name',
+            'facility__ward__name',
+            'facility__ward',
+        ).filter(**filters).annotate(**annotation)
+
+        items = items.annotate(**annotation2).order_by()
+        return items, []
+
     def _get_facility_count(self, category=True, f_type=False, keph=False):
         county = self.request.query_params.get('county', None)
         sub_county = self.request.query_params.get('sub_county', None)
