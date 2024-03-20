@@ -1,5 +1,6 @@
-# KMHFL Backend
+[![CI](https://github.com/ertush/mfl_api/actions/workflows/ci.yml/badge.svg)](https://github.com/ertush/mfl_api/actions/workflows/ci.yml)
 
+# KMHFL Backend
 
 ## Setup
 
