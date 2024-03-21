@@ -5,7 +5,8 @@ import uuid
 from datetime import timedelta
 from collections import OrderedDict, defaultdict
 from django.apps import apps
-from django.db.models import Sum, Case, When, IntegerField,Count,ExpressionWrapper,Q,F
+from django.contrib.auth.models import Group
+from django.db.models import Sum, Case, When, IntegerField, Count, ExpressionWrapper, Q, F
 from django.utils import timezone
 from django.core.paginator import Paginator
 
@@ -13,15 +14,15 @@ from rest_framework.views import APIView, Response
 from rest_framework.exceptions import NotFound, ValidationError
 
 from facilities.models import (
-    Facility,
-    FacilityType,
-    KephLevel, Speciality, FacilitySpecialist,
-    FacilityUpgrade, OwnerType, Owner,RegulatingBody,Service,FacilityInfrastructure,FacilityService,Infrastructure)
+    Facility,ServiceCategory,
+    FacilityType,InfrastructureCategory,
+    KephLevel, Speciality, FacilitySpecialist,SpecialityCategory,
+    FacilityUpgrade, OwnerType, Owner, RegulatingBody, Service, FacilityInfrastructure, FacilityService, Infrastructure)
 from common.constants import TRUTH_NESS, FALSE_NESS
 from common.models import (
     County, Constituency, Ward, SubCounty
 )
-from chul.models import CommunityHealthUnit, Status,CHUService,CHUServiceLink
+from chul.models import CommunityHealthUnit, Status, CHUService, CHUServiceLink
 from mfl_gis.models import FacilityCoordinates
 
 from .report_config import REPORTS
@@ -83,12 +84,39 @@ class FilterReportMixin(object):
             )
         return data
 
+    def _get_user_top_level(self):
+        userid = self.request.user.groups.all()[0].id
+        groupby = self.request.query_params.get('report_groupby', '')
+        resultobject = {'usertoplevel': '', 'userlowerlevels': [], 'usergroupby': 'sub_county'}
+        resultobject['userlowerlevels'].append('ward')
+        if userid == 5:
+            resultobject['usertoplevel'] = 'national'
+            resultobject['userlowerlevels'].append('national')
+            if (groupby == 'county' or groupby == 'sub_county' or groupby == 'ward'):
+                resultobject['usergroupby'] = groupby
+            return resultobject
+        elif userid == 1:
+            resultobject['usertoplevel'] = 'county'
+            resultobject['userlowerlevels'].append('county')
+            if (groupby == 'county' or groupby == 'sub_county' or groupby == 'ward'):
+                resultobject['usergroupby'] = groupby
+            return resultobject
+        elif userid == 2:
+            resultobject['usertoplevel'] = 'sub_county'
+            resultobject['userlowerlevels'].append('sub_county')
+            if (groupby == 'sub_county' or groupby == 'ward'):
+                resultobject['usergroupby'] = groupby
+            return resultobject
+        else:
+            resultobject['usergroupby'] = groupby
+            return resultobject
+
     def get_report_data(self, *args, **kwargs):
         '''Route reports based on report_type param.'''
         report_type = self.request.query_params.get(
             'report_type', 'facility_count_by_county')
         report_groupby = self.request.query_params.get(
-            'report_groupby', 'county')
+            'report_groupby', '')
         if report_type == 'facility_count_by_facility_type_detailed':
             return self._get_facility_type_data()
 
@@ -97,112 +125,112 @@ class FilterReportMixin(object):
 
         if report_type == 'facility_keph_level_report':
             return self._get_facility_count(keph=True)
-        
+
         # New facility report Facility
         if report_type == 'facility_report_all_hierachies':
             county_id = self.request.query_params.get('county', None)
             constituency_id = self.request.query_params.get(
                 'constituency', None
             )
-            
+
             filters = {}
-            
+
             if county_id is not None:
                 filters['ward__sub_county__county__id'] = county_id
             if constituency_id is not None:
                 filters['ward__sub_county__id'] = constituency_id
-        
+
             return self._get_facility_report_all_hierachies(vals={
                 'ward__sub_county__name': 'sub_county_name',
-               'ward__sub_county': 'sub_county',
-               'ward__name': 'ward_name', 
-               'ward': 'ward'
+                'ward__sub_county': 'sub_county',
+                'ward__name': 'ward_name',
+                'ward': 'ward'
             }, filters=filters)
-        
+
         # New facility multi report
         if report_type == 'all_facility_details':
-            
+
             county_id = self.request.query_params.get('county', None)
             constituency_id = self.request.query_params.get(
                 'constituency', None
             )
-            
+
             filters = {}
-            
+
             if county_id is not None:
                 filters['ward__sub_county__county__id'] = county_id
             if constituency_id is not None:
                 filters['ward__sub_county__id'] = constituency_id
-        
+
             return self._get_all_facility_details(vals={
                 'ward__sub_county__name': 'sub_county_name',
-               'ward__sub_county': 'sub_county',
-               'ward__name': 'ward_name', 
-               'ward': 'ward'
+                'ward__sub_county': 'sub_county',
+                'ward__name': 'ward_name',
+                'ward': 'ward'
             }, filters=filters)
-      
-        
+
         # New report format keph levels
         if report_type == 'facility_keph_level_report_all_hierachies':
             county_id = self.request.query_params.get('county', None)
             constituency_id = self.request.query_params.get(
                 'constituency', None
             )
-            
+
             filters = {}
-            
             if county_id is not None:
                 filters['ward__sub_county__county__id'] = county_id
             if constituency_id is not None:
                 filters['ward__sub_county__id'] = constituency_id
+
             return self._get_facility_count_keph_level(vals={
+                'ward__sub_county__county__name': 'county_name',
+                'ward__sub_county__county': 'county',
                 'ward__sub_county__name': 'sub_county_name',
-            'ward__sub_county': 'sub_county',
-            'ward__name': 'ward_name', 
-            'ward': 'ward'
+                'ward__sub_county': 'sub_county',
+                'ward__name': 'ward_name',
+                'ward': 'ward'
             }, filters=filters)
 
-    
         # New report Format regulatory body
         if report_type == 'facility_regulatory_body_report_all_hierachies':
             county_id = self.request.query_params.get('county', None)
             constituency_id = self.request.query_params.get(
                 'constituency', None
             )
-            
+
             filters = {}
-            
+
             if county_id is not None:
                 filters['ward__sub_county__county__id'] = county_id
             if constituency_id is not None:
                 filters['ward__sub_county__id'] = constituency_id
-        
+
             return self._get_facility_count_regulatory_body(vals={
                 'ward__sub_county__name': 'sub_county_name',
-            'ward__sub_county': 'sub_county',
-            'ward__name': 'ward_name', 
-            'ward': 'ward'
+                'ward__sub_county': 'sub_county',
+                'ward__name': 'ward_name',
+                'ward': 'ward'
             }, filters=filters)
-            
+
         # New report Format Facility Type 
         if report_type == 'facility_type_report_all_hierachies':
             county_id = self.request.query_params.get('county', None)
             constituency_id = self.request.query_params.get(
                 'constituency', None
             )
-            
+
             filters = {}
-            
+
             if county_id is not None:
                 filters['ward__sub_county__county__id'] = county_id
             if constituency_id is not None:
                 filters['ward__sub_county__id'] = constituency_id
-        
+
             return self._get_facility_count_facility_type(vals={
                 'ward__sub_county__name': 'sub_county_name',
-            'ward__sub_county': 'sub_county',
-            'ward__name': 'ward_name', 
-            'ward': 'ward'
+                'ward__sub_county': 'sub_county',
+                'ward__name': 'ward_name',
+                'ward': 'ward'
             }, filters=filters)
 
         # New report Format Facility services and service category
@@ -211,40 +239,40 @@ class FilterReportMixin(object):
             constituency_id = self.request.query_params.get(
                 'constituency', None
             )
-            
+
             filters = {}
-            
+
             if county_id is not None:
-                filters['ward__sub_county__county__id'] = county_id
+                filters['facility__ward__sub_county__county__id'] = county_id
             if constituency_id is not None:
-                filters['ward__sub_county__id'] = constituency_id
-        
+                filters['facility__ward__sub_county__id'] = constituency_id
+
             return self._get_facility_services(vals={
                 'ward__sub_county__name': 'sub_county_name',
-            'ward__sub_county': 'sub_county',
-            'ward__name': 'ward_name', 
-            'ward': 'ward'
+                'ward__sub_county': 'sub_county',
+                'ward__name': 'ward_name',
+                'ward': 'ward'
             }, filters=filters)
-            
+
         # New report Format Facility infrastructure and infrastructure category
         if report_type == 'facility_infrastructure_report_all_hierachies':
             county_id = self.request.query_params.get('county', None)
             constituency_id = self.request.query_params.get(
                 'constituency', None
             )
-            
+
             filters = {}
-            
+
             if county_id is not None:
                 filters['ward__sub_county__county__id'] = county_id
             if constituency_id is not None:
                 filters['ward__sub_county__id'] = constituency_id
-        
+
             return self._get_facility_infrustructure(vals={
-                'ward__sub_county__name': 'sub_county_name',
-            'ward__sub_county': 'sub_county',
-            'ward__name': 'ward_name', 
-            'ward': 'ward'
+                'facility__ward__sub_county__name': 'sub_county_name',
+                'facility__ward__sub_county': 'sub_county',
+                'facility__ward__name': 'ward_name',
+                'facility__ward': 'ward'
             }, filters=filters)
 
         # New report format for facility human resource category
@@ -267,28 +295,27 @@ class FilterReportMixin(object):
                 'ward__name': 'ward_name',
                 'ward': 'ward'
             }, filters=filters)
-    
+
         # New report Format facility owner 
         if report_type == 'facility_owner_report_all_hierachies':
             county_id = self.request.query_params.get('county', None)
             constituency_id = self.request.query_params.get(
                 'constituency', None
             )
-            
+
             filters = {}
-            
+
             if county_id is not None:
                 filters['ward__sub_county__county__id'] = county_id
             if constituency_id is not None:
                 filters['ward__sub_county__id'] = constituency_id
-        
+
             return self._get_facility_count_owner(vals={
                 'ward__sub_county__name': 'sub_county_name',
-            'ward__sub_county': 'sub_county',
-            'ward__name': 'ward_name', 
-            'ward': 'ward'
+                'ward__sub_county': 'sub_county',
+                'ward__name': 'ward_name',
+                'ward': 'ward'
             }, filters=filters)
-        
 
         if report_type == 'facility_count_by_sub_county':
             return self._get_facility_sub_county_data()
@@ -310,28 +337,27 @@ class FilterReportMixin(object):
 
         if report_type == 'gis':
             return self._get_gis_report()
-        
+
         # New Report format (beds and cots filter)
         if report_type == 'beds_and_cots_by_all_hierachies':
             county_id = self.request.query_params.get('county', None)
             constituency_id = self.request.query_params.get(
                 'constituency', None
             )
-            
+
             filters = {}
-            
+
             if county_id is not None:
                 filters['ward__sub_county__county__id'] = county_id
             if constituency_id is not None:
                 filters['ward__sub_county__id'] = constituency_id
-        
+
             return self._get_beds_and_cots_all_hierachies(vals={
                 'ward__sub_county__name': 'sub_county_name',
-               'ward__sub_county': 'sub_county',
-               'ward__name': 'ward_name',
-               'ward': 'ward'
-            }, filters=filters, groupby=report_groupby)
-
+                'ward__sub_county': 'sub_county',
+                'ward__name': 'ward_name',
+                'ward': 'ward'
+            }, filters=filters)
 
         if report_type == 'beds_and_cots_by_county':
             return self._get_beds_and_cots({
@@ -371,7 +397,7 @@ class FilterReportMixin(object):
                 {} if keph_level_id is None
                 else {'keph_level': keph_level_id}
             )
-            
+
             return self._get_beds_and_cots(
                 vals={'keph_level__name': 'keph_level_name', 'keph_level_id': 'keph_level'},
                 filters=filters
@@ -385,13 +411,11 @@ class FilterReportMixin(object):
                 {} if keph_level_id is None
                 else {'owner': keph_level_id}
             )
-            
+
             return self._get_beds_and_cots(
                 vals={'owner__name': 'owner_name', 'owner_id': 'owner'},
                 filters=filters
             )
-
-        
 
         more_filters_params = self.request.query_params.get('filters', None)
 
@@ -488,7 +512,6 @@ class FilterReportMixin(object):
         totals = []
         return data, totals
 
-
     def _get_facility_constituency_data(self):
         owner_category = self.request.query_params.get('owner_category')
 
@@ -583,7 +606,7 @@ class FilterReportMixin(object):
 
         for facility in Facility.objects.filter(
                 **queryset_filter).filter(
-                Q(number_of_beds__gt=0) | Q(number_of_cots__gt=0)):
+            Q(number_of_beds__gt=0) | Q(number_of_cots__gt=0)):
             record = {
                 'facility_id': str(facility.id),
                 'facility_name': facility.name,
@@ -594,7 +617,6 @@ class FilterReportMixin(object):
             data.append(record)
 
         return data, []
-
 
     def _get_beds_and_cots(self, vals={}, filters={}):
         fields = vals.keys()
@@ -616,21 +638,20 @@ class FilterReportMixin(object):
                 vals[fields[1]]: p[fields[1]]
             } for p in items
         ], {'total_cots': total_cots, 'total_beds': total_beds}
-        
+
         # Get the total number of facilities
-    
+
     def _get_all_facility_details(self, vals={}, filters={}):
-        
+
         fields = vals.keys()
-        
+
         items = Facility.objects.values(
-            'ward__sub_county__county__name',  
-            'ward__sub_county__county', 
+            'ward__sub_county__county__name',
+            'ward__sub_county__county',
             'name',
-            'facility_services',      
+            'facility_services',
             *fields
         ).filter(**filters).order_by()
-
 
         total_cots, total_beds = 0, 0
 
@@ -661,12 +682,10 @@ class FilterReportMixin(object):
         #     # 'regulatory_body')
         # ).distinct()
         # total_facilities=0
-    
 
         # return list(items),{'total facilities',total_facilities}
-    
-    
-    def _get_facility_report_all_hierachies(self, vals={},filters={}):
+
+    def _get_facility_report_all_hierachies(self, vals={}, filters={}):
         fields = vals.keys()
 
         keph_levels = KephLevel.objects.values_list('id', flat=True)
@@ -706,23 +725,31 @@ class FilterReportMixin(object):
             result[result_key].update(keph_level_counts)  # Update the dictionary
 
         return result
-        
-     # New report format (beds and cots)
-       
+
+    # New report format (beds and cots)
+
     # new report beds and cots
-    def _get_beds_and_cots_all_hierachies(self, vals={}, filters={}, groupby=''):
+    def _get_beds_and_cots_all_hierachies(self, vals={}, filters={}):
         fields = vals.keys()
+        usertoplevel = self._get_user_top_level()
+        groupby = usertoplevel['usergroupby']
+        if usertoplevel['usertoplevel'] == 'county':
+            filters['ward__sub_county__county__id'] = self.request.user.countyid
+        if usertoplevel['usertoplevel'] == 'sub_county':
+            filters['ward__sub_county__id'] = self.request.user.sub_countyid
+
+
         items = Facility.objects.values(
-            'ward__sub_county__county__name',  
+            'ward__sub_county__county__name',
             'ward__sub_county__county',
             'ward__sub_county__name',
             'ward__sub_county',
             'ward__name',
             'ward',
-                  
+
             *fields
         ).filter(**filters).annotate(
-            cots=Sum('number_of_cots'), 
+            cots=Sum('number_of_cots'),
             beds=Sum('number_of_beds'),
             maternity_beds=Sum('number_of_maternity_beds'),
             isolation_beds=Sum('number_of_isolation_beds'),
@@ -739,11 +766,11 @@ class FilterReportMixin(object):
         for item in items:
             groubyvalue = item['ward__sub_county__county__name']
             if groupby == 'county':
-                groubyvalue=item['ward__sub_county__county__name']
+                groubyvalue = item['ward__sub_county__county__name']
             if groupby == 'subcounty':
-                groubyvalue=item['ward__sub_county__name']
+                groubyvalue = item['ward__sub_county__name']
             if groupby == 'ward':
-                groubyvalue=item['ward__name']
+                groubyvalue = item['ward__name']
             if groubyvalue not in county_totals:
                 county_totals[groubyvalue] = {
                     'total_cots': item['cots'],
@@ -777,7 +804,7 @@ class FilterReportMixin(object):
             total_cots += item['cots']
             total_beds += item['beds']
 
-        return {'groupedby':groupby,'results':county_totals}, {'total_cots': total_cots, 'total_beds': total_beds}
+        return {'groupedby': groupby, 'results': county_totals}, {'total_cots': total_cots, 'total_beds': total_beds}
 
     def _get_facility_count_by_county(self):
         data = []
@@ -852,21 +879,20 @@ class FilterReportMixin(object):
                 facility__ward__constituency__county_id__in=county.split(','))
 
         if sub_county:
-            queryset =  FacilityCoordinates.objects.filter(
+            queryset = FacilityCoordinates.objects.filter(
                 facility__ward__sub_county_id__in=sub_county.split('.'))
 
         if constituency:
-            queryset =  FacilityCoordinates.objects.filter(
+            queryset = FacilityCoordinates.objects.filter(
                 facility__ward__constituency_id__in=sub_county.split('.'))
 
         if ward:
-            queryset =  FacilityCoordinates.objects.filter(
+            queryset = FacilityCoordinates.objects.filter(
                 facility__ward_id__in=ward.split('.'))
-
 
         cords = []
         if any([county, sub_county, constituency, ward, True]):
-            for fac in  queryset:
+            for fac in queryset:
                 record = OrderedDict()
                 record['facility_code'] = fac.facility.code
                 record['facility_name'] = fac.facility.name
@@ -874,146 +900,358 @@ class FilterReportMixin(object):
                 record['facility_ward'] = fac.facility.ward.name
                 record['facility_constituency'] = fac.facility.ward.constituency.name
                 record['facility_lat'] = fac.coordinates[1]
-                record['facility_long'] =  fac.coordinates[0]
+                record['facility_long'] = fac.coordinates[0]
                 record['facility_id'] = fac.facility.id
 
                 if fac.facility.ward.sub_county:
                     record['facility_sub_county'] = fac.facility.ward.sub_county.name
                 cords.append(record)
 
-
         return cords, [len(queryset)]
 
     # New report regulatory body
-    def _get_facility_count_regulatory_body(self, vals={}, filters={}):  
+    def _get_facility_count_regulatory_body(self, vals={}, filters={}):
         fields = vals.keys()
-        
-        regulatory_body = RegulatingBody.objects.values('id','name')
+        usertoplevel = self._get_user_top_level()
+        groupby = usertoplevel['usergroupby']
+        if usertoplevel['usertoplevel'] == 'county':
+            filters['ward__sub_county__county__id'] = self.request.user.countyid
+        if usertoplevel['usertoplevel'] == 'sub_county':
+            filters['ward__sub_county__id'] = self.request.user.sub_countyid
+
+        regulatory_body = RegulatingBody.objects.values('id', 'name')
         annotate_dict = {}  # Initialize the dictionary outside the loop
-  
-        annotate_dict = {reg['name']: Sum(Case(When(regulatory_body_id=reg['id'], then=1), output_field=IntegerField(), default=0)) for reg in regulatory_body}
-                        
+
+        annotate_dict = {
+            reg['name']: Sum(Case(When(regulatory_body_id=reg['id'], then=1), output_field=IntegerField(), default=0))
+            for reg in regulatory_body}
+
         items = Facility.objects.values(
-            'ward__sub_county__county__name',  
-            'ward__sub_county__county', 
-                  
+            'ward__sub_county__county__name',
+            'ward__sub_county__county',
+
             *fields
         ).filter(**filters).annotate(
-           **annotate_dict
+            **annotate_dict
         ).order_by()
-        
-        return items, []
-    
+        result_summary = {}
+        allcategories = RegulatingBody.objects.all()
+        for item in items:
+            if groupby == 'county':
+                groubyvalue = item['ward__sub_county__county__name']
+            if groupby == 'sub_county':
+                groubyvalue = item['ward__sub_county__name']
+            if groupby == 'ward':
+                groubyvalue = item['ward__name']
+
+            if groubyvalue not in result_summary:
+                result_summary[groubyvalue] = {str(category.name): item[str(category.name)] for category in
+                                               allcategories}
+                result_summary[groubyvalue]['ward__sub_county__county__name'] = item[
+                    'ward__sub_county__county__name']
+                result_summary[groubyvalue]['ward__sub_county__county'] = item['ward__sub_county__county']
+                result_summary[groubyvalue]['ward__sub_county__name'] = item['ward__sub_county__name']
+                result_summary[groubyvalue]['ward__sub_county'] = item['ward__sub_county']
+                result_summary[groubyvalue]['ward__name'] = item['ward__name']
+                result_summary[groubyvalue]['ward'] = item['ward']
+            else:
+                for category in allcategories:
+                    result_summary[groubyvalue][str(category.name)] += item[str(category.name)]
+        return {'groupedby': groupby, 'results': result_summary}, []
+
+
     # New report keph_level
-    def _get_facility_count_keph_level(self, vals={}, filters={}):
-            
+    def _get_facility_count_keph_level_old(self, vals={}, filters={}):
+
         fields = vals.keys()
-        
-        regulatory_body = KephLevel.objects.values('id','name')
+
+        regulatory_body = KephLevel.objects.values('id', 'name')
         annotate_dict = {}  # Initialize the dictionary outside the loop
-  
-        annotate_dict = {reg['name']: Sum(Case(When(keph_level_id=reg['id'], then=1), output_field=IntegerField(), default=0)) for reg in regulatory_body}
-                        
+
+        annotate_dict = {
+            reg['name']: Sum(Case(When(keph_level_id=reg['id'], then=1), output_field=IntegerField(), default=0)) for
+            reg in regulatory_body}
+
         items = Facility.objects.values(
-            'ward__sub_county__county__name',  
-            'ward__sub_county__county', 
-                  
+            'ward__sub_county__county__name',
+            'ward__sub_county__county',
+
             *fields
         ).filter(**filters).annotate(
-           **annotate_dict
+            **annotate_dict
         ).order_by()
-        
-        return items, []  
+
+        return items, []
+
+        # new report facility owner
+
+    def _get_facility_count_keph_level(self, vals={}, filters={}, ):
+
+        fields = vals.keys()
+        usertoplevel = self._get_user_top_level()
+        groupby = usertoplevel['usergroupby']
+        if usertoplevel['usertoplevel'] == 'county':
+            filters['ward__sub_county__county__id'] = self.request.user.countyid
+        if usertoplevel['usertoplevel'] == 'sub_county':
+            filters['ward__sub_county__id'] = self.request.user.sub_countyid
+
+        regulatory_body = KephLevel.objects.values('id', 'name')
+        annotate_dict = {}  # Initialize the dictionary outside the loop
+
+        annotate_dict = {
+            reg['name']: Sum(Case(When(keph_level_id=reg['id'], then=1), output_field=IntegerField(), default=0)) for
+            reg in regulatory_body}
+
+        items = Facility.objects.values(
+            'ward__sub_county__name',
+            'ward__sub_county',
+            'ward__name',
+            'ward',
+
+            *fields
+        ).filter(**filters).annotate(
+            **annotate_dict
+        ).order_by()
+
+        result_summary = {}
+
+        for item in items:
+            if groupby == 'county':
+                groubyvalue = item['ward__sub_county__county__name']
+            if groupby == 'sub_county':
+                groubyvalue = item['ward__sub_county__name']
+            if groupby == 'ward':
+                groubyvalue = item['ward__name']
+            if groubyvalue not in result_summary:
+                result_summary[groubyvalue] = {
+                    'total_Level6': item['Level 6'],
+                    'total_Level5': item['Level 5'],
+                    'total_Level4': item['Level 4'],
+                    'total_Level3': item['Level 3'],
+                    'total_Level2': item['Level 2'],
+                    'ward__sub_county__county__name': item['ward__sub_county__county__name'],
+                    'ward__sub_county__county': item['ward__sub_county__county'],
+                    'ward__sub_county__name': item['ward__sub_county__name'],
+                    'ward__sub_county': item['ward__sub_county'],
+                    'ward__name': item['ward__name'],
+                    'ward': item['ward'],
+
+                    # Add more properties here...
+                }
+            else:
+                result_summary[groubyvalue]['total_Level6'] += item['Level 6']
+                result_summary[groubyvalue]['total_Level5'] += item['Level 5']
+                result_summary[groubyvalue]['total_Level4'] += item['Level 4']
+                result_summary[groubyvalue]['total_Level3'] += item['Level 3']
+                result_summary[groubyvalue]['total_Level2'] += item['Level 2']
+                # Increment other properties accordingly
+
+        return {'groupedby': groupby, 'results': result_summary}, []
 
     # new report facility owner
-    def _get_facility_count_owner(self, vals={}, filters={}):   
+    def _get_facility_count_owner(self, vals={}, filters={}):
         fields = vals.keys()
-        
-        owners = Owner.objects.values('id','name')
-        ownerTypes = OwnerType.objects.values('id','name')
+        usertoplevel = self._get_user_top_level()
+        groupby = usertoplevel['usergroupby']
+        if usertoplevel['usertoplevel'] == 'county':
+            filters['ward__sub_county__county__id'] = self.request.user.countyid
+        if usertoplevel['usertoplevel'] == 'sub_county':
+            filters['ward__sub_county__id'] = self.request.user.sub_countyid
+        owners = Owner.objects.values('id', 'name')
+        ownerTypes = OwnerType.objects.values('id', 'name')
         annotate_dict = {}  # Initialize the dictionary outside the loop
         annotate_dict2 = {}
-  
-        annotate_dict = {reg['name']: Sum(Case(When(owner_id=reg['id'], then=1), output_field=IntegerField(), default=0)) for reg in owners}
-        annotate_dict2 = {reg['name']: Sum(Case(When(owner_id=reg['id'], then=1), output_field=IntegerField(), default=0)) for reg in ownerTypes}
-                        
+
+        annotate_dict = {
+            reg['name']: Sum(Case(When(owner_id=reg['id'], then=1), output_field=IntegerField(), default=0)) for reg in
+            owners}
+        annotate_dict2 = {
+            reg['name']: Sum(Case(When(owner_id=reg['id'], then=1), output_field=IntegerField(), default=0)) for reg in
+            ownerTypes}
+
         items = Facility.objects.values(
-            'ward__sub_county__county__name',  
-            'ward__sub_county__county', 
+            'ward__sub_county__county__name',
+            'ward__sub_county__county',
             *fields
         ).filter(**filters).annotate(**annotate_dict)
-        
-        items = items.annotate(**annotate_dict2).order_by() 
-            
-        return items, [] 
+
+        items = items.annotate(**annotate_dict2).order_by()
+
+        result_summary = {}
+        allcategories = OwnerType.objects.all()
+        print(allcategories[0])
+        for item in items:
+            if groupby == 'county':
+                groubyvalue = item['ward__sub_county__county__name']
+            if groupby == 'sub_county':
+                groubyvalue = item['ward__sub_county__name']
+            if groupby == 'ward':
+                groubyvalue = item['ward__name']
+
+            # if groubyvalue not in result_summary:
+            #     result_summary[groubyvalue] = {str(category.id): item.get(str(category.id),0) for category in
+            #                                    allcategories}
+            #     result_summary[groubyvalue]['ward__sub_county__county__name'] = item[
+            #         'ward__sub_county__county__name']
+            #     result_summary[groubyvalue]['ward__sub_county__county'] = item['ward__sub_county__county']
+            #     result_summary[groubyvalue]['ward__sub_county__name'] = item['ward__sub_county__name']
+            #     result_summary[groubyvalue]['ward__sub_county'] = item['ward__sub_county']
+            #     result_summary[groubyvalue]['ward__name'] = item['ward__name']
+            #     result_summary[groubyvalue]['ward'] = item['ward']
+            # else:
+            #     for category in allcategories:
+            #         result_summary[groubyvalue][str(category.id)] += item.get(str(category.id),0)
+        return {'groupedby': groupby, 'results': items}, []
 
     # New report facility type
+
     def _get_facility_count_facility_type(self, vals={}, filters={}):
-     
+
         fields = vals.keys()
-        
-        regulatory_body = FacilityType.objects.values('id','name')
+
+        regulatory_body = FacilityType.objects.values('id', 'name')
         annotate_dict = {}  # Initialize the dictionary outside the loop
-  
-        annotate_dict = {reg['name']: Sum(Case(When(facility_type_id=reg['id'], then=1), output_field=IntegerField(), default=0)) for reg in regulatory_body}
-                        
+
+        annotate_dict = {
+            reg['name']: Sum(Case(When(facility_type_id=reg['id'], then=1), output_field=IntegerField(), default=0)) for
+            reg in regulatory_body}
+
         items = Facility.objects.values(
-            'ward__sub_county__county__name',  
-            'ward__sub_county__county', 
-                  
+            'ward__sub_county__county__name',
+            'ward__sub_county__county',
+
             *fields
         ).filter(**filters).annotate(
-           **annotate_dict
+            **annotate_dict
         ).order_by()
-        
-        return items, []     
 
+        return items, []
 
-    # New report faciity service
-    def _get_facility_services(self, vals={},filters={}):
+        # New report faciity service
+
+    def _get_facility_services(self, vals={}, filters={}):
         fields = vals.keys()
-        services = Service.objects.values('id','name','category_id','category_id__name')
-        annotation ={}
-        annotation2 ={}
-        
-        annotation = {reg['name']:Sum(Case(When(service_id=reg['id'],then=1), output_field=IntegerField(),default=0) )for reg in services}
-        annotation2 = {reg['category_id__name']:Sum(Case(When(service_id__category=reg['category_id'],then=1),output_field=IntegerField(),default=0)) for reg in services}
+        usertoplevel = self._get_user_top_level()
+        groupby = usertoplevel['usergroupby']
+        if usertoplevel['usertoplevel'] == 'county':
+            filters['facility__ward__sub_county__county__id'] = self.request.user.countyid
+        if usertoplevel['usertoplevel'] == 'sub_county':
+            filters['facility__ward__sub_county__id'] = self.request.user.sub_countyid
+        services = Service.objects.values('id', 'name', 'category_id', 'category_id__name')
+        annotation = {}
+        annotation2 = {}
+
+        annotation = {reg['name']: Sum(Case(When(service_id=reg['id'], then=1), output_field=IntegerField(), default=0))
+                      for reg in services}
+        annotation2 = {reg['category_id__name']: Sum(
+            Case(When(service_id__category=reg['category_id'], then=1), output_field=IntegerField(), default=0)) for reg
+                       in services}
 
         items = FacilityService.objects.values(
-        'facility__ward__sub_county__county__name',
-        'facility__ward__sub_county__name',
-        'facility__ward__name',
-        'facility__ward',
+            'facility__ward__sub_county__county__name',
+            'facility__ward__sub_county__county',
+            'facility__ward__sub_county__name',
+            'facility__ward__sub_county',
+            'facility__ward__name',
+            'facility__ward',
         ).filter(**filters).annotate(**annotation)
-        
-        items = items.annotate(**annotation2).order_by() 
-            
-        return items, [] 
- 
- 
-    # New Facility report infrastructure
-    def _get_facility_infrustructure(self, vals={}, filters={}):       
+
+        items = items.annotate(**annotation2).order_by()
+        result_summary={}
+        allcategories=ServiceCategory.objects.all()
+        for item in items:
+            if groupby == 'county':
+                groubyvalue = item['facility__ward__sub_county__county__name']
+            if groupby == 'sub_county':
+                groubyvalue = item['facility__ward__sub_county__name']
+            if groupby == 'ward':
+                groubyvalue = item['facility__ward__name']
+
+            if groubyvalue not in result_summary:
+                result_summary[groubyvalue] = {str(category.name): item.get(str(category.name), 0)  for category in
+                                               allcategories}
+                result_summary[groubyvalue]['ward__sub_county__county__name'] = item['facility__ward__sub_county__county__name']
+                result_summary[groubyvalue]['ward__sub_county__county'] = item['facility__ward__sub_county__county']
+                result_summary[groubyvalue]['ward__sub_county__name'] = item['facility__ward__sub_county__name']
+                result_summary[groubyvalue]['ward__sub_county'] = item['facility__ward__sub_county']
+                result_summary[groubyvalue]['ward__name'] = item['facility__ward__name']
+                result_summary[groubyvalue]['ward'] = item['facility__ward']
+            else:
+                for category in allcategories:
+                    result_summary[groubyvalue][str(category.name)] += item.get(str(category.name),0)
+        return {'groupedby': groupby, 'results': result_summary}, []
+
+        # New Facility report infrastructure
+
+    def _get_facility_infrustructure(self, vals={}, filters={}):
         fields = vals.keys()
-        infrastructure = Infrastructure.objects.values('id','name','category_id','category_id__name')
-        annotation ={}
-        annotation2 ={}
-        
-        annotation = {reg['name']:Sum(Case(When(infrastructure_id=reg['id'],then=1), output_field=IntegerField(),default=0) )for reg in infrastructure}
-        annotation2 = {reg['category_id__name']:Sum(Case(When(infrastructure_id__category=reg['category_id'],then=1),output_field=IntegerField(),default=0)) for reg in infrastructure}
+        usertoplevel = self._get_user_top_level()
+        groupby = usertoplevel['usergroupby']
+
+        if usertoplevel['usertoplevel'] == 'county':
+            filters['facility__ward__sub_county__county__id'] = self.request.user.countyid
+        if usertoplevel['usertoplevel'] == 'sub_county':
+            filters['facility__ward__sub_county__id'] = self.request.user.sub_countyid
+
+        infrastructure = Infrastructure.objects.values('id', 'name', 'category_id', 'category_id__name')
+        annotation = {}
+        annotation2 = {}
+
+        annotation = {
+            reg['name']: Sum(Case(When(infrastructure_id=reg['id'], then=1), output_field=IntegerField(), default=0))
+            for reg in infrastructure}
+        annotation2 = {reg['category_id__name']: Sum(
+            Case(When(infrastructure_id__category=reg['category_id'], then=1), output_field=IntegerField(), default=0))
+                       for reg in infrastructure}
 
         items = FacilityInfrastructure.objects.values(
-        'facility__ward__sub_county__county__name',
-        'facility__ward__sub_county__name',
-        'facility__ward__name',
-        'facility__ward',
+            'facility__ward__sub_county__county__name',
+            'facility__ward__sub_county__county',
+            'facility__ward__sub_county__name',
+            'facility__ward__sub_county',
+            'facility__ward__name',
+            'facility__ward',
         ).filter(**filters).annotate(**annotation)
-        
-        items = items.annotate(**annotation2).order_by() 
-            
-        return items, []
+        items = items.annotate(**annotation2).order_by()
+
+
+        result_summary = {}
+        allcategories= InfrastructureCategory.objects.all()
+        for item in items:
+            groubyvalue = item['facility__ward__sub_county__name']
+            if groupby == 'county':
+                groubyvalue = item['facility__ward__sub_county__county__name']
+            if groupby == 'sub_county':
+                groubyvalue = item['facility__ward__sub_county__name']
+            if groupby == 'ward':
+                groubyvalue = item['facility__ward__name']
+
+            if groubyvalue not in result_summary:
+                result_summary[groubyvalue] = {str(category.name): item[str(category.name)] for category in
+                                               allcategories}
+                result_summary[groubyvalue]['ward__sub_county__county__name'] = item['facility__ward__sub_county__county__name']
+                result_summary[groubyvalue]['ward__sub_county__county'] = item['facility__ward__sub_county__county']
+                result_summary[groubyvalue]['ward__sub_county__name'] = item['facility__ward__sub_county__name']
+                result_summary[groubyvalue]['ward__sub_county'] = item['facility__ward__sub_county']
+                result_summary[groubyvalue]['ward__name'] = item['facility__ward__name']
+                result_summary[groubyvalue]['ward'] = item['facility__ward']
+            else:
+                for category in allcategories:
+                    result_summary[groubyvalue][str(category.name)] += item[str(category.name)]
+        return {'groupedby': groupby, 'results': result_summary}, []
+
 
     def _get_facility_humanresource(self, vals={}, filters={}):
         fields = vals.keys()
+        usertoplevel = self._get_user_top_level()
+        groupby = usertoplevel['usergroupby']
+
+
+        if usertoplevel['usertoplevel'] == 'county':
+            filters['facility__ward__sub_county__county__id'] = self.request.user.countyid
+        if usertoplevel['usertoplevel'] == 'sub_county':
+            filters['facility__ward__sub_county__id'] = self.request.user.sub_countyid
+
         speciality = Speciality.objects.values('id', 'name', 'category_id', 'category_id__name')
         annotation = {}
         annotation2 = {}
@@ -1023,17 +1261,43 @@ class FilterReportMixin(object):
             for reg in speciality}
         annotation2 = {reg['category_id__name']: Sum(
             Case(When(speciality_id__category=reg['category_id'], then=1), output_field=IntegerField(), default=0))
-                       for reg in speciality}
+            for reg in speciality}
 
         items = FacilitySpecialist.objects.values(
             'facility__ward__sub_county__county__name',
+            'facility__ward__sub_county__county',
             'facility__ward__sub_county__name',
+            'facility__ward__sub_county',
             'facility__ward__name',
             'facility__ward',
         ).filter(**filters).annotate(**annotation)
 
         items = items.annotate(**annotation2).order_by()
-        return items, []
+
+        result_summary = {}
+        allcategories = SpecialityCategory.objects.all()
+        for item in items:
+            groubyvalue = item['facility__ward__sub_county__name']
+            if groupby == 'county':
+                groubyvalue = item['facility__ward__sub_county__county__name']
+            if groupby == 'sub_county':
+                groubyvalue = item['facility__ward__sub_county__name']
+            if groupby == 'ward':
+                groubyvalue = item['facility__ward__name']
+
+            if groubyvalue not in result_summary:
+                result_summary[groubyvalue] = {str(category.name): item[str(category.name)] for category in
+                                               allcategories}
+                result_summary[groubyvalue]['ward__sub_county__county__name'] = item['facility__ward__sub_county__county__name']
+                result_summary[groubyvalue]['ward__sub_county__county'] = item['facility__ward__sub_county__county']
+                result_summary[groubyvalue]['ward__sub_county__name'] = item['facility__ward__sub_county__name']
+                result_summary[groubyvalue]['ward__sub_county'] = item['facility__ward__sub_county']
+                result_summary[groubyvalue]['ward__name'] = item['facility__ward__name']
+                result_summary[groubyvalue]['ward'] = item['facility__ward']
+            else:
+                for category in allcategories:
+                    result_summary[groubyvalue][str(category.name)] += item[str(category.name)]
+        return {'groupedby': groupby, 'results': result_summary}, []
 
     def _get_facility_count(self, category=True, f_type=False, keph=False):
         county = self.request.query_params.get('county', None)
@@ -1152,17 +1416,16 @@ class FilterReportMixin(object):
             }
         data = []
         for ft in FacilityType.objects.filter(parent__isnull=True):
-            ft_children=  FacilityType.objects.filter(parent=ft)
+            ft_children = FacilityType.objects.filter(parent=ft)
             data_dict = {
-                    'type_category': ft.name,
-                    'id': str(ft.id),
-                    'number_of_facilities': Facility.objects.filter(
-                        facility_type__in=ft_children).filter(
-                        **admin_area_filter).count()
-                }
+                'type_category': ft.name,
+                'id': str(ft.id),
+                'number_of_facilities': Facility.objects.filter(
+                    facility_type__in=ft_children).filter(
+                    **admin_area_filter).count()
+            }
             data.append(data_dict)
         return data, []
-
 
     def _get_facility_count_by_facility_type_details(self):
         county = self.request.query_params.get('county', None)
@@ -1208,18 +1471,18 @@ class FilterReportMixin(object):
             allowed_fts = FacilityType.objects.filter(parent_id=parent)
         else:
             allowed_fts = FacilityType.objects.filter(parent__isnull=False)
-        
+
         wards = Ward.objects.filter(**admin_area_filter)
-        
+
         for ward in wards:
             ward_data = {
                 'ward__sub_county__name': ward.sub_county.county.name,
                 'ward__sub_county__county__name': ward.sub_county.name,
                 'ward__name': ward.name,
             }
-            
+
             facility_counts = []
-            
+
             for ft in allowed_fts:
                 count = Facility.objects.filter(
                     facility_type=ft, ward=ward).count()
@@ -1229,7 +1492,7 @@ class FilterReportMixin(object):
                     'number_of_facilities': count
                 }
                 facility_counts.append(facility_count)
-            
+
             ward_data.update(facility_counts=facility_counts)
             data.append(ward_data)
 
@@ -1504,7 +1767,7 @@ class CommunityHealthUnitReport(APIView):
             return self.get_county_reports(queryset=queryset)
 
     def get_status_report(self, constituency=None, county=None, chu_list=False,
-            ward=None, sub_county=None):
+                          ward=None, sub_county=None):
         data = []
         if county:
             self.queryset = self.queryset.filter(
@@ -1571,47 +1834,51 @@ class CommunityHealthUnitReport(APIView):
 
     # new CHUL report functionality/status
     def get_status_report_all_hierachies(self, filters={}):
-        status = Status.objects.values('id','name')
+        status = Status.objects.values('id', 'name')
         annotate_dict = {}  # Initialize the dictionary outside the loop
-  
-        annotate_dict = {reg['name']: Sum(Case(When(status_id=reg['id'], then=1), output_field=IntegerField(), default=0)) for reg in status}
-                        
+
+        annotate_dict = {
+            reg['name']: Sum(Case(When(status_id=reg['id'], then=1), output_field=IntegerField(), default=0)) for reg in
+            status}
+
         items = CommunityHealthUnit.objects.values(
             'facility__ward__sub_county__county__name',
             'facility__ward__sub_county__name',
             'facility__ward__name',
             'facility__ward__sub_county__county',
             'facility__ward',
-    
+
         ).filter(**filters).annotate(
-           **annotate_dict
+            **annotate_dict
         ).order_by()
-        
+
         return items, []
 
     # new CHUL report services
     def get_services_report_all_hierachies(self, filters={}):
-        service = CHUService.objects.values('id','name')
+        service = CHUService.objects.values('id', 'name')
         annotate_dict = {}  # Initialize the dictionary outside the loop
-  
-        annotate_dict = {reg['name']: Sum(Case(When(service_id=reg['id'], then=1), output_field=IntegerField(), default=0)) for reg in service}
-                        
+
+        annotate_dict = {
+            reg['name']: Sum(Case(When(service_id=reg['id'], then=1), output_field=IntegerField(), default=0)) for reg
+            in service}
+
         items = CHUServiceLink.objects.values(
-        'health_unit__facility__ward__sub_county__county__name',
-        'health_unit__facility__ward__sub_county__name',
-        'health_unit__facility__ward__name',
-        'health_unit__facility__ward__sub_county__county',
-        'health_unit__facility__ward',
+            'health_unit__facility__ward__sub_county__county__name',
+            'health_unit__facility__ward__sub_county__name',
+            'health_unit__facility__ward__name',
+            'health_unit__facility__ward__sub_county__county',
+            'health_unit__facility__ward',
 
-    
         ).filter(**filters).annotate(
-           **annotate_dict
+            **annotate_dict
         ).order_by()
-        
-        return items, []        
 
-    # new CHUL report  count chus
-    def get_count_report_all_hierarchies(self, queryset=queryset):
+        return items, []
+
+        # new CHUL report  count chus
+
+    def get_count_report_all_hierarchies_old(self, queryset=queryset):
         data = []
         wards = Ward.objects.all()
 
@@ -1642,6 +1909,31 @@ class CommunityHealthUnitReport(APIView):
             )
         return data, total_chus
 
+    def get_count_report_all_hierarchies(self, queryset=queryset):
+        data = []
+        wards = Ward.objects.all()
+
+        total_chus = 0
+        for ward in wards:
+            chus = queryset.filter(facility__ward=ward)
+            chu_count = chus.count()
+            total_chus += chu_count
+
+            total_chvs = sum(chu.number_of_chvs for chu in chus)
+            total_chews = sum(chu.health_unit_workers.count() for chu in chus)
+
+            data.append(
+                {
+                    'ward_name': ward.name,
+                    'ward_id': ward.id,
+                    'number_of_units': chu_count,
+                    'chvs': total_chvs,
+                    'chews': total_chews,
+                    'county': ward.sub_county.county.name,
+                    'sub county': ward.sub_county.name,
+                }
+            )
+        return data, total_chus
 
     def get(self, *args, **kwargs):
         county = self.request.query_params.get('county', None)
@@ -1651,16 +1943,16 @@ class CommunityHealthUnitReport(APIView):
         report_type = self.request.query_params.get('report_type', None)
         last_quarter = self.request.query_params.get('last_quarter', None)
         chu_list = self.request.query_params.get('chu_list', False)
-        
+
         # New report chul status ward level
         if report_type == 'chul_status_all_hierachies':
             county_id = self.request.query_params.get('county', None)
             constituency_id = self.request.query_params.get(
                 'constituency', None
             )
-            
+
             filters = {}
-            
+
             if county_id is not None:
                 filters['ward__sub_county__county__id'] = county_id
             if constituency_id is not None:
@@ -1679,9 +1971,9 @@ class CommunityHealthUnitReport(APIView):
             constituency_id = self.request.query_params.get(
                 'constituency', None
             )
-            
+
             filters = {}
-            
+
             if county_id is not None:
                 filters['ward__sub_county__county__id'] = county_id
             if constituency_id is not None:
@@ -1692,9 +1984,9 @@ class CommunityHealthUnitReport(APIView):
                 'total': report_data[1],
                 'results': report_data[0]
             }
-            return Response(data)        
+            return Response(data)
 
-        # New report count chul at facility level
+            # New report count chul at facility level
         if report_type == 'chul_count_all_hierachies':
             report_data = self.get_count_report_all_hierarchies()
             data = {
@@ -1702,7 +1994,7 @@ class CommunityHealthUnitReport(APIView):
                 'results': report_data[0]
             }
             return Response(data)
- 
+
         if report_type == 'constituency' and county:
             report_data = self.get_constituency_reports(county=county)
 
@@ -1753,7 +2045,6 @@ class CommunityHealthUnitReport(APIView):
             }
             return Response(data)
 
-
         if last_quarter and county and not constituency:
             report_data = self.get_date_established_report(county=county)
             data = {
@@ -1803,7 +2094,6 @@ class CommunityHealthUnitReport(APIView):
             return Response(data)
 
         if report_type == 'status' and not county and constituency:
-
             report_data = self.get_status_report(constituency=constituency)
             data = {
                 'total': report_data[1],
@@ -1811,8 +2101,7 @@ class CommunityHealthUnitReport(APIView):
             }
             return Response(data)
 
-        if report_type == 'status' and  county and sub_county:
-
+        if report_type == 'status' and county and sub_county:
             report_data = self.get_status_report(sub_county=sub_county)
             data = {
                 'total': report_data[1],
@@ -1820,8 +2109,7 @@ class CommunityHealthUnitReport(APIView):
             }
             return Response(data)
 
-        if report_type == 'status' and  county and ward:
-
+        if report_type == 'status' and county and ward:
             report_data = self.get_status_report(ward=ward)
             data = {
                 'total': report_data[1],
