@@ -949,11 +949,8 @@ class FilterReportMixin(object):
                                                allcategories}
                 result_summary[groubyvalue]['ward__sub_county__county__name'] = item[
                     'ward__sub_county__county__name']
-                result_summary[groubyvalue]['ward__sub_county__county'] = item['ward__sub_county__county']
                 result_summary[groubyvalue]['ward__sub_county__name'] = item['ward__sub_county__name']
-                result_summary[groubyvalue]['ward__sub_county'] = item['ward__sub_county']
                 result_summary[groubyvalue]['ward__name'] = item['ward__name']
-                result_summary[groubyvalue]['ward'] = item['ward']
             else:
                 for category in allcategories:
                     result_summary[groubyvalue][str(category.name)] += item[str(category.name)]
@@ -1030,11 +1027,8 @@ class FilterReportMixin(object):
                     'total_Level3': item['Level 3'],
                     'total_Level2': item['Level 2'],
                     'ward__sub_county__county__name': item['ward__sub_county__county__name'],
-                    'ward__sub_county__county': item['ward__sub_county__county'],
                     'ward__sub_county__name': item['ward__sub_county__name'],
-                    'ward__sub_county': item['ward__sub_county'],
                     'ward__name': item['ward__name'],
-                    'ward': item['ward'],
 
                     # Add more properties here...
                 }
@@ -1066,7 +1060,7 @@ class FilterReportMixin(object):
             reg['name']: Sum(Case(When(owner_id=reg['id'], then=1), output_field=IntegerField(), default=0)) for reg in
             owners}
         annotate_dict2 = {
-            reg['name']: Sum(Case(When(owner_id=reg['id'], then=1), output_field=IntegerField(), default=0)) for reg in
+            reg['name']: Sum(Case(When(owner_id__owner_type=reg['id'], then=1), output_field=IntegerField(), default=0)) for reg in
             ownerTypes}
 
         items = Facility.objects.values(
@@ -1079,7 +1073,6 @@ class FilterReportMixin(object):
 
         result_summary = {}
         allcategories = OwnerType.objects.all()
-        print(allcategories[0])
         for item in items:
             if groupby == 'county':
                 groubyvalue = item['ward__sub_county__county__name']
@@ -1088,44 +1081,71 @@ class FilterReportMixin(object):
             if groupby == 'ward':
                 groubyvalue = item['ward__name']
 
-            # if groubyvalue not in result_summary:
-            #     result_summary[groubyvalue] = {str(category.id): item.get(str(category.id),0) for category in
-            #                                    allcategories}
-            #     result_summary[groubyvalue]['ward__sub_county__county__name'] = item[
-            #         'ward__sub_county__county__name']
-            #     result_summary[groubyvalue]['ward__sub_county__county'] = item['ward__sub_county__county']
-            #     result_summary[groubyvalue]['ward__sub_county__name'] = item['ward__sub_county__name']
-            #     result_summary[groubyvalue]['ward__sub_county'] = item['ward__sub_county']
-            #     result_summary[groubyvalue]['ward__name'] = item['ward__name']
-            #     result_summary[groubyvalue]['ward'] = item['ward']
-            # else:
-            #     for category in allcategories:
-            #         result_summary[groubyvalue][str(category.id)] += item.get(str(category.id),0)
-        return {'groupedby': groupby, 'results': items}, []
+            if groubyvalue not in result_summary:
+                result_summary[groubyvalue]={}
+                for category in allcategories:
+                    result_summary[groubyvalue][category.name]=item.get(str(category.name),0)
+                result_summary[groubyvalue]['ward__sub_county__county__name'] = item['ward__sub_county__county__name']
+                result_summary[groubyvalue]['ward__sub_county__name'] = item['ward__sub_county__name']
+                result_summary[groubyvalue]['ward__name'] = item['ward__name']
+            else:
+                for category in allcategories:
+                    result_summary[groubyvalue][str(category.name)] += item.get(category.name,0)
+        return {'groupedby': groupby, 'results': result_summary}, []
 
     # New report facility type
 
     def _get_facility_count_facility_type(self, vals={}, filters={}):
 
         fields = vals.keys()
-
-        regulatory_body = FacilityType.objects.values('id', 'name')
+        usertoplevel = self._get_user_top_level()
+        groupby = usertoplevel['usergroupby']
+        if usertoplevel['usertoplevel'] == 'county':
+            filters['ward__sub_county__county__id'] = self.request.user.countyid
+        if usertoplevel['usertoplevel'] == 'sub_county':
+            filters['ward__sub_county__id'] = self.request.user.sub_countyid
+        facilitytype = FacilityType.objects.values('id', 'name')
         annotate_dict = {}  # Initialize the dictionary outside the loop
 
         annotate_dict = {
             reg['name']: Sum(Case(When(facility_type_id=reg['id'], then=1), output_field=IntegerField(), default=0)) for
-            reg in regulatory_body}
+            reg in facilitytype}
+        annotate_dict2 = {
+            reg['name']: Sum(Case(When(facility_type__parent_id=reg['id'], then=1), output_field=IntegerField(), default=0)) for
+            reg in facilitytype}
 
         items = Facility.objects.values(
             'ward__sub_county__county__name',
             'ward__sub_county__county',
+            'ward__name',
+            'ward',
 
             *fields
         ).filter(**filters).annotate(
             **annotate_dict
-        ).order_by()
+        ).annotate(**annotate_dict2).order_by()
 
-        return items, []
+        result_summary = {}
+        allcategories = FacilityType.objects.all().filter(parent_id=None)
+        for item in items:
+            if groupby == 'county':
+                groubyvalue = item['ward__sub_county__county__name']
+            if groupby == 'sub_county':
+                groubyvalue = item['ward__sub_county__name']
+            if groupby == 'ward':
+                groubyvalue = item['ward__name']
+
+            if groubyvalue not in result_summary:
+                result_summary[groubyvalue]={}
+                for category in allcategories:
+                    result_summary[groubyvalue][category.name] = item.get(str(category.name), 0)
+                result_summary[groubyvalue]['ward__sub_county__county__name'] = item['ward__sub_county__county__name']
+                result_summary[groubyvalue]['ward__sub_county__name'] = item['ward__sub_county__name']
+                result_summary[groubyvalue]['ward__name'] = item['ward__name']
+            else:
+                for category in allcategories:
+                    result_summary[groubyvalue][str(category.name)] += item.get(str(category.name), 0)
+        return {'groupedby': groupby, 'results': result_summary}, []
 
         # New report faciity service
 
@@ -1171,11 +1191,8 @@ class FilterReportMixin(object):
                 result_summary[groubyvalue] = {str(category.name): item.get(str(category.name), 0)  for category in
                                                allcategories}
                 result_summary[groubyvalue]['ward__sub_county__county__name'] = item['facility__ward__sub_county__county__name']
-                result_summary[groubyvalue]['ward__sub_county__county'] = item['facility__ward__sub_county__county']
                 result_summary[groubyvalue]['ward__sub_county__name'] = item['facility__ward__sub_county__name']
-                result_summary[groubyvalue]['ward__sub_county'] = item['facility__ward__sub_county']
                 result_summary[groubyvalue]['ward__name'] = item['facility__ward__name']
-                result_summary[groubyvalue]['ward'] = item['facility__ward']
             else:
                 for category in allcategories:
                     result_summary[groubyvalue][str(category.name)] += item.get(str(category.name),0)
@@ -1227,17 +1244,15 @@ class FilterReportMixin(object):
                 groubyvalue = item['facility__ward__name']
 
             if groubyvalue not in result_summary:
-                result_summary[groubyvalue] = {str(category.name): item[str(category.name)] for category in
-                                               allcategories}
+                result_summary[groubyvalue] = {}
+                for category in allcategories:
+                    result_summary[groubyvalue][category.name]= item[str(category.name)]
                 result_summary[groubyvalue]['ward__sub_county__county__name'] = item['facility__ward__sub_county__county__name']
-                result_summary[groubyvalue]['ward__sub_county__county'] = item['facility__ward__sub_county__county']
                 result_summary[groubyvalue]['ward__sub_county__name'] = item['facility__ward__sub_county__name']
-                result_summary[groubyvalue]['ward__sub_county'] = item['facility__ward__sub_county']
                 result_summary[groubyvalue]['ward__name'] = item['facility__ward__name']
-                result_summary[groubyvalue]['ward'] = item['facility__ward']
             else:
                 for category in allcategories:
-                    result_summary[groubyvalue][str(category.name)] += item[str(category.name)]
+                    result_summary[groubyvalue][category.name] += item[str(category.name)]
         return {'groupedby': groupby, 'results': result_summary}, []
 
 
@@ -1286,14 +1301,12 @@ class FilterReportMixin(object):
                 groubyvalue = item['facility__ward__name']
 
             if groubyvalue not in result_summary:
-                result_summary[groubyvalue] = {str(category.name): item[str(category.name)] for category in
-                                               allcategories}
+                result_summary[groubyvalue] = {}
+                for category in allcategories:
+                    result_summary[groubyvalue][category.name] = item[str(category.name)]
                 result_summary[groubyvalue]['ward__sub_county__county__name'] = item['facility__ward__sub_county__county__name']
-                result_summary[groubyvalue]['ward__sub_county__county'] = item['facility__ward__sub_county__county']
                 result_summary[groubyvalue]['ward__sub_county__name'] = item['facility__ward__sub_county__name']
-                result_summary[groubyvalue]['ward__sub_county'] = item['facility__ward__sub_county']
                 result_summary[groubyvalue]['ward__name'] = item['facility__ward__name']
-                result_summary[groubyvalue]['ward'] = item['facility__ward']
             else:
                 for category in allcategories:
                     result_summary[groubyvalue][str(category.name)] += item[str(category.name)]
