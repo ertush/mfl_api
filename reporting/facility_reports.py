@@ -89,13 +89,13 @@ class FilterReportMixin(object):
         groupby = self.request.query_params.get('report_groupby', '')
         resultobject = {'usertoplevel': '', 'userlowerlevels': [], 'usergroupby': 'sub_county'}
         resultobject['userlowerlevels'].append('ward')
-        if userid == 5:
+        if userid == 5 or userid==6 or userid==7:
             resultobject['usertoplevel'] = 'national'
             resultobject['userlowerlevels'].append('national')
             if (groupby == 'county' or groupby == 'sub_county' or groupby == 'ward'):
                 resultobject['usergroupby'] = groupby
             return resultobject
-        elif userid == 1:
+        elif userid == 1 or userid==12:
             resultobject['usertoplevel'] = 'county'
             resultobject['userlowerlevels'].append('county')
             if (groupby == 'county' or groupby == 'sub_county' or groupby == 'ward'):
