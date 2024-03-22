@@ -1313,7 +1313,6 @@ class FilterReportMixin(object):
             if group_byvalue not in result_summary:
                 result_summary[group_byvalue] = {}
                 for category in allcategories:
-                    print (category.name)
                     result_summary[group_byvalue][str(category.name).strip().replace(" ",'_')] = item[str(category.name)]
                 result_summary[group_byvalue]['ward__sub_county__county__name'] = item['facility__ward__sub_county__county__name']
                 result_summary[group_byvalue]['ward__sub_county__name'] = item['facility__ward__sub_county__name']
