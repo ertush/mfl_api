@@ -1018,7 +1018,7 @@ class FilterReportMixin(object):
         ).order_by()
 
         result_summary = {}
-
+        allcategories = KephLevel.objects.all()
         for item in items:
             if groupby == 'county':
                 group_byvalue = item['ward__sub_county__county__name']
@@ -1029,25 +1029,17 @@ class FilterReportMixin(object):
 
             group_byvalue=str(group_byvalue).strip().replace(" ", '_')
             if group_byvalue not in result_summary:
-                result_summary[group_byvalue] = {
-                    'total_Level6': item['Level 6'],
-                    'total_Level5': item['Level 5'],
-                    'total_Level4': item['Level 4'],
-                    'total_Level3': item['Level 3'],
-                    'total_Level2': item['Level 2'],
-                    'ward__sub_county__county__name': item['ward__sub_county__county__name'],
-                    'ward__sub_county__name': item['ward__sub_county__name'],
-                    'ward__name': item['ward__name'],
-
-                    # Add more properties here...
-                }
+                result_summary[group_byvalue] = {}
+                for category in allcategories:
+                    result_summary[group_byvalue][str(category.name).strip().replace(" ", '_')] =  item[category.name]
+                result_summary[group_byvalue]['ward__sub_county__county__name'] = item[
+                        'ward__sub_county__county__name']
+                result_summary[group_byvalue]['ward__sub_county__name'] = item['ward__sub_county__name']
+                result_summary[group_byvalue]['ward__name'] = item['ward__name']
+                # Add more properties here...
             else:
-                result_summary[group_byvalue]['total_Level6'] += item['Level 6']
-                result_summary[group_byvalue]['total_Level5'] += item['Level 5']
-                result_summary[group_byvalue]['total_Level4'] += item['Level 4']
-                result_summary[group_byvalue]['total_Level3'] += item['Level 3']
-                result_summary[group_byvalue]['total_Level2'] += item['Level 2']
-                # Increment other properties accordingly
+                for category in allcategories:
+                    result_summary[group_byvalue][str(category.name).strip().replace(" ", '_')] += item.get(category.name, 0)
 
         return {'groupedby': groupby, 'results': result_summary}, []
 
