@@ -1266,7 +1266,7 @@ class FilterReportMixin(object):
                 for category in allcategories:
                     result_summary[group_byvalue][str(category.name).strip().replace(" ",'_')] += item[str(category.name)]
 
-        # get specic infrastructure aggregation
+        # get specific infrastructure aggregation
         for item in items:
             group_byvalue = item['facility__ward__sub_county__name']
             if groupby == 'county':
@@ -1326,6 +1326,8 @@ class FilterReportMixin(object):
 
         result_summary = {}
         allcategories = SpecialityCategory.objects.all()
+        allspecialities = Speciality.objects.all()
+
         for item in items:
             group_byvalue = item['facility__ward__sub_county__name']
             if groupby == 'county':
@@ -1345,6 +1347,31 @@ class FilterReportMixin(object):
             else:
                 for category in allcategories:
                     result_summary[group_byvalue][str(category.name).strip().replace(" ",'_')] += item[str(category.name)]
+
+        # get specific allspecialities aggregation
+        for item in items:
+                group_byvalue = item['facility__ward__sub_county__name']
+                if groupby == 'county':
+                    group_byvalue = item['facility__ward__sub_county__county__name']
+                if groupby == 'sub_county':
+                    group_byvalue = item['facility__ward__sub_county__name']
+                if groupby == 'ward':
+                    group_byvalue = item['facility__ward__name']
+                group_byvalue = str(group_byvalue).strip().replace(" ", '_')
+                if group_byvalue not in result_summary:
+                    result_summary[group_byvalue] = {}
+                    for speciality in allspecialities:
+                        result_summary[group_byvalue][str(speciality.name).strip().replace(" ", '_')] = item[str(speciality.name)]
+
+                else:
+                    for speciality in allspecialities:
+                        if str(speciality.name).strip().replace(" ", '_') not in result_summary[group_byvalue]:
+                            result_summary[group_byvalue][str(speciality.name).strip().replace(" ", '_')] = item[
+                                str(speciality.name)]
+                        else:
+                            result_summary[group_byvalue][str(speciality.name).strip().replace(" ", '_')] += item[
+                                str(speciality.name)]
+
         return {'groupedby': groupby, 'results': result_summary}, []
 
     def _get_facility_count(self, category=True, f_type=False, keph=False):
