@@ -330,6 +330,7 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
 
     def get_facility_dhis2_parent_id(self):
         from facilities.models.facility_models import DhisAuth
+        import requests
         LOGGER.info('[ERROR] Facility Code : {}'.format(self.facility.code))
         r = requests.get(
             settings.DHIS_ENDPOINT + "api/organisationUnits.json",
