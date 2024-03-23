@@ -865,54 +865,103 @@ class FilterReportMixin(object):
         return data, []
 
     def _get_gis_report(self):
+
         county = self.request.query_params.get('county', None)
         sub_county = self.request.query_params.get('sub_county', None)
         ward = self.request.query_params.get('ward', None)
-        constituency = self.request.query_params.get('ward', None)
         page = self.request.query_params.get('page', 1)
         page_size = self.request.query_params.get('page_size', 30)
         paginate = self.request.query_params.get('paginate', True)
+        allcounties = County.objects.all()
+        allsubcounties = SubCounty.objects.all()
+        allwards = Ward.objects.all()
 
-        queryset = FacilityCoordinates.objects.all()
-        paginator = Paginator(queryset, 30)
+        usertoplevel = self._get_user_top_level()
+        groupby = usertoplevel['usergroupby']
+        filters={}
+        if usertoplevel['usertoplevel'] == 'county':
+            filters['facility__ward__sub_county__county__id'] = self.request.user.countyid
+            allcounties = County.objects.filter(id=self.request.user.countyid)
+            allsubcounties = SubCounty.objects.filter(county__id=self.request.user.countyid)
+            allwards = Ward.objects.filter(sub_county__county__id=self.request.user.countyid)
+        if usertoplevel['usertoplevel'] == 'sub_county':
+            filters['facility__ward__sub_county__id'] = self.request.user.sub_countyid
+            allcounties = County.objects.filter(id=self.request.user.countyid)
+            allsubcounties = SubCounty.objects.filter(id=self.request.user.sub_countyid)
+            allwards = Ward.objects.filter(sub_county__id=self.request.user.sub_countyid)
 
-        if paginate:
-            queryset = paginator.page(1)
+        queryset = FacilityCoordinates.objects.filter(**filters).all()
 
         if county:
-            queryset = FacilityCoordinates.objects.filter(
-                facility__ward__constituency__county_id__in=county.split(','))
-
+            queryset = queryset.filter(
+                facility__ward__sub_county__county_id__in=county.split(','))
         if sub_county:
-            queryset = FacilityCoordinates.objects.filter(
+            queryset = queryset.filter(
                 facility__ward__sub_county_id__in=sub_county.split('.'))
-
-        if constituency:
-            queryset = FacilityCoordinates.objects.filter(
-                facility__ward__constituency_id__in=sub_county.split('.'))
-
         if ward:
-            queryset = FacilityCoordinates.objects.filter(
+            queryset = queryset.filter(
                 facility__ward_id__in=ward.split('.'))
 
+        result_summary = {}
+        myset=[]
+
+        if groupby == 'county':
+            paginator = Paginator(list(allcounties), page_size)
+            if paginate:
+                allcounties = paginator.page(page)
+            for group in allcounties:
+                result_summary[group.name] = []
+                myset+=list(queryset.filter(facility__ward__sub_county__county__id= group.id))
+        if groupby == 'sub_county':
+            paginator = Paginator(list(allsubcounties), page_size)
+            if paginate:
+                allsubcounties = paginator.page(page)
+            for group in allsubcounties:
+                result_summary[group.name] = []
+                myset += list(queryset.filter(facility__ward__sub_county__id=group.id))
+
+
+        if groupby == 'ward':
+            paginator = Paginator(list(allwards), page_size)
+            if paginate:
+                allwards = paginator.page(page)
+            for group in allwards:
+                result_summary[group.name] = []
+                myset += list(queryset.filter(facility__ward__id=group.id))
+
         cords = []
-        if any([county, sub_county, constituency, ward, True]):
-            for fac in queryset:
-                record = OrderedDict()
-                record['facility_code'] = fac.facility.code
-                record['facility_name'] = fac.facility.name
-                record['facility_county'] = fac.facility.ward.constituency.county.name
-                record['facility_ward'] = fac.facility.ward.name
-                record['facility_constituency'] = fac.facility.ward.constituency.name
-                record['facility_lat'] = fac.coordinates[1]
-                record['facility_long'] = fac.coordinates[0]
-                record['facility_id'] = fac.facility.id
+        for fac in myset:
+            record = {'facility_code': fac.facility.code,
+                      'facility_name': fac.facility.name,
+                      'facility_county': fac.facility.ward.constituency.county.name,
+                      'facility_ward': fac.facility.ward.name,
+                      'facility_lat': fac.coordinates[1],
+                      'facility_long': fac.coordinates[0],
+                      'facility_sub_county': fac.facility.ward.sub_county.name}
 
-                if fac.facility.ward.sub_county:
-                    record['facility_sub_county'] = fac.facility.ward.sub_county.name
-                cords.append(record)
+            # if fac.facility.ward.sub_county:
+            #     record['facility_sub_county'] = fac.facility.ward.sub_county.name
+            cords.append(record)
 
-        return cords, [len(queryset)]
+
+        for item in cords:
+            if groupby == 'county':
+                group_byvalue = item['facility_county']
+            if groupby == 'sub_county':
+                group_byvalue = item['facility_sub_county']
+            if groupby == 'ward':
+                group_byvalue = item['facility_ward']
+
+            group_byvalue = str(group_byvalue).strip().replace(" ", '_')
+
+            if group_byvalue not in result_summary:
+                result_summary[group_byvalue] = []
+                result_summary[group_byvalue].append(item)
+            else:
+                result_summary[group_byvalue].append(item)
+
+
+        return {'groupedby': groupby, 'results': result_summary}, [len(cords)]
 
     # New report regulatory body
     def _get_facility_count_regulatory_body(self, vals={}, filters={}):
