@@ -919,8 +919,6 @@ class FilterReportMixin(object):
             for group in allsubcounties:
                 result_summary[group.name] = []
                 myset += list(queryset.filter(facility__ward__sub_county__id=group.id))
-
-
         if groupby == 'ward':
             paginator = Paginator(list(allwards), page_size)
             if paginate:
@@ -929,7 +927,7 @@ class FilterReportMixin(object):
                 result_summary[group.name] = []
                 myset += list(queryset.filter(facility__ward__id=group.id))
 
-        cords = []
+
         for fac in myset:
             record = {'facility_code': fac.facility.code,
                       'facility_name': fac.facility.name,
@@ -941,27 +939,23 @@ class FilterReportMixin(object):
 
             # if fac.facility.ward.sub_county:
             #     record['facility_sub_county'] = fac.facility.ward.sub_county.name
-            cords.append(record)
-
-
-        for item in cords:
             if groupby == 'county':
-                group_byvalue = item['facility_county']
+                group_byvalue = record['facility_county']
             if groupby == 'sub_county':
-                group_byvalue = item['facility_sub_county']
+                group_byvalue = record['facility_sub_county']
             if groupby == 'ward':
-                group_byvalue = item['facility_ward']
+                group_byvalue = record['facility_ward']
 
             group_byvalue = str(group_byvalue).strip().replace(" ", '_')
 
             if group_byvalue not in result_summary:
-                result_summary[group_byvalue] = []
-                result_summary[group_byvalue].append(item)
+                result_summary[group_byvalue]=[record]
             else:
-                result_summary[group_byvalue].append(item)
+                result_summary[group_byvalue].append(record)
 
 
-        return {'groupedby': groupby, 'results': result_summary}, [len(cords)]
+
+        return {'groupedby': groupby, 'results': result_summary}, [len(myset)]
 
     # New report regulatory body
     def _get_facility_count_regulatory_body(self, vals={}, filters={}):
