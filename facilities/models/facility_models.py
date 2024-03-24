@@ -131,12 +131,12 @@ class DhisAuth(ApiAuthentication):
             },
             params={
                 "filter": "code:eq:"+str(code),
-                "fields": "[id]",
+                "fields": "id",
                 "paging": "false"
             }
         )
         print("Get Org Unit ID Response", r.text, str(code))
-        if len(r.json()["organisationUnits"]) is 1:
+        if len(r.json()["organisationUnits"]) is 1 and "id" in r.json()["organisationUnits"][0]:
             # raise ValidationError(
             #     {
             #         "Error!": ["This facility is already available in DHIS2. Please ensure details are correct"]
