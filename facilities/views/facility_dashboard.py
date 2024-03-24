@@ -36,94 +36,121 @@ class DashBoard(QuerysetFilterMixin, APIView):
             facility__ward=ward).count()
 
     def get_facility_county_summary(self,period_start,period_end):
-        if not self.request.query_params.get('county'):
-            counties = County.objects.all()
-            if not self.request.user.is_national:
-                counties = counties.filter(id=self.request.user.county.id)
-                queryset = Facility.objects.filter(county=self.request.user.county)
-        else:
-            counties = [County.objects.get(id=self.request.query_params.get('county'))]
-            queryset = self.get_queryset().filter(county=counties[0])
-        facility_county_summary = {}
-        for county in counties:
-            facility_county_count = self.get_queryset().filter(ward__sub_county__county=county).count()
-            facility_county_summary[str(county.name)] = facility_county_count
-        top_10_counties = sorted(
-            facility_county_summary.items(),
-            key=lambda x: x[1], reverse=True)[0:94]
-        facility_county_summary
+        userlevel = self._get_user_top_level().get('userlevel', '')
+
+        summary_array=[]
+        allcounties=County.objects.all()
+        for county in allcounties:
+            userlevelfilters = {'created__gte': period_start, 'created__lte': period_end,
+                                'county__id': county.id}
+            if userlevel == 'county':
+                userlevelfilters['county__id'] = self.request.user.county.id
+            elif userlevel == 'sub_county':
+                userlevelfilters['sub_county__id'] = self.request.user.sub_county.id
+
+            queryset = Facility.objects.filter(**userlevelfilters);
+            # get filters based on clients parameters
+            parameterfilters = {}
+            if self.request.query_params.get('ward'):
+                parameterfilters['ward'] = self.request.query_params.get('ward')
+            elif self.request.query_params.get('sub_county'):
+                parameterfilters['sub_county'] = self.request.query_params.get('sub_county')
+            elif self.request.query_params.get('county'):
+                parameterfilters['county'] = self.request.query_params.get('county')
+
+            queryset = queryset.filter(**parameterfilters)
+            summary_array.append({county.name: queryset.count()})
+
+        # Get the top ten locations
+        top_ten_locations = sorted(summary_array, key=lambda x: list(x.values())[0], reverse=True)[:10]
+
         top_10_counties_summary = []
-        for item in top_10_counties:
-            county = County.objects.get(name=item[0])
+        for item in top_ten_locations:
+            county = County.objects.get(name=item.keys()[0])
             chu_count = self.get_chu_count_in_county_summary(county)
             top_10_counties_summary.append(
                 {
-                    "name": item[0],
-                    "count": item[1],
+                    "name": item.keys()[0],
+                    "count": item.values()[0],
                     "chu_count": chu_count
                 })
         return top_10_counties_summary if self.request.user.is_national else []
 
     def get_facility_constituency_summary(self, period_start,period_end):
-        if not self.request.query_params.get('sub_county'):
-            constituencies =  SubCounty.objects.filter(
-            county=self.request.user.county) \
-            if not self.request.query_params.get('ward') and self.request.user.county  else []
+        userlevel = self._get_user_top_level().get('userlevel', '')
 
-        else:
-            constituencies = [SubCounty.objects.get(id=self.request.query_params.get('sub_county'))]
-     
-        facility_constituency_summary = {}
+        summary_array = []
+        allsubcounties = SubCounty.objects.all()
+        for subcounty in allsubcounties:
+            userlevelfilters = {'created__gte': period_start, 'created__lte': period_end,
+                                'sub_county__id': subcounty.id}
+            if userlevel == 'county':
+                userlevelfilters['county__id'] = self.request.user.county.id
+            elif userlevel == 'sub_county':
+                userlevelfilters['sub_county__id'] = self.request.user.sub_county.id
 
-        for const in constituencies:
-            facility_const_count = self.get_queryset().filter(
-                ward__sub_county=const).count()
-            facility_constituency_summary[
-                str(const.name)] = facility_const_count
-        top_10_consts = sorted(
-            facility_constituency_summary.items(),
-            key=lambda x: x[1], reverse=True)[0:20]
-        top_10_consts_summary = []
-        for item in top_10_consts:
-            const = SubCounty.objects.get(name=item[0])
-            chu_count = self.get_chu_count_in_constituency_summary(const)
-            top_10_consts_summary.append(
-                
+            queryset = Facility.objects.filter(**userlevelfilters);
+            # get filters based on clients parameters
+            parameterfilters = {}
+            if self.request.query_params.get('ward'):
+                parameterfilters['ward'] = self.request.query_params.get('ward')
+            elif self.request.query_params.get('sub_county'):
+                parameterfilters['sub_county'] = self.request.query_params.get('sub_county')
+            elif self.request.query_params.get('county'):
+                parameterfilters['county'] = self.request.query_params.get('county')
+
+            queryset = queryset.filter(**parameterfilters)
+            summary_array.append({subcounty.name: queryset.count()})
+
+        # Get the top ten locations
+        top_ten_locations = sorted(summary_array, key=lambda x: list(x.values())[0], reverse=True)[:10]
+
+        top_10_subcounties_summary = []
+        for item in top_ten_locations:
+            sub = SubCounty.objects.get(name=item.keys()[0])
+            chu_count = self.get_chu_count_in_constituency_summary(sub)
+            top_10_subcounties_summary.append(
                 {
-                    "name": item[0],
-                    "count": item[1],
+                    "name": item.keys()[0],
+                    "count": item.values()[0],
                     "chu_count": chu_count
                 })
-        return top_10_consts_summary
+        return top_10_subcounties_summary
         
     def get_facility_ward_summary(self,period_start,period_end):
+        userlevel = self._get_user_top_level().get('userlevel', '')
+        summary_array = []
+        allwards = Ward.objects.all()
+        for ward in allwards:
+            userlevelfilters = {'created__gte': period_start, 'created__lte': period_end,
+                                'ward__id': ward.id}
+            if userlevel == 'county':
+                userlevelfilters['county__id'] = self.request.user.county.id
+            elif userlevel == 'sub_county':
+                userlevelfilters['sub_county__id'] = self.request.user.sub_county.id
 
-        if not self.request.query_params.get('ward'):
-            wards = Ward.objects.filter(
-            sub_county=self.request.user.sub_county) \
-            if self.request.user.sub_county else []
+            queryset = Facility.objects.filter(**userlevelfilters);
+            # get filters based on clients parameters
+            parameterfilters = {}
+            if self.request.query_params.get('ward'):
+                parameterfilters['ward'] = self.request.query_params.get('ward')
+            elif self.request.query_params.get('sub_county'):
+                parameterfilters['sub_county'] = self.request.query_params.get('sub_county')
+            elif self.request.query_params.get('county'):
+                parameterfilters['county'] = self.request.query_params.get('county')
 
-        else:
-            wards = [Ward.objects.get(id=self.request.query_params.get('ward'))]
-            
-        
-        facility_ward_summary = {}
-        for ward in wards:
-            facility_ward_count = self.get_queryset().filter(
-                ward=ward).count()
-            facility_ward_summary[
-                str(ward.name + "|" + str(ward.code))] = facility_ward_count
-        top_10_wards = sorted(
-            facility_ward_summary.items(),
-            key=lambda x: x[1], reverse=True)[0:20]
+            queryset = queryset.filter(**parameterfilters)
+            summary_array.append({str(ward.name + "|" + str(ward.code)): queryset.count()})
+
+        top_10_wards = sorted(summary_array,key=lambda x: list(x.values())[0], reverse=True)[:10]
         top_10_wards_summary = []
         for item in top_10_wards:
-            ward = Ward.objects.get(code=item[0].split('|')[1])
+            ward = Ward.objects.get(code=item.keys()[0].split('|')[1])
             chu_count = self.get_chu_count_in_ward_summary(ward)
             top_10_wards_summary.append(
                 {
-                    "name": item[0].split('|')[0],
-                    "count": item[1],
+                    "name": item.keys()[0],
+                    "count": item.values()[0],
                     "chu_count": chu_count
                 })
         return top_10_wards_summary
@@ -177,175 +204,86 @@ class DashBoard(QuerysetFilterMixin, APIView):
         return facility_type_summary_sorted
 
     def get_facility_owner_summary(self, cty, period_start,period_end):
-        owners = Owner.objects.all()
+        userlevel = self._get_user_top_level().get('userlevel', '')
+        allowners = Owner.objects.all()
+        summary_array = []
+        for owner in allowners:
+            userlevelfilters = {'created__gte': period_start, 'created__lte': period_end,
+                                'owner__id': owner.id}
+            if userlevel == 'county':
+                userlevelfilters['county__id'] = self.request.user.county.id
+            elif userlevel == 'sub_county':
+                userlevelfilters['sub_county__id'] = self.request.user.sub_county.id
 
-        facility_owners_summary = []
-        for owner in owners:
-            if self.request.query_params.get('ward'): 
-                facility_owners_summary.append(
-                    {
-                        "name": owner.name,
-                        "count": self.get_queryset().filter(updated__gte=period_start, updated__lte=period_end,
-                            owner=owner, ward=self.request.query_params.get('ward')).count()
-                    })
+            queryset = self.get_queryset().filter(**userlevelfilters);
+            # get filters based on clients parameters
+            parameterfilters = {}
+            if self.request.query_params.get('ward'):
+                parameterfilters['ward'] = self.request.query_params.get('ward')
             elif self.request.query_params.get('sub_county'):
-                 facility_owners_summary.append(
-                        {
-                            "name": owner.name,
-                            "count": self.get_queryset().filter(updated__gte=period_start, updated__lte=period_end,
-                                owner=owner, sub_county=self.request.query_params.get('sub_county')).count()
-                        })
+                parameterfilters['sub_county'] = self.request.query_params.get('sub_county')
             elif self.request.query_params.get('county'):
-                 facility_owners_summary.append(
-                        {
-                            "name": owner.name,
-                            "count": self.get_queryset().filter(updated__gte=period_start, updated__lte=period_end,
-                                owner=owner, county=self.request.query_params.get('county')).count()
-                        })
-            elif self.request.user.is_national:
-                facility_owners_summary.append(
-                    {
-                        "name": owner.name,
-                        "count": self.get_queryset().filter(updated__gte=period_start, updated__lte=period_end, owner=owner).count()
-                    })
-            else:
-                if(self.mfluser.user_groups.get('is_sub_county_level')):
-                    facility_owners_summary.append(
-                        {
-                            "name": owner.name,
-                            "count": self.get_queryset().filter(updated__gte=period_start, updated__lte=period_end,
-                                owner=owner, sub_county=self.usersubcounty).count()
-                        })
-                elif(self.mfluser.user_groups.get('is_county_level')):
-                    facility_owners_summary.append(
-                        {
-                            "name": owner.name,
-                            "count": self.get_queryset().filter(updated__gte=period_start, updated__lte=period_end,
-                                owner=owner, county=self.usercounty).count()
-                        })
-                else:
-                    facility_owners_summary.append(
-                        {
-                            "name": owner.name,
-                            "count": 0
-                        })
-                    
-        return facility_owners_summary
+                parameterfilters['county'] = self.request.query_params.get('county')
+
+            queryset = queryset.filter(**parameterfilters)
+            summary_array.append({'name':owner.name,'count': queryset.count()})
+
+        return summary_array
 
     def get_facility_status_summary(self, cty, period_start,period_end):
-        statuses = FacilityStatus.objects.all().filter(updated__gte=period_start, updated__lte=period_end)
-        status_summary = []
-        for status in statuses:
-            if self.request.query_params.get('ward'):
-                status_summary.append(
-                        {
-                            "name": status.name,
-                            "count": self.get_queryset().filter( 
-                                operation_status=status, ward=self.request.query_params.get('ward')).count()
-                        })
-            elif self.request.query_params.get('sub_county'):
-                status_summary.append(
-                        {
-                            "name": status.name,
-                            "count": self.get_queryset().filter(
-                                operation_status=status, sub_county=self.request.query_params.get('sub_county')).count()
-                        })
-            elif self.request.query_params.get('county'):
-                status_summary.append(
-                        {
-                            "name": status.name,
-                            "count": self.get_queryset().filter( 
-                                operation_status=status, county=self.usercounty).count()
-                        })
-            elif self.request.user.is_national:
-                status_summary.append(
-                    {
-                        "name": status.name,
-                        "count": self.get_queryset().filter(
-                            operation_status=status).count()
-                    })
-            else:
-                if(self.mfluser.user_groups.get('is_sub_county_level')):
-                    status_summary.append(
-                        {
-                            "name": status.name,
-                            "count": self.get_queryset().filter(
-                                operation_status=status, sub_county=self.usersubcounty).count()
-                        })
-                elif(self.mfluser.user_groups.get('is_county_level')):
-                    status_summary.append(
-                        {
-                            "name": status.name,
-                            "count": self.get_queryset().filter( 
-                                operation_status=status, county=self.usercounty).count()
-                        })
-                else:
-                    status_summary.append(
-                        {
-                            "name": status.name,
-                            "count": 0
-                        })
-                    
+        userlevel = self._get_user_top_level().get('userlevel', '')
+        summary_array = []
+        allstatus = FacilityStatus.objects.all()
+        for status in allstatus:
+            userlevelfilters = {'created__gte': period_start, 'created__lte': period_end,
+                                'operation_status': status.id}
+            if userlevel == 'county':
+                userlevelfilters['county__id'] = self.request.user.county.id
+            elif userlevel == 'sub_county':
+                userlevelfilters['sub_county__id'] = self.request.user.sub_county.id
 
-        return status_summary
+            queryset = self.get_queryset().filter(**userlevelfilters);
+            # get filters based on clients parameters
+            parameterfilters = {}
+            if self.request.query_params.get('ward'):
+                parameterfilters['ward'] = self.request.query_params.get('ward')
+            elif self.request.query_params.get('sub_county'):
+                parameterfilters['sub_county'] = self.request.query_params.get('sub_county')
+            elif self.request.query_params.get('county'):
+                parameterfilters['county'] = self.request.query_params.get('county')
+
+            queryset = queryset.filter(**parameterfilters)
+            summary_array.append({status.name : queryset.count()})
+
+
+        return summary_array
 
     def get_facility_owner_types_summary(self, cty, period_start,period_end):
-        owner_types = OwnerType.objects.all()
-        owner_types_summary = []
-        for owner_type in owner_types:
-            if self.request.query_params.get('ward'): 
-                 owner_types_summary.append(
-                        {
-                            "name": owner_type.name,
-                            "count": self.get_queryset().filter(created__gte=period_start, created__lte=period_end,
-                                owner__owner_type=owner_type, ward=self.request.query_params.get('ward')).count()
-                        })
+        userlevel = self._get_user_top_level().get('userlevel', '')
+        summary_array = []
+        allownertypes = OwnerType.objects.all()
+        for owner in allownertypes:
+            userlevelfilters = {'created__gte': period_start, 'created__lte': period_end,
+                                'owner__owner_type__id': owner.id}
+            if userlevel == 'county':
+                userlevelfilters['county__id'] = self.request.user.county.id
+            elif userlevel == 'sub_county':
+                userlevelfilters['sub_county__id'] = self.request.user.sub_county.id
+
+            queryset = Facility.objects.filter(**userlevelfilters)
+            # get filters based on clients parameters
+            parameterfilters = {}
+            if self.request.query_params.get('ward'):
+                parameterfilters['ward'] = self.request.query_params.get('ward')
             elif self.request.query_params.get('sub_county'):
-                owner_types_summary.append(
-                        {
-                            "name": owner_type.name,
-                            "count": self.get_queryset().filter(created__gte=period_start, created__lte=period_end,
-                                owner__owner_type=owner_type, sub_county=self.request.query_params.get('sub_county')).count()
-                        })
+                parameterfilters['sub_county'] = self.request.query_params.get('sub_county')
             elif self.request.query_params.get('county'):
-                owner_types_summary.append(
-                        {
-                            "name": owner_type.name,
-                            "count": self.get_queryset().filter(
-                                created__gte=period_start, created__lte=period_end,
-                                owner__owner_type=owner_type, county=self.usercounty).count()
-                        })
-            elif self.request.user.is_national:
-                owner_types_summary.append(
-                    {
-                        "name": owner_type.name,
-                        "count": self.get_queryset().filter(created__gte=period_start, created__lte=period_end,
-                            owner__owner_type=owner_type).count()
-                    })
-            else:
-                if(self.mfluser.user_groups.get('is_sub_county_level')):
-                    owner_types_summary.append(
-                        {
-                            "name": owner_type.name,
-                            "count": self.get_queryset().filter(
-                                created__gte=period_start, created__lte=period_end,
-                                owner__owner_type=owner_type, sub_county=self.usersubcounty).count()
-                        })
-                elif(self.mfluser.user_groups.get('is_county_level')):
-                    owner_types_summary.append(
-                        {
-                            "name": owner_type.name,
-                            "count": self.get_queryset().filter(
-                                created__gte=period_start, created__lte=period_end,
-                                owner__owner_type=owner_type, county=self.usercounty).count()
-                        })
-                else:
-                    owner_types_summary.append(
-                        {
-                            "name": owner_type.name,
-                            "count": 0
-                        })
-        return owner_types_summary
+                parameterfilters['county'] = self.request.query_params.get('county')
+
+            queryset = queryset.filter(**parameterfilters)
+            summary_array.append({'name':owner.name,'count': queryset.count()})
+
+        return summary_array
 
     def get_recently_created_facilities(self, cty, period_start,period_end):
       
@@ -420,61 +358,50 @@ class DashBoard(QuerysetFilterMixin, APIView):
                 return 0
         
     def facilities_pending_approval_count(self, cty, period_start,period_end):
-        if self.request.query_params.get('ward'): 
-            updated_pending_approval = self.get_queryset().filter(created__gte=period_start, created__lte=period_end,
-                    ward=self.request.query_params.get('ward'), has_edits=True)
-            newly_created = self.queryset.filter(created__gte=period_start, created__lte=period_end,
-                    ward=self.request.query_params.get('ward'), approved=False, rejected=False)
+        userlevel = self._get_user_top_level().get('userlevel', '')
+        userlevelfilters = {}
+        if userlevel == 'county':
+            userlevelfilters['county__id'] = self.request.user.county.id
+        elif userlevel == 'sub_county':
+            userlevelfilters['sub_county__id'] = self.request.user.sub_county.id
+
+        myqueryset = self.get_queryset().filter(**userlevelfilters)
+
+        parameterfilters = {}
+        if self.request.query_params.get('ward'):
+            parameterfilters['ward'] = self.request.query_params.get('ward')
         elif self.request.query_params.get('sub_county'):
-            updated_pending_approval = self.get_queryset().filter(created__gte=period_start, created__lte=period_end,
-                    sub_county=self.request.query_params.get('sub_county'), has_edits=True)
-            newly_created = self.queryset.filter(created__gte=period_start, created__lte=period_end,
-                    sub_county=self.request.query_params.get('sub_county'), approved=False, rejected=False)
+            parameterfilters['sub_county'] = self.request.query_params.get('sub_county')
         elif self.request.query_params.get('county'):
-            updated_pending_approval = self.get_queryset().filter(created__gte=period_start, created__lte=period_end,
-                    county=self.request.query_params.get('county'), has_edits=True)
-            newly_created = self.queryset.filter(created__gte=period_start, created__lte=period_end,
-                    county=self.request.query_params.get('county'), approved=False, rejected=False)
-        elif self.request.user.is_national:
-            updated_pending_approval = self.get_queryset().filter(created__gte=period_start, created__lte=period_end, has_edits=True)
-            newly_created = self.queryset.filter(created__gte=period_start, created__lte=period_end, approved=False, rejected=False)
-        else:
-            if(self.mfluser.user_groups.get('is_sub_county_level')):
-                updated_pending_approval = self.get_queryset().filter(created__gte=period_start, created__lte=period_end,
-                    sub_county=self.usersubcounty, has_edits=True)
-                newly_created = self.queryset.filter(created__gte=period_start, created__lte=period_end,
-                    sub_county=self.usersubcounty, approved=False, rejected=False)
-            elif(self.mfluser.user_groups.get('is_county_level')):
-                updated_pending_approval = self.get_queryset().filter(created__gte=period_start, created__lte=period_end,
-                    sub_county=self.usercounty, has_edits=True)
-                newly_created = self.queryset.filter(created__gte=period_start, created__lte=period_end,
-                    sub_county=self.usercounty, approved=False, rejected=False)
-            else:
-                updated_pending_approval = self.get_queryset().filter(id__isnull=True)
-                newly_created = self.get_queryset().filter(id__isnull=True)
-         
+            parameterfilters['county'] = self.request.query_params.get('county')
+
+        queryset = myqueryset.filter(**parameterfilters)
+        updated_pending_approval = queryset.filter(has_edits=True)
+        newly_created = queryset.filter(approved=False,rejected=False)
+
         return len(
             list(set(list(updated_pending_approval) + list(newly_created)))
         )
    
     def get_facilities_approved_count(self,cty,period_start,period_end):
+        userlevel = self._get_user_top_level().get('userlevel', '')
+        userlevelfilters = {'approved': True, 'rejected': False}
+        if userlevel == 'county':
+            userlevelfilters['county__id'] = self.request.user.county.id
+        elif userlevel == 'sub_county':
+            userlevelfilters['sub_county__id'] = self.request.user.sub_county.id
 
-        if self.request.query_params.get('ward'): 
-            return self.queryset.filter(approvalrejection_date__gte=period_start, approvalrejection_date__lte=period_end, approved=True, rejected=False, ward=self.request.query_params.get('ward')).count()
+        myqueryset = self.get_queryset().filter(**userlevelfilters)
+
+        parameterfilters = {}
+        if self.request.query_params.get('ward'):
+            parameterfilters['ward'] = self.request.query_params.get('ward')
         elif self.request.query_params.get('sub_county'):
-            return self.queryset.filter(approvalrejection_date__gte=period_start, approvalrejection_date__lte=period_end, approved=True, rejected=False, sub_county=self.request.query_params.get('sub_county')).count()
+            parameterfilters['sub_county'] = self.request.query_params.get('sub_county')
         elif self.request.query_params.get('county'):
-            return self.queryset.filter(approvalrejection_date__gte=period_start, approvalrejection_date__lte=period_end, approved=True, rejected=False, county=self.request.query_params.get('county')).count()
-        elif self.request.user.is_national:
-            return self.queryset.filter(approvalrejection_date__gte=period_start, approvalrejection_date__lte=period_end, approved=True, rejected=False).count()
-        else:
-            if(self.mfluser.user_groups.get('is_sub_county_level')):
-                return self.queryset.filter(approvalrejection_date__gte=period_start, approvalrejection_date__lte=period_end, approved=True, rejected=False, sub_county=self.usersubcounty).count()
-            elif(self.mfluser.user_groups.get('is_county_level')):
-                return self.queryset.filter(approvalrejection_date__gte=period_start, approvalrejection_date__lte=period_end, approved=True, rejected=False, county=self.usercounty).count()
-            else:
-                return 0
-                
+            parameterfilters['county'] = self.request.query_params.get('county')
+        queryset = myqueryset.filter(**parameterfilters)
+        return  queryset.count()
 
     def get_chus_pending_approval(self, cty,period_start,period_end):
         """
@@ -547,90 +474,92 @@ class DashBoard(QuerysetFilterMixin, APIView):
   
 
     def get_rejected_facilities_count(self, cty, period_start,period_end):
+        userlevel = self._get_user_top_level().get('userlevel', '')
+        userlevelfilters = {'rejected': True }
+        if userlevel == 'county':
+            userlevelfilters['county__id'] = self.request.user.county.id
+        elif userlevel == 'sub_county':
+            userlevelfilters['sub_county__id'] = self.request.user.sub_county.id
+
+        myqueryset = self.get_queryset().filter(**userlevelfilters)
+
+        parameterfilters = {}
         if self.request.query_params.get('ward'):
-            return self.get_queryset().filter(approvalrejection_date__gte=period_start, approvalrejection_date__lte=period_end, rejected=True, ward=self.request.query_params.get('ward')).count()
+            parameterfilters['ward'] = self.request.query_params.get('ward')
         elif self.request.query_params.get('sub_county'):
-            return self.get_queryset().filter(approvalrejection_date__gte=period_start, approvalrejection_date__lte=period_end, rejected=True, sub_county=self.request.query_params.get('sub_county')).count()
+            parameterfilters['sub_county'] = self.request.query_params.get('sub_county')
         elif self.request.query_params.get('county'):
-            return self.get_queryset().filter(approvalrejection_date__gte=period_start, approvalrejection_date__lte=period_end, rejected=True, county=self.request.query_params.get('county')).count()
-        elif self.request.user.is_national:
-            return self.get_queryset().filter(approvalrejection_date__gte=period_start, approvalrejection_date__lte=period_end,rejected=True).count()
-        else:
-            if(self.mfluser.user_groups.get('is_sub_county_level')):
-                return self.get_queryset().filter(approvalrejection_date__gte=period_start, approvalrejection_date__lte=period_end, rejected=True, sub_county=self.usersubcounty).count()
-            elif(self.mfluser.user_groups.get('is_county_level')):
-                return self.get_queryset().filter(approvalrejection_date__gte=period_start, approvalrejection_date__lte=period_end, rejected=True, county=self.usercounty).count()
-            else:
-                return 0
+            parameterfilters['county'] = self.request.query_params.get('county')
+        queryset = myqueryset.filter(**parameterfilters)
+        return queryset.count()
 
     def get_closed_facilities_count(self, cty, period_start,period_end):
+        userlevel = self._get_user_top_level().get('userlevel', '')
+        userlevelfilters = {'closed': True,'closed_date__gte':period_start ,'closed_date__lte':period_end}
+        if userlevel == 'county':
+            userlevelfilters['county__id'] = self.request.user.county.id
+        elif userlevel == 'sub_county':
+            userlevelfilters['sub_county__id'] = self.request.user.sub_county.id
+
+        myqueryset = self.get_queryset().filter(**userlevelfilters)
+
+        parameterfilters = {}
         if self.request.query_params.get('ward'):
-            return self.get_queryset().filter(closed_date__gte=period_start, closed_date__lte=period_end,  ward=self.request.query_params.get('ward')).count()
+            parameterfilters['ward'] = self.request.query_params.get('ward')
         elif self.request.query_params.get('sub_county'):
-            return self.get_queryset().filter(closed_date__gte=period_start, closed_date__lte=period_end,  sub_county=self.request.query_params.get('sub_county')).count()
+            parameterfilters['sub_county'] = self.request.query_params.get('sub_county')
         elif self.request.query_params.get('county'):
-            return self.get_queryset().filter(closed_date__gte=period_start, closed_date__lte=period_end,  county=self.request.query_params.get('county')).count()
-        elif self.request.user.is_national:
-            return self.get_queryset().filter(closed_date__gte=period_start, closed_date__lte=period_end).count()
-        else:
-            if(self.mfluser.user_groups.get('is_sub_county_level')):
-                return self.get_queryset().filter(closed_date__gte=period_start, closed_date__lte=period_end, sub_county=self.usersubcounty).count()
-            elif(self.mfluser.user_groups.get('is_county_level')):
-                return self.get_queryset().filter(closed_date__gte=period_start, closed_date__lte=period_end, county=self.usercounty).count()
-            else:
-                return 0
+            parameterfilters['county'] = self.request.query_params.get('county')
+        queryset = myqueryset.filter(**parameterfilters)
+
+        return queryset.count()
+
+
         
     def get_facilities_kephlevel_count(self,county_name,period_start,period_end):
         """
         Function to get facilities by keph level
-        """  
+        """
+        userlevel = self._get_user_top_level().get('userlevel', '')
         keph_level = KephLevel.objects.values("id", "name")  
         keph_array = []
         for keph in keph_level:
-            if self.request.query_params.get('ward'): 
-                keph_count = Facility.objects.filter(created__gte=period_start, created__lte=period_end, keph_level_id=keph.get("id"), ward=self.request.query_params.get('ward')).count()
-                keph_array.append({"name" : keph.get("name"), "count" : keph_count})
+            userlevelfilters={'created__gte':period_start, 'created__lte':period_end, 'keph_level_id':keph.get("id")}
+            if userlevel=='county':
+                userlevelfilters['county__id']= self.request.user.county.id
+            elif userlevel=='sub_county':
+                userlevelfilters['sub_county__id']= self.request.user.sub_county.id
+
+            queryset=Facility.objects.filter(**userlevelfilters);
+            # get filters based on clients parameters
+            parameterfilters = {}
+            if self.request.query_params.get('ward'):
+                parameterfilters['ward'] = self.request.query_params.get('ward')
             elif self.request.query_params.get('sub_county'):
-                keph_count = Facility.objects.filter(created__gte=period_start, created__lte=period_end, keph_level_id=keph.get("id"), sub_county=self.request.query_params.get('sub_county')).count()
-                keph_array.append({"name" : keph.get("name"), "count" : keph_count})
+                parameterfilters['sub_county'] = self.request.query_params.get('sub_county')
             elif self.request.query_params.get('county'):
-                keph_count = Facility.objects.filter(created__gte=period_start, created__lte=period_end, keph_level_id=keph.get("id"), county=self.request.query_params.get('county')).count()
-                keph_array.append({"name" : keph.get("name"), "count" : keph_count})
-            elif self.request.user.is_national:
-                keph_count = Facility.objects.filter(created__gte=period_start, created__lte=period_end, keph_level_id=keph.get("id")).count()
-                keph_array.append({"name" : keph.get("name"), "count" : keph_count})
-            else:
-                if(self.mfluser.user_groups.get('is_sub_county_level')):
-                    keph_count = Facility.objects.filter(created__gte=period_start, created__lte=period_end, keph_level_id=keph.get("id"), sub_county=self.usersubcounty).count()
-                    keph_array.append({"name" : keph.get("name"), "count" : keph_count})
-                elif(self.mfluser.user_groups.get('is_county_level')):
-                    keph_count = Facility.objects.filter(created__gte=period_start, created__lte=period_end, keph_level_id=keph.get("id"), county=self.usercounty).count()
-                    keph_array.append({"name" : keph.get("name"), "count" : keph_count})
-                else:
-                    keph_count = 0
-                    keph_array.append({"name" : keph.get("name"), "count" : keph_count})
-            
+                parameterfilters['county'] = self.request.query_params.get('county')
+
+            queryset=queryset.filter(**parameterfilters)
+            keph_array.append({"name": keph.get("name"), "count": queryset.count()})
 
         return keph_array
-        
 
-        # if county_name:
-        #     keph_level = KephLevel.objects.values("id", "name")  
-        #     keph_array = []
-        #     for keph in keph_level:
-        #         keph_count = Facility.objects.filter(created__gte=period_start, created__lte=period_end, keph_level_id=keph.get("id"),ward__sub_county__county=county_name ).count()
-        #         keph_array.append({"name" : keph.get("name"), "count" : keph_count})
-        #     return keph_array
 
-        # else:
-        #     keph_level = KephLevel.objects.values("id", "name")  
-        #     keph_array = []
-        #     for keph in keph_level:
-        #         keph_count = Facility.objects.filter(created__gte=period_start, created__lte=period_end, keph_level_id=keph.get("id")).count()
-        #         keph_array.append({"name" : keph.get("name"), "count" : keph_count})
+    def _get_user_top_level(self):
+        userid = self.request.user.groups.all()[0].id
+        resultobject = {'userlevel': ''}
+        if userid == 5 or userid == 6 or userid == 7:
+            resultobject['userlevel'] = 'national'
+        elif userid == 1 or userid == 12:
+            resultobject['userlevel'] = 'county'
+        elif userid == 2:
+            resultobject['userlevel'] = 'sub_county'
+        else:
+            resultobject['userlevel'] = 'sub_county'
 
-        #     return keph_array
-       
+        return resultobject
+
     def get(self, *args, **kwargs):
         
         user = self.request.user 
@@ -657,9 +586,12 @@ class DashBoard(QuerysetFilterMixin, APIView):
         elif self.request.user.is_national:
             total_facilities = self.queryset.filter(created__gte=period_start, created__lte=period_end).count()
         else:
-            if(self.mfluser.user_groups.get('is_sub_county_level')):
+            userlevel=self._get_user_top_level().get('userlevel','')
+            if userlevel == 'national':
+                total_facilities = self.get_queryset().filter(created__gte=period_start, created__lte=period_end).count()
+            elif userlevel == 'sub_county':
                 total_facilities = self.get_queryset().filter(created__gte=period_start, created__lte=period_end, sub_county=self.usersubcounty).count()
-            elif(self.mfluser.user_groups.get('is_county_level')):
+            elif userlevel == 'county':
                 total_facilities = self.get_queryset().filter(created__gte=period_start, created__lte=period_end,county=self.usercounty).count() 
             else:
                 total_facilities=0
@@ -692,8 +624,7 @@ class DashBoard(QuerysetFilterMixin, APIView):
             "timeperiod":[{"startdate":period_start},{"enddate":period_end}],
             "keph_level" : self.get_facilities_kephlevel_count(county_,period_start,period_end),
             "total_facilities": total_facilities,
-            "county_summary": self.get_facility_county_summary(period_start,period_end)
-            if user.is_national else [],
+            "county_summary": self.get_facility_county_summary(period_start,period_end) if user.is_national else [],
             "constituencies_summary": self.get_facility_constituency_summary(period_start,period_end),
             # if user.county and not user.sub_county else [],
             "wards_summary": self.get_facility_ward_summary(period_start,period_end),
