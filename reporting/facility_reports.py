@@ -739,6 +739,9 @@ class FilterReportMixin(object):
         fields = vals.keys()
         usertoplevel = self._get_user_top_level()
         groupby = usertoplevel['usergroupby']
+        yearfilterby = self.request.query_params.get('report_year', '')
+        if yearfilterby is not '':
+            filters['date_established__year'] = yearfilterby
         if usertoplevel['usertoplevel'] == 'county':
             filters['ward__sub_county__county__id'] = self.request.user.countyid
         if usertoplevel['usertoplevel'] == 'sub_county':
@@ -751,7 +754,7 @@ class FilterReportMixin(object):
             'ward__sub_county',
             'ward__name',
             'ward',
-
+            'date_established',
             *fields
         ).filter(**filters).annotate(
             cots=Sum('number_of_cots'),
@@ -786,25 +789,25 @@ class FilterReportMixin(object):
                     'total_hdu_beds': item['hdu_beds'],
                     'total_icu_beds': item['icu_beds'],
                     'total_emergency_casualty_beds': item['emergency_casualty_beds'],
-                    'total_inpatient_beds': item['inpatient_beds'],
+                    'total_inpatient_beds': item.get('inpatient_beds',0),
                     'total_general_theaters': item['general_theaters'],
                     'total_maternity_theaters': item['maternity_theaters'],
                     'ward__sub_county__county__name' :item['ward__sub_county__county__name'],
                     'ward__sub_county__name' :item['ward__sub_county__name'],
-                    'ward__name' :item['ward__name']
-                # Add more properties here...
+                    'ward__name' :item['ward__name'],
+                    'date_established':item['date_established']
                 }
             else:
-                county_totals[group_byvalue]['total_cots'] += item['cots']
-                county_totals[group_byvalue]['total_beds'] += item['beds']
-                county_totals[group_byvalue]['total_maternity_beds'] += item['maternity_beds']
-                county_totals[group_byvalue]['total_isolation_beds'] += item['isolation_beds']
-                county_totals[group_byvalue]['total_hdu_beds'] += item['hdu_beds']
-                county_totals[group_byvalue]['total_icu_beds'] += item['icu_beds']
-                county_totals[group_byvalue]['total_emergency_casualty_beds'] += item['emergency_casualty_beds']
-                county_totals[group_byvalue]['total_inpatient_beds'] += item['inpatient_beds']
-                county_totals[group_byvalue]['total_general_theaters'] += item['general_theaters']
-                county_totals[group_byvalue]['total_maternity_theaters'] += item['maternity_theaters']
+                county_totals[group_byvalue]['total_cots'] += int(item.get('cots',0) or 0)
+                county_totals[group_byvalue]['total_beds'] += int(item.get('beds',0) or 0)
+                county_totals[group_byvalue]['total_maternity_beds'] += int(item.get('maternity_beds',0) or 0)
+                county_totals[group_byvalue]['total_isolation_beds'] += int(item.get('isolation_beds',0) or 0)
+                county_totals[group_byvalue]['total_hdu_beds'] += int(item.get('hdu_beds',0) or 0)
+                county_totals[group_byvalue]['total_icu_beds'] += int(item.get('icu_beds',0) or 0)
+                county_totals[group_byvalue]['total_emergency_casualty_beds'] += int(item.get('emergency_casualty_beds',0) or 0)
+                county_totals[group_byvalue]['total_inpatient_beds'] += int(item.get('inpatient_beds',0) or 0)
+                county_totals[group_byvalue]['total_general_theaters'] += int(item.get('general_theaters',0) or 0)
+                county_totals[group_byvalue]['total_maternity_theaters'] += int(item.get('maternity_theaters',0) or 0)
                 # Increment other properties accordingly
 
         total_cots, total_beds = 0, 0
@@ -883,6 +886,9 @@ class FilterReportMixin(object):
         usertoplevel = self._get_user_top_level()
         groupby = usertoplevel['usergroupby']
         filters={}
+        yearfilterby = self.request.query_params.get('report_year', '')
+        if yearfilterby is not '':
+            filters['facility__date_established__year'] = yearfilterby
         if usertoplevel['usertoplevel'] == 'county':
             filters['facility__ward__sub_county__county__id'] = self.request.user.countyid
             allcounties = County.objects.filter(id=self.request.user.countyid)
@@ -915,6 +921,7 @@ class FilterReportMixin(object):
 
             for group in allcounties:
                  annotated_queryset = queryset.filter(facility__ward__sub_county__county__id= group.id).annotate(
+                    facility_date_established=F('facility__date_established'),
                     facility_code=F('facility__code'),
                     facility_name=F('facility__name'),
                     facility_county=F('facility__ward__constituency__county__name'),
@@ -923,6 +930,7 @@ class FilterReportMixin(object):
                     facility_long=Func("coordinates", function="ST_X", output_field=FloatField()),
                     facility_sub_county=F('facility__ward__sub_county__name')
                  ).values(
+                    'facility_date_established',
                     'facility_code',
                     'facility_name',
                     'facility_county',
@@ -939,6 +947,7 @@ class FilterReportMixin(object):
                 allsubcounties = paginator.page(page)
             for group in allsubcounties:
                 annotated_queryset = queryset.filter(facility__ward__sub_county__id=group.id).annotate(
+                    facility_date_established=F('facility__date_established'),
                     facility_code=F('facility__code'),
                     facility_name=F('facility__name'),
                     facility_county=F('facility__ward__constituency__county__name'),
@@ -947,6 +956,7 @@ class FilterReportMixin(object):
                     facility_long=Func("coordinates", function="ST_X", output_field=FloatField()),
                     facility_sub_county=F('facility__ward__sub_county__name')
                 ).values(
+                    'facility_date_established',
                     'facility_code',
                     'facility_name',
                     'facility_county',
@@ -963,6 +973,7 @@ class FilterReportMixin(object):
                 allwards = paginator.page(page)
             for group in allwards:
                 annotated_queryset = queryset.filter(facility__ward__id=group.id).annotate(
+                    facility_date_established=F('facility__date_established'),
                     facility_code=F('facility__code'),
                     facility_name=F('facility__name'),
                     facility_county=F('facility__ward__constituency__county__name'),
@@ -971,6 +982,7 @@ class FilterReportMixin(object):
                     facility_long=Func("coordinates", function="ST_X", output_field=FloatField()),
                     facility_sub_county=F('facility__ward__sub_county__name')
                 ).values(
+                    'facility_date_established',
                     'facility_code',
                     'facility_name',
                     'facility_county',
@@ -988,7 +1000,9 @@ class FilterReportMixin(object):
         fields = vals.keys()
         usertoplevel = self._get_user_top_level()
         groupby = usertoplevel['usergroupby']
-
+        yearfilterby = self.request.query_params.get('report_year', '')
+        if yearfilterby is not '':
+            filters['date_established__year'] = yearfilterby
         if usertoplevel['usertoplevel'] == 'county':
             filters['ward__sub_county__county__id'] = self.request.user.countyid
         if usertoplevel['usertoplevel'] == 'sub_county':
@@ -1004,7 +1018,7 @@ class FilterReportMixin(object):
         items = Facility.objects.values(
             'ward__sub_county__county__name',
             'ward__sub_county__county',
-
+            'date_established',
             *fields
         ).filter(**filters).annotate(
             **annotate_dict
@@ -1022,40 +1036,14 @@ class FilterReportMixin(object):
             if group_byvalue not in result_summary:
                 result_summary[group_byvalue] = {str(category.name).strip().replace(" ", '_'): item[str(category.name)] for category in
                                                allcategories}
-                result_summary[group_byvalue]['ward__sub_county__county__name'] = item[
-                    'ward__sub_county__county__name']
+                result_summary[group_byvalue]['date_established'] = item['date_established']
+                result_summary[group_byvalue]['ward__sub_county__county__name'] = item['ward__sub_county__county__name']
                 result_summary[group_byvalue]['ward__sub_county__name'] = item['ward__sub_county__name']
                 result_summary[group_byvalue]['ward__name'] = item['ward__name']
             else:
                 for category in allcategories:
                     result_summary[group_byvalue][str(category.name).strip().replace(" ", '_')] += item[str(category.name)]
         return {'groupedby': groupby, 'results': result_summary}, []
-
-
-    # New report keph_level
-    def _get_facility_count_keph_level_old(self, vals={}, filters={}):
-
-        fields = vals.keys()
-
-        regulatory_body = KephLevel.objects.values('id', 'name')
-        annotate_dict = {}  # Initialize the dictionary outside the loop
-
-        annotate_dict = {
-            reg['name']: Sum(Case(When(keph_level_id=reg['id'], then=1), output_field=IntegerField(), default=0)) for
-            reg in regulatory_body}
-
-        items = Facility.objects.values(
-            'ward__sub_county__county__name',
-            'ward__sub_county__county',
-
-            *fields
-        ).filter(**filters).annotate(
-            **annotate_dict
-        ).order_by()
-
-        return items, []
-
-        # new report facility owner
 
     def _get_facility_count_keph_level(self, vals={}, filters={}, ):
 
@@ -1119,6 +1107,9 @@ class FilterReportMixin(object):
         fields = vals.keys()
         usertoplevel = self._get_user_top_level()
         groupby = usertoplevel['usergroupby']
+        yearfilterby = self.request.query_params.get('report_year', '')
+        if yearfilterby is not '':
+            filters['date_established__year'] = yearfilterby
         if usertoplevel['usertoplevel'] == 'county':
             filters['ward__sub_county__county__id'] = self.request.user.countyid
         if usertoplevel['usertoplevel'] == 'sub_county':
@@ -1138,6 +1129,7 @@ class FilterReportMixin(object):
         items = Facility.objects.values(
             'ward__sub_county__county__name',
             'ward__sub_county__county',
+            'date_established',
             *fields
         ).filter(**filters).annotate(**annotate_dict)
 
@@ -1157,6 +1149,8 @@ class FilterReportMixin(object):
                 result_summary[group_byvalue]={}
                 for category in allcategories:
                     result_summary[group_byvalue][str(category.name).strip().replace(" ", '_')]=item.get(str(category.name),0)
+
+                result_summary[group_byvalue]['date_established'] = item['date_established']
                 result_summary[group_byvalue]['ward__sub_county__county__name'] = item['ward__sub_county__county__name']
                 result_summary[group_byvalue]['ward__sub_county__name'] = item['ward__sub_county__name']
                 result_summary[group_byvalue]['ward__name'] = item['ward__name']
@@ -1172,6 +1166,9 @@ class FilterReportMixin(object):
         fields = vals.keys()
         usertoplevel = self._get_user_top_level()
         groupby = usertoplevel['usergroupby']
+        yearfilterby = self.request.query_params.get('report_year', '')
+        if yearfilterby is not '':
+            filters['date_established__year'] = yearfilterby
         if usertoplevel['usertoplevel'] == 'county':
             filters['ward__sub_county__county__id'] = self.request.user.countyid
         if usertoplevel['usertoplevel'] == 'sub_county':
@@ -1191,7 +1188,7 @@ class FilterReportMixin(object):
             'ward__sub_county__county',
             'ward__name',
             'ward',
-
+            'date_established',
             *fields
         ).filter(**filters).annotate(
             **annotate_dict
@@ -1207,12 +1204,12 @@ class FilterReportMixin(object):
             if groupby == 'ward':
                 group_byvalue = item['ward__name']
 
-            group_byvalue = str(group_byvalue).strip().replace(" ", '_')
-
             if group_byvalue not in result_summary:
                 result_summary[group_byvalue]={}
                 for category in allcategories:
                     result_summary[group_byvalue][str(category.name).strip().replace(" ", '_')] = item.get(str(category.name), 0)
+
+                result_summary[group_byvalue]['date_established'] = item['date_established']
                 result_summary[group_byvalue]['ward__sub_county__county__name'] = item['ward__sub_county__county__name']
                 result_summary[group_byvalue]['ward__sub_county__name'] = item['ward__sub_county__name']
                 result_summary[group_byvalue]['ward__name'] = item['ward__name']
@@ -1227,6 +1224,9 @@ class FilterReportMixin(object):
         fields = vals.keys()
         usertoplevel = self._get_user_top_level()
         groupby = usertoplevel['usergroupby']
+        yearfilterby = self.request.query_params.get('report_year', '')
+        if yearfilterby is not '':
+            filters['facility__date_established__year'] = yearfilterby
         if usertoplevel['usertoplevel'] == 'county':
             filters['facility__ward__sub_county__county__id'] = self.request.user.countyid
         if usertoplevel['usertoplevel'] == 'sub_county':
@@ -1249,6 +1249,7 @@ class FilterReportMixin(object):
             'facility__ward__sub_county',
             'facility__ward__name',
             'facility__ward',
+            'facility__date_established',
         ).filter(**filters).annotate(**annotation)
 
         items = items.annotate(**annotation2).order_by()
@@ -1262,13 +1263,12 @@ class FilterReportMixin(object):
             if groupby == 'ward':
                 group_byvalue = item['facility__ward__name']
 
-            group_byvalue=str(group_byvalue).strip().replace(" ",'_')
-
             if group_byvalue not in result_summary:
                 result_summary[group_byvalue] = {}
                 for category in allcategories:
                     result_summary[group_byvalue][str(category.name).strip().replace(" ", '_')] = item.get(
                         str(category.name), 0)
+                result_summary[group_byvalue]['facility__date_established']=item['facility__date_established']
                 result_summary[group_byvalue]['ward__sub_county__county__name'] = item['facility__ward__sub_county__county__name']
                 result_summary[group_byvalue]['ward__sub_county__name'] = item['facility__ward__sub_county__name']
                 result_summary[group_byvalue]['ward__name'] = item['facility__ward__name']
@@ -1283,7 +1283,9 @@ class FilterReportMixin(object):
         fields = vals.keys()
         usertoplevel = self._get_user_top_level()
         groupby = usertoplevel['usergroupby']
-
+        yearfilterby = self.request.query_params.get('report_year', '')
+        if yearfilterby is not '':
+            filters['facility__date_established__year'] = yearfilterby
         if usertoplevel['usertoplevel'] == 'county':
             filters['facility__ward__sub_county__county__id'] = self.request.user.countyid
         if usertoplevel['usertoplevel'] == 'sub_county':
@@ -1307,6 +1309,7 @@ class FilterReportMixin(object):
             'facility__ward__sub_county',
             'facility__ward__name',
             'facility__ward',
+            'facility__date_established',
         ).filter(**filters).annotate(**annotation)
         items = items.annotate(**annotation2).order_by()
 
@@ -1323,11 +1326,12 @@ class FilterReportMixin(object):
                 group_byvalue = item['facility__ward__sub_county__name']
             if groupby == 'ward':
                 group_byvalue = item['facility__ward__name']
-            group_byvalue = str(group_byvalue).strip().replace(" ", '_')
             if group_byvalue not in result_summary:
                 result_summary[group_byvalue] = {}
+                result_summary[group_byvalue]['facility__date_established']=item['facility__date_established']
                 for category in allcategories:
                     result_summary[group_byvalue][str(category.name).strip().replace(" ",'_')]= item[str(category.name)]
+
                 result_summary[group_byvalue]['ward__sub_county__county__name'] = item['facility__ward__sub_county__county__name']
                 result_summary[group_byvalue]['ward__sub_county__name'] = item['facility__ward__sub_county__name']
                 result_summary[group_byvalue]['ward__name'] = item['facility__ward__name']
@@ -1347,6 +1351,7 @@ class FilterReportMixin(object):
 
             if group_byvalue not in result_summary:
                 result_summary[group_byvalue] = {}
+                result_summary[group_byvalue]['facility__date_established']=item['facility__date_established']
                 for infra in allinfrastructure:
                     result_summary[group_byvalue][str(infra.name).strip().replace(" ", '_')] = item[str(infra.name)]
 
@@ -1364,8 +1369,9 @@ class FilterReportMixin(object):
         fields = vals.keys()
         usertoplevel = self._get_user_top_level()
         groupby = usertoplevel['usergroupby']
-
-
+        yearfilterby = self.request.query_params.get('report_year', '')
+        if yearfilterby is not '':
+            filters['facility__date_established__year'] = yearfilterby
         if usertoplevel['usertoplevel'] == 'county':
             filters['facility__ward__sub_county__county__id'] = self.request.user.countyid
         if usertoplevel['usertoplevel'] == 'sub_county':
@@ -1389,6 +1395,7 @@ class FilterReportMixin(object):
             'facility__ward__sub_county',
             'facility__ward__name',
             'facility__ward',
+            'facility__date_established',
         ).filter(**filters).annotate(**annotation)
 
         items = items.annotate(**annotation2).order_by()
@@ -1405,9 +1412,9 @@ class FilterReportMixin(object):
                 group_byvalue = item['facility__ward__sub_county__name']
             if groupby == 'ward':
                 group_byvalue = item['facility__ward__name']
-            group_byvalue =(str(group_byvalue).strip().replace(" ",'_'))
             if group_byvalue not in result_summary:
                 result_summary[group_byvalue] = {}
+                result_summary[group_byvalue]['facility__date_established'] = item['facility__date_established']
                 for category in allcategories:
                     result_summary[group_byvalue][str(category.name).strip().replace(" ",'_')] = item[str(category.name)]
                 result_summary[group_byvalue]['ward__sub_county__county__name'] = item['facility__ward__sub_county__county__name']
@@ -1426,9 +1433,9 @@ class FilterReportMixin(object):
                     group_byvalue = item['facility__ward__sub_county__name']
                 if groupby == 'ward':
                     group_byvalue = item['facility__ward__name']
-                group_byvalue = str(group_byvalue).strip().replace(" ", '_')
                 if group_byvalue not in result_summary:
                     result_summary[group_byvalue] = {}
+                    result_summary[group_byvalue]['facility__date_established']=item['facility__date_established']
                     for speciality in allspecialities:
                         result_summary[group_byvalue][str(speciality.name).strip().replace(" ", '_')] = item[str(speciality.name)]
 
@@ -2013,7 +2020,9 @@ class CommunityHealthUnitReport(APIView):
     def get_status_report_all_hierachies(self, filters={}):
         usertoplevel = self._get_user_top_level()
         groupby = usertoplevel['usergroupby']
-
+        yearfilterby = self.request.query_params.get('report_year', '')
+        if yearfilterby is not '':
+            filters['facility__date_established__year'] = yearfilterby
         if usertoplevel['usertoplevel'] == 'county':
             filters['facility__ward__sub_county__county__id'] = self.request.user.countyid
         if usertoplevel['usertoplevel'] == 'sub_county':
@@ -2039,6 +2048,7 @@ class CommunityHealthUnitReport(APIView):
             'facility__ward__sub_county',
             'facility__ward__name',
             'facility__ward',
+            'facility__date_established'
         ).filter(**filters).annotate(**annotate_dict)
         result_summary = {}
 
@@ -2055,6 +2065,7 @@ class CommunityHealthUnitReport(APIView):
 
             if group_byvalue not in result_summary:
                 result_summary[group_byvalue] = {}
+                result_summary[group_byvalue]['facility__date_established']=item['facility__date_established']
                 for status in allstatuses:
                     result_summary[group_byvalue][str(status.name).strip().replace(" ", '_')] = item[str(status.name)]
 
@@ -2073,33 +2084,43 @@ class CommunityHealthUnitReport(APIView):
     def get_services_report_all_hierachies(self, filters={}):
         usertoplevel = self._get_user_top_level()
         groupby = usertoplevel['usergroupby']
+        yearfilterby = self.request.query_params.get('report_year', '')
+        if yearfilterby is not '':
+            filters['health_unit__date_established__year'] = yearfilterby
+        if usertoplevel['usertoplevel'] == 'county':
+            filters['health_unit__facility__ward__sub_county__county__id'] = self.request.user.countyid
+        if usertoplevel['usertoplevel'] == 'sub_county':
+            filters['health_unit__facility__ward__sub_county__id'] = self.request.user.sub_countyid
 
         services = CHUService.objects.values('id', 'name')
         allcounties = County.objects.all()
         allsubcounties=SubCounty.objects.all()
         allwards=Ward.objects.all()
+        allchuservicelinks=CHUServiceLink.objects.filter(**filters)
         result_summary={}
-
         if groupby=='county':
             for county in allcounties:
                 result_summary[county.name] = {}
+                result_summary[county.name]['health_unit__date_established'] = yearfilterby if yearfilterby else 'all'
                 for serv in services:
-                    service_counts = CHUServiceLink.objects.all().filter(service_id=serv['id'],
+                    service_counts = allchuservicelinks.filter(service_id=serv['id'],
                                                                          health_unit__facility__ward__sub_county__county=county)
                     result_summary[county.name][serv['name']] = len(service_counts)
 
         if groupby == 'sub_county':
             for subcounty in allsubcounties:
                 result_summary[subcounty.name] = {}
+                result_summary[subcounty.name]['health_unit__year_established'] = yearfilterby if yearfilterby else 'all'
                 for serv in services:
-                    service_counts = CHUServiceLink.objects.all().filter(service_id=serv['id'],
+                    service_counts = allchuservicelinks.filter(service_id=serv['id'],
                                                                          health_unit__facility__ward__sub_county=subcounty)
                     result_summary[subcounty.name][serv['name']] = len(service_counts)
         if groupby == 'ward':
             for ward in allwards:
                 result_summary[ward.name] = {}
+                result_summary[ward.name]['health_unit__year_established']=yearfilterby if yearfilterby else 'all'
                 for serv in services:
-                    service_counts = CHUServiceLink.objects.all().filter(service_id=serv['id'],
+                    service_counts = allchuservicelinks.filter(service_id=serv['id'],
                                                                          health_unit__facility__ward=ward)
                     result_summary[ward.name][serv['name']] = len(service_counts)
 
