@@ -5,8 +5,8 @@ import uuid
 from datetime import timedelta
 from collections import OrderedDict, defaultdict
 from django.apps import apps
-from django.contrib.auth.models import Group
-from django.db.models import Sum, Case, When, IntegerField, Count, ExpressionWrapper, Q, F
+from django.db.models import Sum, Case, When, IntegerField, Count, ExpressionWrapper, Q, F, Value, FloatField, Func, \
+    TextField, Subquery
 from django.utils import timezone
 from django.core.paginator import Paginator
 
@@ -94,18 +94,24 @@ class FilterReportMixin(object):
             resultobject['userlowerlevels'].append('national')
             if (groupby == 'county' or groupby == 'sub_county' or groupby == 'ward'):
                 resultobject['usergroupby'] = groupby
+            else:
+                resultobject['usergroupby'] = 'county'
             return resultobject
         elif userid == 1 or userid==12:
             resultobject['usertoplevel'] = 'county'
             resultobject['userlowerlevels'].append('county')
             if (groupby == 'county' or groupby == 'sub_county' or groupby == 'ward'):
                 resultobject['usergroupby'] = groupby
+            else:
+                resultobject['usergroupby'] = 'county'
             return resultobject
         elif userid == 2:
             resultobject['usertoplevel'] = 'sub_county'
             resultobject['userlowerlevels'].append('sub_county')
-            if (groupby == 'sub_county' or groupby == 'ward'):
+            if (groupby == 'county' or groupby == 'sub_county' or groupby == 'ward'):
                 resultobject['usergroupby'] = groupby
+            else:
+                resultobject['usergroupby'] = 'sub_county'
             return resultobject
         else:
             resultobject['usergroupby'] = groupby
@@ -772,7 +778,6 @@ class FilterReportMixin(object):
             if groupby == 'ward':
                 group_byvalue = item['ward__name']
 
-            group_byvalue=str(group_byvalue).strip().replace(" ", '_')
             if group_byvalue not in county_totals:
                 county_totals[group_byvalue] = {
                     'total_cots': item['cots'],
@@ -870,7 +875,7 @@ class FilterReportMixin(object):
         sub_county = self.request.query_params.get('sub_county', None)
         ward = self.request.query_params.get('ward', None)
         page = self.request.query_params.get('page', 1)
-        page_size = self.request.query_params.get('page_size', 30)
+        page_size = self.request.query_params.get('page_size', 10)
         paginate = self.request.query_params.get('paginate', True)
         allcounties = County.objects.all()
         allsubcounties = SubCounty.objects.all()
@@ -903,59 +908,81 @@ class FilterReportMixin(object):
                 facility__ward_id__in=ward.split('.'))
 
         result_summary = {}
-        myset=[]
 
         if groupby == 'county':
             paginator = Paginator(list(allcounties), page_size)
             if paginate:
                 allcounties = paginator.page(page)
+
             for group in allcounties:
-                result_summary[group.name] = []
-                myset+=list(queryset.filter(facility__ward__sub_county__county__id= group.id))
+                 annotated_queryset = queryset.filter(facility__ward__sub_county__county__id= group.id).annotate(
+                    facility_code=F('facility__code'),
+                    facility_name=F('facility__name'),
+                    facility_county=F('facility__ward__constituency__county__name'),
+                    facility_ward=F('facility__ward__name'),
+                    facility_lat=Func("coordinates", function="ST_Y", output_field=FloatField()),
+                    facility_long=Func("coordinates", function="ST_X", output_field=FloatField()),
+                    facility_sub_county=F('facility__ward__sub_county__name')
+                 ).values(
+                    'facility_code',
+                    'facility_name',
+                    'facility_county',
+                    'facility_ward',
+                    'facility_lat',
+                    'facility_long',
+                    'facility_sub_county')
+
+                 result_summary[group.name] = list(annotated_queryset)
         if groupby == 'sub_county':
+            page_size = self.request.query_params.get('page_size', 20)
             paginator = Paginator(list(allsubcounties), page_size)
             if paginate:
                 allsubcounties = paginator.page(page)
             for group in allsubcounties:
-                result_summary[group.name] = []
-                myset += list(queryset.filter(facility__ward__sub_county__id=group.id))
+                annotated_queryset = queryset.filter(facility__ward__sub_county__id=group.id).annotate(
+                    facility_code=F('facility__code'),
+                    facility_name=F('facility__name'),
+                    facility_county=F('facility__ward__constituency__county__name'),
+                    facility_ward=F('facility__ward__name'),
+                    facility_lat=Func("coordinates", function="ST_Y", output_field=FloatField()),
+                    facility_long=Func("coordinates", function="ST_X", output_field=FloatField()),
+                    facility_sub_county=F('facility__ward__sub_county__name')
+                ).values(
+                    'facility_code',
+                    'facility_name',
+                    'facility_county',
+                    'facility_ward',
+                    'facility_lat',
+                    'facility_long',
+                    'facility_sub_county')
+
+                result_summary[group.name] = list(annotated_queryset)
         if groupby == 'ward':
+            page_size = self.request.query_params.get('page_size', 150)
             paginator = Paginator(list(allwards), page_size)
             if paginate:
                 allwards = paginator.page(page)
             for group in allwards:
-                result_summary[group.name] = []
-                myset += list(queryset.filter(facility__ward__id=group.id))
+                annotated_queryset = queryset.filter(facility__ward__id=group.id).annotate(
+                    facility_code=F('facility__code'),
+                    facility_name=F('facility__name'),
+                    facility_county=F('facility__ward__constituency__county__name'),
+                    facility_ward=F('facility__ward__name'),
+                    facility_lat=Func("coordinates", function="ST_Y", output_field=FloatField()),
+                    facility_long=Func("coordinates", function="ST_X", output_field=FloatField()),
+                    facility_sub_county=F('facility__ward__sub_county__name')
+                ).values(
+                    'facility_code',
+                    'facility_name',
+                    'facility_county',
+                    'facility_ward',
+                    'facility_lat',
+                    'facility_long',
+                    'facility_sub_county')
 
+                result_summary[group.name] = list(annotated_queryset)
 
-        for fac in myset:
-            record = {'facility_code': fac.facility.code,
-                      'facility_name': fac.facility.name,
-                      'facility_county': fac.facility.ward.constituency.county.name,
-                      'facility_ward': fac.facility.ward.name,
-                      'facility_lat': fac.coordinates[1],
-                      'facility_long': fac.coordinates[0],
-                      'facility_sub_county': fac.facility.ward.sub_county.name}
-
-            # if fac.facility.ward.sub_county:
-            #     record['facility_sub_county'] = fac.facility.ward.sub_county.name
-            if groupby == 'county':
-                group_byvalue = record['facility_county']
-            if groupby == 'sub_county':
-                group_byvalue = record['facility_sub_county']
-            if groupby == 'ward':
-                group_byvalue = record['facility_ward']
-
-            group_byvalue = str(group_byvalue).strip().replace(" ", '_')
-
-            if group_byvalue not in result_summary:
-                result_summary[group_byvalue]=[record]
-            else:
-                result_summary[group_byvalue].append(record)
-
-
-
-        return {'groupedby': groupby, 'results': result_summary}, [len(myset)]
+        return {'groupedby': groupby, 'results': result_summary}, [len(result_summary)]
 
     # New report regulatory body
     def _get_facility_count_regulatory_body(self, vals={}, filters={}):
@@ -991,8 +1018,6 @@ class FilterReportMixin(object):
                 group_byvalue = item['ward__sub_county__name']
             if groupby == 'ward':
                 group_byvalue = item['ward__name']
-
-            group_byvalue=str(group_byvalue).strip().replace(" ", '_')
 
             if group_byvalue not in result_summary:
                 result_summary[group_byvalue] = {str(category.name).strip().replace(" ", '_'): item[str(category.name)] for category in
@@ -1070,7 +1095,6 @@ class FilterReportMixin(object):
             if groupby == 'ward':
                 group_byvalue = item['ward__name']
 
-            group_byvalue=str(group_byvalue).strip().replace(" ", '_')
             if group_byvalue not in result_summary:
                 result_summary[group_byvalue] = {}
                 for category in allcategories:
@@ -1124,8 +1148,6 @@ class FilterReportMixin(object):
                 group_byvalue = item['ward__sub_county__name']
             if groupby == 'ward':
                 group_byvalue = item['ward__name']
-
-            group_byvalue=str(group_byvalue).strip().replace(" ", '_')
 
             if group_byvalue not in result_summary:
                 result_summary[group_byvalue]={}
@@ -1318,7 +1340,7 @@ class FilterReportMixin(object):
                 group_byvalue = item['facility__ward__sub_county__name']
             if groupby == 'ward':
                 group_byvalue = item['facility__ward__name']
-            group_byvalue = str(group_byvalue).strip().replace(" ", '_')
+
             if group_byvalue not in result_summary:
                 result_summary[group_byvalue] = {}
                 for infra in allinfrastructure:
