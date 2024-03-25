@@ -989,6 +989,7 @@ class FilterReportMixin(object):
         fields = vals.keys()
         usertoplevel = self._get_user_top_level()
         groupby = usertoplevel['usergroupby']
+
         if usertoplevel['usertoplevel'] == 'county':
             filters['ward__sub_county__county__id'] = self.request.user.countyid
         if usertoplevel['usertoplevel'] == 'sub_county':
@@ -1772,6 +1773,39 @@ class FacilityUpgradeDowngrade(APIView):
 class CommunityHealthUnitReport(APIView):
     queryset = CommunityHealthUnit.objects.all()
 
+    def _get_user_top_level(self):
+        userid = self.request.user.groups.all()[0].id
+        groupby = self.request.query_params.get('report_groupby', '')
+        resultobject = {'usertoplevel': '', 'userlowerlevels': [], 'usergroupby': 'sub_county'}
+        resultobject['userlowerlevels'].append('ward')
+        if userid == 5 or userid == 6 or userid == 7:
+            resultobject['usertoplevel'] = 'national'
+            resultobject['userlowerlevels'].append('national')
+            if (groupby == 'county' or groupby == 'sub_county' or groupby == 'ward'):
+                resultobject['usergroupby'] = groupby
+            else:
+                resultobject['usergroupby'] = 'county'
+            return resultobject
+        elif userid == 1 or userid == 12:
+            resultobject['usertoplevel'] = 'county'
+            resultobject['userlowerlevels'].append('county')
+            if (groupby == 'county' or groupby == 'sub_county' or groupby == 'ward'):
+                resultobject['usergroupby'] = groupby
+            else:
+                resultobject['usergroupby'] = 'county'
+            return resultobject
+        elif userid == 2:
+            resultobject['usertoplevel'] = 'sub_county'
+            resultobject['userlowerlevels'].append('sub_county')
+            if (groupby == 'county' or groupby == 'sub_county' or groupby == 'ward'):
+                resultobject['usergroupby'] = groupby
+            else:
+                resultobject['usergroupby'] = 'sub_county'
+            return resultobject
+        else:
+            resultobject['usergroupby'] = groupby
+            return resultobject
+
     def get_county_reports(self, queryset=queryset):
         data = []
         counties = County.objects.all()
@@ -1974,47 +2008,93 @@ class CommunityHealthUnitReport(APIView):
 
     # new CHUL report functionality/status
     def get_status_report_all_hierachies(self, filters={}):
-        status = Status.objects.values('id', 'name')
-        annotate_dict = {}  # Initialize the dictionary outside the loop
+        usertoplevel = self._get_user_top_level()
+        groupby = usertoplevel['usergroupby']
+
+        if usertoplevel['usertoplevel'] == 'county':
+            filters['facility__ward__sub_county__county__id'] = self.request.user.countyid
+        if usertoplevel['usertoplevel'] == 'sub_county':
+            filters['facility__ward__sub_county__id'] = self.request.user.sub_countyid
+
+        allstatuses = Status.objects.all()
+        annotation2 = {}
 
         annotate_dict = {
-            reg['name']: Sum(Case(When(status_id=reg['id'], then=1), output_field=IntegerField(), default=0)) for reg in
-            status}
+            reg.name: Sum(Case(When(status=reg.id, then=1), output_field=IntegerField(), default=0)) for reg in
+            allstatuses}
 
         items = CommunityHealthUnit.objects.values(
             'facility__ward__sub_county__county__name',
-            'facility__ward__sub_county__name',
-            'facility__ward__name',
             'facility__ward__sub_county__county',
+            'facility__ward__sub_county__name',
+            'facility__ward__sub_county',
+            'facility__ward__name',
             'facility__ward',
+        ).filter(**filters).annotate(**annotate_dict)
+        result_summary = {}
 
-        ).filter(**filters).annotate(
-            **annotate_dict
-        ).order_by()
+        # get specific status aggregation
 
-        return items, []
+        for item in items:
+            group_byvalue = item['facility__ward__sub_county__name']
+            if groupby == 'county':
+                group_byvalue = item['facility__ward__sub_county__county__name']
+            if groupby == 'sub_county':
+                group_byvalue = item['facility__ward__sub_county__name']
+            if groupby == 'ward':
+                group_byvalue = item['facility__ward__name']
+
+            if group_byvalue not in result_summary:
+                result_summary[group_byvalue] = {}
+                for status in allstatuses:
+                    result_summary[group_byvalue][str(status.name).strip().replace(" ", '_')] = item[str(status.name)]
+
+            else:
+                for status in allstatuses:
+                    if str(status.name).strip().replace(" ", '_') not in result_summary[group_byvalue]:
+                        result_summary[group_byvalue][str(status.name).strip().replace(" ", '_')] = item[str(status.name)]
+                    else:
+                        result_summary[group_byvalue][str(status.name).strip().replace(" ", '_')] += item[
+                            str(status.name)]
+
+        return {'groupedby': groupby, 'results': result_summary}, []
+
 
     # new CHUL report services
     def get_services_report_all_hierachies(self, filters={}):
-        service = CHUService.objects.values('id', 'name')
-        annotate_dict = {}  # Initialize the dictionary outside the loop
+        usertoplevel = self._get_user_top_level()
+        groupby = usertoplevel['usergroupby']
 
-        annotate_dict = {
-            reg['name']: Sum(Case(When(service_id=reg['id'], then=1), output_field=IntegerField(), default=0)) for reg
-            in service}
+        services = CHUService.objects.values('id', 'name')
+        allcounties = County.objects.all()
+        allsubcounties=SubCounty.objects.all()
+        allwards=Ward.objects.all()
+        result_summary={}
 
-        items = CHUServiceLink.objects.values(
-            'health_unit__facility__ward__sub_county__county__name',
-            'health_unit__facility__ward__sub_county__name',
-            'health_unit__facility__ward__name',
-            'health_unit__facility__ward__sub_county__county',
-            'health_unit__facility__ward',
+        if groupby=='county':
+            for county in allcounties:
+                result_summary[county.name] = {}
+                for serv in services:
+                    service_counts = CHUServiceLink.objects.all().filter(service_id=serv['id'],
+                                                                         health_unit__facility__ward__sub_county__county=county)
+                    result_summary[county.name][serv['name']] = len(service_counts)
 
-        ).filter(**filters).annotate(
-            **annotate_dict
-        ).order_by()
+        if groupby == 'sub_county':
+            for subcounty in allsubcounties:
+                result_summary[subcounty.name] = {}
+                for serv in services:
+                    service_counts = CHUServiceLink.objects.all().filter(service_id=serv['id'],
+                                                                         health_unit__facility__ward__sub_county=subcounty)
+                    result_summary[subcounty.name][serv['name']] = len(service_counts)
+        if groupby == 'ward':
+            for ward in allwards:
+                result_summary[ward.name] = {}
+                for serv in services:
+                    service_counts = CHUServiceLink.objects.all().filter(service_id=serv['id'],
+                                                                         health_unit__facility__ward=ward)
+                    result_summary[ward.name][serv['name']] = len(service_counts)
 
-        return items, []
+        return result_summary, []
 
         # new CHUL report  count chus
 
