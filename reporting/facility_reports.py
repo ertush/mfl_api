@@ -1062,6 +1062,9 @@ class FilterReportMixin(object):
         fields = vals.keys()
         usertoplevel = self._get_user_top_level()
         groupby = usertoplevel['usergroupby']
+        yearfilterby = self.request.query_params.get('report_year', '')
+        if yearfilterby is not '':
+            filters['date_established__year'] = yearfilterby
         if usertoplevel['usertoplevel'] == 'county':
             filters['ward__sub_county__county__id'] = self.request.user.countyid
         if usertoplevel['usertoplevel'] == 'sub_county':
@@ -1079,7 +1082,7 @@ class FilterReportMixin(object):
             'ward__sub_county',
             'ward__name',
             'ward',
-
+            'date_established',
             *fields
         ).filter(**filters).annotate(
             **annotate_dict
@@ -1099,6 +1102,7 @@ class FilterReportMixin(object):
                 result_summary[group_byvalue] = {}
                 for category in allcategories:
                     result_summary[group_byvalue][str(category.name).strip().replace(" ", '_')] =  item[category.name]
+                result_summary[group_byvalue]['year_established'] = item['date_established']
                 result_summary[group_byvalue]['ward__sub_county__county__name'] = item[
                         'ward__sub_county__county__name']
                 result_summary[group_byvalue]['ward__sub_county__name'] = item['ward__sub_county__name']
