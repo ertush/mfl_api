@@ -744,7 +744,6 @@ class FilterReportMixin(object):
         if usertoplevel['usertoplevel'] == 'sub_county':
             filters['ward__sub_county__id'] = self.request.user.sub_countyid
 
-
         items = Facility.objects.values(
             'ward__sub_county__county__name',
             'ward__sub_county__county',
@@ -773,7 +772,7 @@ class FilterReportMixin(object):
             group_byvalue = item['ward__sub_county__county__name']
             if groupby == 'county':
                 group_byvalue = item['ward__sub_county__county__name']
-            if groupby == 'subcounty':
+            if groupby == 'sub_county':
                 group_byvalue = item['ward__sub_county__name']
             if groupby == 'ward':
                 group_byvalue = item['ward__name']
@@ -2015,9 +2014,15 @@ class CommunityHealthUnitReport(APIView):
             filters['facility__ward__sub_county__county__id'] = self.request.user.countyid
         if usertoplevel['usertoplevel'] == 'sub_county':
             filters['facility__ward__sub_county__id'] = self.request.user.sub_countyid
+        parameterfilters = {}
+        if self.request.query_params.get('ward'):
+            parameterfilters['ward'] = self.request.query_params.get('ward')
+        elif self.request.query_params.get('sub_county'):
+            parameterfilters['sub_county'] = self.request.query_params.get('sub_county')
+        elif self.request.query_params.get('county'):
+            parameterfilters['county'] = self.request.query_params.get('county')
 
         allstatuses = Status.objects.all()
-        annotation2 = {}
 
         annotate_dict = {
             reg.name: Sum(Case(When(status=reg.id, then=1), output_field=IntegerField(), default=0)) for reg in
