@@ -782,19 +782,19 @@ class FilterReportMixin(object):
 
             if group_byvalue not in county_totals:
                 county_totals[group_byvalue] = {
-                    'total_cots': item['cots'],
-                    'total_beds': item['beds'],
-                    'total_maternity_beds': item['maternity_beds'],
-                    'total_isolation_beds': item['isolation_beds'],
-                    'total_hdu_beds': item['hdu_beds'],
-                    'total_icu_beds': item['icu_beds'],
-                    'total_emergency_casualty_beds': item['emergency_casualty_beds'],
-                    'total_inpatient_beds': item.get('inpatient_beds',0),
-                    'total_general_theaters': item['general_theaters'],
-                    'total_maternity_theaters': item['maternity_theaters'],
-                    'ward__sub_county__county__name' :item['ward__sub_county__county__name'],
-                    'ward__sub_county__name' :item['ward__sub_county__name'],
-                    'ward__name' :item['ward__name'],
+                    'total_cots': int(item.get('cots',0) or 0),
+                    'total_beds': int(item.get('beds',0) or 0),
+                    'total_maternity_beds': int(item.get('maternity_beds',0) or 0),
+                    'total_isolation_beds': int(item.get('isolation_beds',0) or 0),
+                    'total_hdu_beds': int(item.get('hdu_beds',0) or 0),
+                    'total_icu_beds': int(item.get('icu_beds',0) or 0),
+                    'total_emergency_casualty_beds': int(item.get('emergency_casualty_beds',0) or 0),
+                    'total_inpatient_beds': int(item.get('inpatient_beds',0) or 0),
+                    'total_general_theaters': int(item.get('general_theaters',0) or 0),
+                    'total_maternity_theaters': int(item.get('maternity_theaters',0) or 0),
+                    'ward__sub_county__county__name' :item.get('ward__sub_county__county__name',''),
+                    'ward__sub_county__name' :item.get('ward__sub_county__name',''),
+                    'ward__name' :item.get('ward__name',''),
                     'date_established':item['date_established']
                 }
             else:
