@@ -330,7 +330,7 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
 
     def get_facility_dhis2_parent_id(self):
         from facilities.models.facility_models import DhisAuth
-        import requests
+        LOGGER.info('[ERROR] Facility Code : {}'.format(self.facility.code))
         r = requests.get(
             settings.DHIS_ENDPOINT + "api/organisationUnits.json",
             auth=(settings.DHIS_USERNAME, settings.DHIS_PASSWORD),
@@ -339,7 +339,7 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
             },
             params={
                 "query": self.facility.code,
-                "fields": "id,name",
+                "fields": "[id,name]",
                 "filter": "level:in:[5]",
                 "paging": "false"
             }
@@ -479,7 +479,7 @@ class ChuUpdateBuffer(AbstractBase):
 
     def update_basic_details(self):
         # Because the basic property of ChuUpdateBuffer receives {"basic": {"facilities": <facility_id>}"}
-        basic_details = json.loads(self.basic)
+        basic_details = json.loads(self.basic.basic)
         if 'status' in basic_details:
             basic_details['status_id'] = basic_details.get(
                 'status').get('status_id')
