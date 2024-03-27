@@ -339,7 +339,7 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
             },
             params={
                 "query": self.facility.code,
-                "fields": "[id,name]",
+                "fields": "id,name",
                 "filter": "level:in:[5]",
                 "paging": "false"
             }
