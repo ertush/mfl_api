@@ -87,7 +87,7 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
         help_text='The number of house holds a CHU is in-charge of')
     date_established = models.DateField(default=timezone.now)
     date_operational = models.DateField(null=True, blank=True)
-    is_approved = models.NullBooleanField(blank=True, null=True, help_text='Determines if a chu has been approved')
+    is_approved = models.NullBooleanField(null=True, blank=True, help_text='Determines if a chu has been approved')
     approval_comment = models.TextField(null=True, blank=True)
     approval_date = models.DateTimeField(null=True, blank=True)
     location = models.CharField(max_length=255, null=True, blank=True)
@@ -277,6 +277,7 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
             },
             "openingDate": self.date_operational.strftime("%Y-%m-%d"),
         }
+        
         metadata_payload = {
             "keph": 'axUnguN4QDh'
         }
