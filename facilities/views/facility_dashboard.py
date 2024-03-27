@@ -170,31 +170,45 @@ class DashBoard(QuerysetFilterMixin, APIView):
             summaries[parent] = 0
 
         for facility_type in facility_types:
-            if self.request.query_params.get('ward'): 
-                summaries[facility_type.sub_division] = self.get_queryset().filter(created__gte=period_start, created__lte=period_end,
-                    facility_type=facility_type, ward=self.request.query_params.get('ward')).count()
+            if self.request.query_params.get('ward'):
+                summaries[facility_type.sub_division] = self.get_queryset().filter(created__gte=period_start,
+                                                                                   created__lte=period_end,
+                                                                                   facility_type=facility_type,
+                                                                                   ward=self.request.query_params.get(
+                                                                                       'ward')).count()
             elif self.request.query_params.get('sub_county'):
-                summaries[facility_type.sub_division] = self.get_queryset().filter(created__gte=period_start, created__lte=period_end,
-                    facility_type=facility_type, sub_county=self.request.query_params.get('sub_county')).count()
+                summaries[facility_type.sub_division] = self.get_queryset().filter(created__gte=period_start,
+                                                                                   created__lte=period_end,
+                                                                                   facility_type=facility_type,
+                                                                                   sub_county=self.request.query_params.get(
+                                                                                       'sub_county')).count()
             elif self.request.query_params.get('county'):
-                 summaries[facility_type.sub_division] = self.get_queryset().filter(created__gte=period_start, created__lte=period_end,
-                    facility_type=facility_type, county=self.request.query_params.get('county')).count()
+                summaries[facility_type.sub_division] = self.get_queryset().filter(created__gte=period_start,
+                                                                                   created__lte=period_end,
+                                                                                   facility_type=facility_type,
+                                                                                   county=self.request.query_params.get(
+                                                                                       'county')).count()
             elif self.request.user.is_national:
                 summaries[facility_type.sub_division] = summaries.get(
-                        facility_type.sub_division) + self.get_queryset().filter(created__gte=period_start, created__lte=period_end,
-                                facility_type=facility_type).count()
+                    facility_type.sub_division) + self.get_queryset().filter(created__gte=period_start,
+                                                                             created__lte=period_end,
+                                                                             facility_type=facility_type).count()
             else:
-                if(self.mfluser.user_groups.get('is_sub_county_level')):
-                    summaries[facility_type.sub_division] = self.get_queryset().filter(created__gte=period_start, created__lte=period_end,
-                    facility_type=facility_type, sub_county=self.usersubcounty).count()
-                elif(self.mfluser.user_groups.get('is_county_level')):
-                    summaries[facility_type.sub_division] = self.get_queryset().filter(created__gte=period_start, created__lte=period_end,
-                    facility_type=facility_type, county=self.usercounty).count()
+                if (self.mfluser.user_groups.get('is_sub_county_level')):
+                    summaries[facility_type.sub_division] = self.get_queryset().filter(created__gte=period_start,
+                                                                                       created__lte=period_end,
+                                                                                       facility_type=facility_type,
+                                                                                       sub_county=self.usersubcounty).count()
+                elif (self.mfluser.user_groups.get('is_county_level')):
+                    summaries[facility_type.sub_division] = self.get_queryset().filter(created__gte=period_start,
+                                                                                       created__lte=period_end,
+                                                                                       facility_type=facility_type,
+                                                                                       county=self.usercounty).count()
                 else:
-                    summaries[facility_type.sub_division] =0
-        
-        facility_type_summary =  [
-            {"name": key, "count": value } for key, value in summaries.items()
+                    summaries[facility_type.sub_division] = 0
+
+        facility_type_summary = [
+            {"name": key, "count": value} for key, value in summaries.items()
         ]
 
         facility_type_summary_sorted = sorted(
