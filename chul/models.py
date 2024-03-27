@@ -1,5 +1,7 @@
 import json
 import datetime
+
+import requests
 import reversion
 import logging
 
