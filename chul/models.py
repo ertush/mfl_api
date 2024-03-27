@@ -345,7 +345,7 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
             }
         )
 
-        if len(r.json()["organisationUnits"]) is 1 and "id" in r.json()["organisationUnits"][0]:
+        if len(r.json()["organisationUnits"]) is 1:
             if r.json()["organisationUnits"][0]["id"]:
                 return r.json()["organisationUnits"][0]["id"]
         else:
