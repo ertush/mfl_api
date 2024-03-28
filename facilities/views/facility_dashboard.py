@@ -43,11 +43,6 @@ class DashBoard(QuerysetFilterMixin, APIView):
         for county in allcounties:
             userlevelfilters = {'created__gte': period_start, 'created__lte': period_end,
                                 'county__id': county.id}
-            if userlevel == 'county':
-                userlevelfilters['county__id'] = self.request.user.county.id
-            elif userlevel == 'sub_county':
-                userlevelfilters['sub_county__id'] = self.request.user.sub_county.id
-
             queryset = Facility.objects.filter(**userlevelfilters);
             # get filters based on clients parameters
             parameterfilters = {}
@@ -188,25 +183,11 @@ class DashBoard(QuerysetFilterMixin, APIView):
                                                                                    facility_type=facility_type,
                                                                                    county=self.request.query_params.get(
                                                                                        'county')).count()
-            elif self.request.user.is_national:
+            else:
                 summaries[facility_type.sub_division] = summaries.get(
                     facility_type.sub_division) + self.get_queryset().filter(created__gte=period_start,
                                                                              created__lte=period_end,
                                                                              facility_type=facility_type).count()
-            else:
-                if (self.mfluser.user_groups.get('is_sub_county_level')):
-                    summaries[facility_type.sub_division] = self.get_queryset().filter(created__gte=period_start,
-                                                                                       created__lte=period_end,
-                                                                                       facility_type=facility_type,
-                                                                                       sub_county=self.usersubcounty).count()
-                elif (self.mfluser.user_groups.get('is_county_level')):
-                    summaries[facility_type.sub_division] = self.get_queryset().filter(created__gte=period_start,
-                                                                                       created__lte=period_end,
-                                                                                       facility_type=facility_type,
-                                                                                       county=self.usercounty).count()
-                else:
-                    summaries[facility_type.sub_division] = 0
-
         facility_type_summary = [
             {"name": key, "count": value} for key, value in summaries.items()
         ]
@@ -386,29 +367,12 @@ class DashBoard(QuerysetFilterMixin, APIView):
             return CommunityHealthUnit.objects.filter(updated__gte=period_start, updated__lte=period_end,
                                                       facility__ward__sub_county__county=self.request.query_params.get(
                                                           'county'), facility__in=self.get_queryset()).count()
-        elif self.request.user.is_national:
-            return self.get_queryset().filter(updated__gte=period_start, updated__lte=period_end).count()
         else:
-            if (self.mfluser.user_groups.get('is_sub_county_level')):
-                return CommunityHealthUnit.objects.filter(updated__gte=period_start, updated__lte=period_end,
-                                                          facility__ward__sub_county=self.usersubcounty,
-                                                          facility__in=self.get_queryset()).count()
-            elif (self.mfluser.user_groups.get('is_county_level')):
-                return CommunityHealthUnit.objects.filter(updated__gte=period_start, updated__lte=period_end,
-                                                          facility__ward__sub_county__county=self.usercounty,
-                                                          facility__in=self.get_queryset()).count()
-            else:
-                return 0
+            return self.get_queryset().filter(updated__gte=period_start, updated__lte=period_end).count()
+
 
     def facilities_pending_approval_count(self, cty, period_start, period_end):
         userlevel = self._get_user_top_level().get('userlevel', '')
-        userlevelfilters = {}
-        if userlevel == 'county':
-            userlevelfilters['county__id'] = self.request.user.county.id
-        elif userlevel == 'sub_county':
-            userlevelfilters['sub_county__id'] = self.request.user.sub_county.id
-
-        myqueryset = self.get_queryset().filter(**userlevelfilters)
 
         parameterfilters = {}
         if self.request.query_params.get('ward'):
@@ -418,7 +382,7 @@ class DashBoard(QuerysetFilterMixin, APIView):
         elif self.request.query_params.get('county'):
             parameterfilters['county'] = self.request.query_params.get('county')
 
-        queryset = myqueryset.filter(**parameterfilters)
+        queryset = self.get_queryset().filter(**parameterfilters)
         updated_pending_approval = queryset.filter(has_edits=True)
         newly_created = queryset.filter(approved=False, rejected=False)
 
@@ -525,12 +489,7 @@ class DashBoard(QuerysetFilterMixin, APIView):
         return queryset.count()
 
     def get_closed_facilities_count(self, cty, period_start, period_end):
-        userlevel = self._get_user_top_level().get('userlevel', '')
         userlevelfilters = {'closed': True, 'closed_date__gte': period_start, 'closed_date__lte': period_end}
-        if userlevel == 'county':
-            userlevelfilters['county__id'] = self.request.user.county.id
-        elif userlevel == 'sub_county':
-            userlevelfilters['sub_county__id'] = self.request.user.sub_county.id
 
         myqueryset = self.get_queryset().filter(**userlevelfilters)
 
@@ -549,18 +508,12 @@ class DashBoard(QuerysetFilterMixin, APIView):
         """
         Function to get facilities by keph level
         """
-        userlevel = self._get_user_top_level().get('userlevel', '')
         keph_level = KephLevel.objects.values("id", "name")
         keph_array = []
         for keph in keph_level:
             userlevelfilters = {'created__gte': period_start, 'created__lte': period_end,
                                 'keph_level_id': keph.get("id")}
-            if userlevel == 'county':
-                userlevelfilters['county__id'] = self.request.user.county.id
-            elif userlevel == 'sub_county':
-                userlevelfilters['sub_county__id'] = self.request.user.sub_county.id
-
-            queryset = Facility.objects.filter(**userlevelfilters);
+            queryset = self.get_queryset().filter(**userlevelfilters);
             # get filters based on clients parameters
             parameterfilters = {}
             if self.request.query_params.get('ward'):
