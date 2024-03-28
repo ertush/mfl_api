@@ -154,40 +154,32 @@ class DashBoard(QuerysetFilterMixin, APIView):
         facility_type_parents_names = []
         for f_type in FacilityType.objects.all():
             if f_type.sub_division:
-                facility_type_parents_names.append(f_type.sub_division)
+                if f_type.sub_division not in facility_type_parents_names:
+                    facility_type_parents_names.append(f_type.sub_division)
 
-        facility_types = FacilityType.objects.filter(
-            sub_division__in=facility_type_parents_names)
-
+        all_categories={}
+        for parent in facility_type_parents_names:
+            if parent not in all_categories:
+                all_categories[parent]=0
+        myqueryset=self.get_queryset()
         facility_type_summary = []
         summaries = {}
-        for parent in facility_type_parents_names:
-            summaries[parent] = 0
+        if self.request.query_params.get('ward'):
+            myqueryset = self.get_queryset().filter(created__gte=period_start, created__lte=period_end,
+                                                                               ward=self.request.query_params.get(
+                                                                                   'ward')).count()
+        elif self.request.query_params.get('sub_county'):
+            myqueryset = self.get_queryset().filter(created__gte=period_start, created__lte=period_end,
+                                                                               sub_county=self.request.query_params.get(
+                                                                                   'sub_county')).count()
+        elif self.request.query_params.get('county'):
+            myqueryset = self.get_queryset().filter(created__gte=period_start, created__lte=period_end,
+                                                                               county=self.request.query_params.get(
+                                                                                   'county')).count()
 
-        for facility_type in facility_types:
-            if self.request.query_params.get('ward'):
-                summaries[facility_type.sub_division] = self.get_queryset().filter(created__gte=period_start,
-                                                                                   created__lte=period_end,
-                                                                                   facility_type=facility_type,
-                                                                                   ward=self.request.query_params.get(
-                                                                                       'ward')).count()
-            elif self.request.query_params.get('sub_county'):
-                summaries[facility_type.sub_division] = self.get_queryset().filter(created__gte=period_start,
-                                                                                   created__lte=period_end,
-                                                                                   facility_type=facility_type,
-                                                                                   sub_county=self.request.query_params.get(
-                                                                                       'sub_county')).count()
-            elif self.request.query_params.get('county'):
-                summaries[facility_type.sub_division] = self.get_queryset().filter(created__gte=period_start,
-                                                                                   created__lte=period_end,
-                                                                                   facility_type=facility_type,
-                                                                                   county=self.request.query_params.get(
-                                                                                       'county')).count()
-            else:
-                summaries[facility_type.sub_division] = summaries.get(
-                    facility_type.sub_division) + self.get_queryset().filter(created__gte=period_start,
-                                                                             created__lte=period_end,
-                                                                             facility_type=facility_type).count()
+        for category in all_categories:
+            summaries[category] = myqueryset.filter(facility_type__sub_division=category).count()
+
         facility_type_summary = [
             {"name": key, "count": value} for key, value in summaries.items()
         ]
@@ -199,17 +191,11 @@ class DashBoard(QuerysetFilterMixin, APIView):
         return facility_type_summary_sorted
 
     def get_facility_owner_summary(self, cty, period_start, period_end):
-        userlevel = self._get_user_top_level().get('userlevel', '')
         allowners = Owner.objects.all()
         summary_array = []
         for owner in allowners:
             userlevelfilters = {'created__gte': period_start, 'created__lte': period_end,
                                 'owner__id': owner.id}
-            if userlevel == 'county':
-                userlevelfilters['county__id'] = self.request.user.county.id
-            elif userlevel == 'sub_county':
-                userlevelfilters['sub_county__id'] = self.request.user.sub_county.id
-
             queryset = self.get_queryset().filter(**userlevelfilters);
             # get filters based on clients parameters
             parameterfilters = {}
@@ -226,17 +212,11 @@ class DashBoard(QuerysetFilterMixin, APIView):
         return summary_array
 
     def get_facility_status_summary(self, cty, period_start, period_end):
-        userlevel = self._get_user_top_level().get('userlevel', '')
         summary_array = []
         allstatus = FacilityStatus.objects.all()
         for status in allstatus:
             userlevelfilters = {'created__gte': period_start, 'created__lte': period_end,
                                 'operation_status': status.id}
-            if userlevel == 'county':
-                userlevelfilters['county__id'] = self.request.user.county.id
-            elif userlevel == 'sub_county':
-                userlevelfilters['sub_county__id'] = self.request.user.sub_county.id
-
             queryset = self.get_queryset().filter(**userlevelfilters);
             # get filters based on clients parameters
             parameterfilters = {}
@@ -247,24 +227,17 @@ class DashBoard(QuerysetFilterMixin, APIView):
             elif self.request.query_params.get('county'):
                 parameterfilters['county'] = self.request.query_params.get('county')
 
-            queryset = queryset.filter(**parameterfilters)
-            summary_array.append({status.name: queryset.count()})
+            summary_array.append({status.name: queryset.filter(**parameterfilters).count()})
 
         return summary_array
 
     def get_facility_owner_types_summary(self, cty, period_start, period_end):
-        userlevel = self._get_user_top_level().get('userlevel', '')
         summary_array = []
         allownertypes = OwnerType.objects.all()
         for owner in allownertypes:
             userlevelfilters = {'created__gte': period_start, 'created__lte': period_end,
                                 'owner__owner_type__id': owner.id}
-            if userlevel == 'county':
-                userlevelfilters['county__id'] = self.request.user.county.id
-            elif userlevel == 'sub_county':
-                userlevelfilters['sub_county__id'] = self.request.user.sub_county.id
-
-            queryset = Facility.objects.filter(**userlevelfilters)
+            queryset = self.get_queryset().filter(**userlevelfilters)
             # get filters based on clients parameters
             parameterfilters = {}
             if self.request.query_params.get('ward'):
@@ -372,8 +345,6 @@ class DashBoard(QuerysetFilterMixin, APIView):
 
 
     def facilities_pending_approval_count(self, cty, period_start, period_end):
-        userlevel = self._get_user_top_level().get('userlevel', '')
-
         parameterfilters = {}
         if self.request.query_params.get('ward'):
             parameterfilters['ward'] = self.request.query_params.get('ward')
@@ -475,9 +446,22 @@ class DashBoard(QuerysetFilterMixin, APIView):
             else:
                 return 0
 
-    def get_rejected_facilities_count(self, cty, period_start, period_end):
+    def get_rejected_validation_facilities_count(self, cty, period_start, period_end):
         parameterfilters = {}
         parameterfilters['rejected'] = True
+        # parameterfilters['approved_national_level'] = True
+        if self.request.query_params.get('ward'):
+            parameterfilters['ward'] = self.request.query_params.get('ward')
+        elif self.request.query_params.get('sub_county'):
+            parameterfilters['sub_county'] = self.request.query_params.get('sub_county')
+        elif self.request.query_params.get('county'):
+            parameterfilters['county'] = self.request.query_params.get('county')
+        queryset = self.get_queryset().filter(**parameterfilters)
+        return queryset.count()
+
+    def get_rejected_at_national_facilities_count(self, cty, period_start, period_end):
+        parameterfilters = {}
+        # parameterfilters['rejected'] = True
         parameterfilters['approved_national_level'] = False
         if self.request.query_params.get('ward'):
             parameterfilters['ward'] = self.request.query_params.get('ward')
@@ -621,7 +605,8 @@ class DashBoard(QuerysetFilterMixin, APIView):
             "recently_created_chus": self.get_recently_created_chus(county_, period_start, period_end),
             "recently_updated_chus": self.get_recently_updated_chus(county_, period_start, period_end),
             "pending_updates": self.facilities_pending_approval_count(county_, period_start, period_end),
-            "rejected_facilities_count": self.get_rejected_facilities_count(county_, period_start, period_end),
+            "validation_rejected_facilities_count": self.get_rejected_validation_facilities_count(county_, period_start, period_end),
+            "national_rejected_facilities_count": self.get_rejected_at_national_facilities_count(county_, period_start, period_end),
             "closed_facilities_count": self.get_closed_facilities_count(county_, period_start, period_end),
             "rejected_chus": self.get_rejected_chus(county_, period_start, period_end),
             "chus_pending_approval": self.get_chus_pending_approval(county_, period_start, period_end),
