@@ -250,7 +250,9 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
         # and have not been pushed to DHIS yet
         if self.is_approved and not self.code:
             self.code = self.generate_next_code_sequence()
+
             if settings.PUSH_TO_DHIS:
+
                 self.push_chu_to_dhis2()
             super(CommunityHealthUnit, self).save(*args, **kwargs)
 
@@ -345,7 +347,7 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
             },
             params={
                 "query": self.facility.code,
-                "fields": "[id,name]",
+                "fields": "id,name",
                 "filter": "level:in:[5]",
                 "paging": "false"
             }
@@ -479,6 +481,7 @@ class ChuUpdateBuffer(AbstractBase):
             raise ValidationError({"__all__": ["Nothing was edited"]})
 
     def update_basic_details(self):
+
         if self.basic:
             basic_details = json.loads(self.basic)
             if 'status' in basic_details:
@@ -495,6 +498,7 @@ class ChuUpdateBuffer(AbstractBase):
             if 'basic' in basic_details:
                 setattr(self.health_unit, 'facility_id', basic_details.get('basic').get('facility'))
             self.health_unit.save()
+
 
     def update_workers(self):
         chews = json.loads(self.workers)
