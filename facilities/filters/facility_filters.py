@@ -407,17 +407,19 @@ class FacilityFilter(CommonFieldsFilterset):
         This is in order to allow the facilities to be seen
         so that they can be approved at the national level and assigned an MFL code.
         """
-        return qs.filter(
+        incomplete_facilities = qs.filter(
              Q (
-               Q(facility_services=not None) |   
-               Q(facility_infrastructure=not None) |
-               Q(facility_specialists=not None) |
-               Q(facility_contacts=not None) |
-               Q(facility_coordinates_through=not None) |
-               Q(facility_specialists=not None) 
-            ), 
+               Q(facility_services=None) |   
+               Q(facility_infrastructure=None) |
+               Q(facility_specialists=None) |
+               Q(facility_contacts=None) |
+               Q(facility_coordinates_through=None) |
+               Q(facility_specialists=None) 
+                )
+             )
+        return qs.filter(
             approved_national_level=None, code=None, approved=True, has_edits=False, closed=False
-        )
+        ).exclude(id__in=incomplete_facilities)
 
     def filter_incomplete_facilities(self, qs, name, value):
         """
