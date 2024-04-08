@@ -455,22 +455,31 @@ class FacilityFilter(CommonFieldsFilterset):
 
     def facilities_pending_approval(self, qs, name, value):
         fac_pend_appr = qs.filter(code=not None)
+        fac_incomplete = qs.filter(
+            Q(
+                Q(facility_services=None) |  
+                Q(facility_infrastructure=None) |
+                Q(facility_specialists=None) | 
+                Q(facility_contacts=None) |
+                Q(facility_coordinates_through=None) | 
+                Q(facility_specialists=None)
+            )
+        )
         fac_pend_appr_facility_ids = [facility.id for facility in fac_pend_appr]
+        fac_incomplete_facility_ids = [facility.id for facility in fac_incomplete]
+
         if value in TRUTH_NESS:
-            return qs.filter(
+            facility_without_code = qs.filter(
                 Q (
                     Q(rejected=False),
                     Q(has_edits=False),
-                    Q(approved=None),
-                    Q(facility_services=None).negate() |  
-                    Q(facility_infrastructure=None).negate() |
-                    Q(facility_specialists=None).negate() | 
-                    Q(facility_contacts=None).negate() |
-                    # Q(facility_coordinates_through=None).negate() | 
-                    Q(facility_specialists=None).negate()   
+                    Q(approved=None)
                 )
                 
             ).exclude(id__in=fac_pend_appr_facility_ids)
+
+            return facility_without_code.exclude(id__in=fac_incomplete_facility_ids)
+            
         else:
             return qs.filter(
                 Q(rejected=True) |
