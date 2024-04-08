@@ -458,12 +458,12 @@ class FacilityFilter(CommonFieldsFilterset):
         facilities_exclude = qs.filter(
             Q(  Q(code=not None) &
                 Q(
-                    Q(facility_services=None) |  
-                    Q(facility_infrastructure=None) |
-                    Q(facility_specialists=None) | 
-                    Q(facility_contacts=None) |
-                    Q(facility_coordinates_through=None) | 
-                    Q(facility_specialists=None)
+                    Q(facility_services=not None) |  
+                    Q(facility_infrastructure=not None) |
+                    Q(facility_specialists=not None) | 
+                    Q(facility_contacts=not None) |
+                    Q(facility_coordinates_through=not None) | 
+                    Q(facility_specialists=not None)
                 )
             )
         )
