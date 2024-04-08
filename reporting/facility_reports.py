@@ -282,6 +282,7 @@ class FilterReportMixin(object):
             }, filters=filters)
 
         # New report format for facility human resource category
+
         if report_type == 'facility_human_resource_category_report_all_hierachies':
             county_id = self.request.query_params.get('county', None)
             constituency_id = self.request.query_params.get(
@@ -301,6 +302,7 @@ class FilterReportMixin(object):
                 'ward__name': 'ward_name',
                 'ward': 'ward'
             }, filters=filters)
+
 
         # New report Format facility owner 
         if report_type == 'facility_owner_report_all_hierachies':
@@ -1279,6 +1281,7 @@ class FilterReportMixin(object):
 
         # New Facility report infrastructure
 
+
     def _get_facility_infrustructure(self, vals={}, filters={}):
         fields = vals.keys()
         usertoplevel = self._get_user_top_level()
@@ -1315,6 +1318,7 @@ class FilterReportMixin(object):
 
 
         result_summary = {}
+        result_summary_category = {}
         allcategories= InfrastructureCategory.objects.all()
         allinfrastructure = Infrastructure.objects.all()
         # get categories aggregation
@@ -1326,18 +1330,18 @@ class FilterReportMixin(object):
                 group_byvalue = item['facility__ward__sub_county__name']
             if groupby == 'ward':
                 group_byvalue = item['facility__ward__name']
-            if group_byvalue not in result_summary:
-                result_summary[group_byvalue] = {}
-                result_summary[group_byvalue]['facility__date_established']=item['facility__date_established']
+            if group_byvalue not in result_summary_category:
+                result_summary_category[group_byvalue] = {}
+                result_summary_category[group_byvalue]['facility__date_established']=item['facility__date_established']
                 for category in allcategories:
-                    result_summary[group_byvalue][str(category.name).strip().replace(" ",'_')]= item[str(category.name)]
+                    result_summary_category[group_byvalue][str(category.name).strip().replace(" ",'_')]= item[str(category.name)]
 
-                result_summary[group_byvalue]['ward__sub_county__county__name'] = item['facility__ward__sub_county__county__name']
-                result_summary[group_byvalue]['ward__sub_county__name'] = item['facility__ward__sub_county__name']
-                result_summary[group_byvalue]['ward__name'] = item['facility__ward__name']
+                result_summary_category[group_byvalue]['ward__sub_county__county__name'] = item['facility__ward__sub_county__county__name']
+                result_summary_category[group_byvalue]['ward__sub_county__name'] = item['facility__ward__sub_county__name']
+                result_summary_category[group_byvalue]['ward__name'] = item['facility__ward__name']
             else:
                 for category in allcategories:
-                    result_summary[group_byvalue][str(category.name).strip().replace(" ",'_')] += item[str(category.name)]
+                    result_summary_category[group_byvalue][str(category.name).strip().replace(" ",'_')] += item[str(category.name)]
 
         # get specific infrastructure aggregation
         for item in items:
@@ -1362,7 +1366,7 @@ class FilterReportMixin(object):
                     else:
                         result_summary[group_byvalue][str(infra.name).strip().replace(" ", '_')] += item[str(infra.name)]
 
-        return {'groupedby': groupby, 'results': result_summary}, []
+        return {'groupedby': groupby, 'results_bycategory':result_summary_category, 'results': result_summary}, []
 
 
     def _get_facility_humanresource(self, vals={}, filters={}):
@@ -1401,6 +1405,7 @@ class FilterReportMixin(object):
         items = items.annotate(**annotation2).order_by()
 
         result_summary = {}
+        result_summary_category = {}
         allcategories = SpecialityCategory.objects.all()
         allspecialities = Speciality.objects.all()
 
@@ -1412,17 +1417,17 @@ class FilterReportMixin(object):
                 group_byvalue = item['facility__ward__sub_county__name']
             if groupby == 'ward':
                 group_byvalue = item['facility__ward__name']
-            if group_byvalue not in result_summary:
-                result_summary[group_byvalue] = {}
-                result_summary[group_byvalue]['facility__date_established'] = item['facility__date_established']
+            if group_byvalue not in result_summary_category:
+                result_summary_category[group_byvalue] = {}
+                result_summary_category[group_byvalue]['facility__date_established'] = item['facility__date_established']
                 for category in allcategories:
-                    result_summary[group_byvalue][str(category.name).strip().replace(" ",'_')] = item[str(category.name)]
-                result_summary[group_byvalue]['ward__sub_county__county__name'] = item['facility__ward__sub_county__county__name']
-                result_summary[group_byvalue]['ward__sub_county__name'] = item['facility__ward__sub_county__name']
-                result_summary[group_byvalue]['ward__name'] = item['facility__ward__name']
+                    result_summary_category[group_byvalue][str(category.name).strip().replace(" ",'_')] = item[str(category.name)]
+                result_summary_category[group_byvalue]['ward__sub_county__county__name'] = item['facility__ward__sub_county__county__name']
+                result_summary_category[group_byvalue]['ward__sub_county__name'] = item['facility__ward__sub_county__name']
+                result_summary_category[group_byvalue]['ward__name'] = item['facility__ward__name']
             else:
                 for category in allcategories:
-                    result_summary[group_byvalue][str(category.name).strip().replace(" ",'_')] += item[str(category.name)]
+                    result_summary_category[group_byvalue][str(category.name).strip().replace(" ",'_')] += item[str(category.name)]
 
         # get specific allspecialities aggregation
         for item in items:
@@ -1448,8 +1453,7 @@ class FilterReportMixin(object):
                             result_summary[group_byvalue][str(speciality.name).strip().replace(" ", '_')] += item[
                                 str(speciality.name)]
 
-        return {'groupedby': groupby, 'results': result_summary}, []
-
+        return {'groupedby': groupby, 'results_bycategory': result_summary_category,'results': result_summary}, []
     def _get_facility_count(self, category=True, f_type=False, keph=False):
         county = self.request.query_params.get('county', None)
         sub_county = self.request.query_params.get('sub_county', None)
