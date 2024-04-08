@@ -408,7 +408,15 @@ class FacilityFilter(CommonFieldsFilterset):
         so that they can be approved at the national level and assigned an MFL code.
         """
         return qs.filter(
-            approved_national_level=None, code=None, approved=True, has_edits=False, closed=False, is_complete=True
+             Q (
+               Q(facility_services=not None) |   
+               Q(facility_infrastructure=not None) |
+               Q(facility_specialists=not None) |
+               Q(facility_contacts=not None) |
+               Q(facility_coordinates_through=not None) |
+               Q(facility_specialists=not None) 
+            ), 
+            approved_national_level=None, code=None, approved=True, has_edits=False, closed=False
         )
 
     def filter_incomplete_facilities(self, qs, name, value):
@@ -422,7 +430,8 @@ class FacilityFilter(CommonFieldsFilterset):
                Q(facility_infrastructure=None) & Q(code=None) |
                Q(facility_specialists=None) & Q(code=None) |
                Q(facility_contacts=None) & Q(code=None) |
-               Q(facility_coordinates_through=None) & Q(code=None)
+               Q(facility_coordinates_through=None) & Q(code=None) |
+               Q(facility_specialists=None) & Q(code=None)
             
 
             # Q(facility_services=None) & Q(code=None)
@@ -449,14 +458,18 @@ class FacilityFilter(CommonFieldsFilterset):
         fac_pend_appr_facility_ids = [facility.id for facility in fac_pend_appr]
         if value in TRUTH_NESS:
             return qs.filter(
-                Q(
+                Q (
                     Q(rejected=False),
-                    Q(has_edits=True) |
-                    Q(approved=None,rejected=False)
-                ) |
-                Q(
-                    Q(rejected=False),
-                    Q(has_edits=True) | Q(approved=None,rejected=False))
+                    Q(has_edits=False),
+                    Q(approved=None),
+                    Q(facility_services=not None) |  
+                    Q(facility_infrastructure=not None) |
+                    Q(facility_specialists=not None) | 
+                    Q(facility_contacts=not None) |
+                    Q(facility_coordinates_through=not None) | 
+                    Q(facility_specialists=not None) 
+                ) 
+                
             ).exclude(id__in=fac_pend_appr_facility_ids)
         else:
             return qs.filter(
