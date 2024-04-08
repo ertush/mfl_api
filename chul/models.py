@@ -338,7 +338,7 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
 
     def get_facility_dhis2_parent_id(self):
         from facilities.models.facility_models import DhisAuth
-        LOGGER.info('[ERROR] Facility Code : {}'.format(self.facility.code))
+        import requests
         r = requests.get(
             settings.DHIS_ENDPOINT + "api/organisationUnits.json",
             auth=(settings.DHIS_USERNAME, settings.DHIS_PASSWORD),
@@ -481,24 +481,23 @@ class ChuUpdateBuffer(AbstractBase):
             raise ValidationError({"__all__": ["Nothing was edited"]})
 
     def update_basic_details(self):
-
-        if self.basic:
-            basic_details = json.loads(self.basic)
-            if 'status' in basic_details:
-                basic_details['status_id'] = basic_details.get(
-                    'status').get('status_id')
-                basic_details.pop('status')
-            if 'facility' in basic_details:
-                basic_details['facility_id'] = basic_details.get(
-                    'facility').get('facility_id')
-                basic_details.pop('facility')
-
-            for key, value in basic_details.iteritems():
-                setattr(self.health_unit, key, value)
-            if 'basic' in basic_details:
-                setattr(self.health_unit, 'facility_id', basic_details.get('basic').get('facility'))
-            self.health_unit.save()
-
+        # Because the basic property of ChuUpdateBuffer receives {"basic": {"facilities": <facility_id>}"}
+        basic_details = json.loads(self.basic)
+        if 'status' in basic_details:
+            basic_details['status_id'] = basic_details.get(
+                'status').get('status_id')
+            basic_details.pop('status')
+        if 'facility' in basic_details:
+            basic_details['facility_id'] = basic_details.get(
+                'facility').get('facility_id')
+            basic_details.pop('facility')
+        
+        
+        for key, value in basic_details.iteritems():
+            setattr(self.health_unit, key, value)
+        if 'basic' in basic_details:
+            setattr(self.health_unit, 'facility_id', basic_details.get('basic').get('facility'))
+        self.health_unit.save()
 
     def update_workers(self):
         chews = json.loads(self.workers)
@@ -569,7 +568,7 @@ class ChuUpdateBuffer(AbstractBase):
     def updates(self):
         updates = {}
         if self.basic:
-            updates['basic'] = json.loads(self.basic)
+            updates['basic'] = json.loads(self.basic)['basic']
         if self.contacts:
             updates['contacts'] = json.loads(self.contacts)
         if self.workers:
