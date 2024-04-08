@@ -466,8 +466,8 @@ class FacilityFilter(CommonFieldsFilterset):
                     Q(facility_infrastructure=None).negate() |
                     Q(facility_specialists=None).negate() | 
                     Q(facility_contacts=None).negate() |
-                    Q(facility_coordinates_through=None).negate() | 
-                    Q(facility_specialists=None).negate() 
+                    # Q(facility_coordinates_through=None).negate() | 
+                    Q(facility_specialists=None).negate()   
                 )
                 
             ).exclude(id__in=fac_pend_appr_facility_ids)
