@@ -462,13 +462,13 @@ class FacilityFilter(CommonFieldsFilterset):
                     Q(rejected=False),
                     Q(has_edits=False),
                     Q(approved=None),
-                    Q(facility_services=not None) |  
-                    Q(facility_infrastructure=not None) |
-                    Q(facility_specialists=not None) | 
-                    Q(facility_contacts=not None) |
-                    Q(facility_coordinates_through=not None) | 
-                    Q(facility_specialists=not None) 
-                ) 
+                    Q(facility_services=None).negate() |  
+                    Q(facility_infrastructure=None).negate() |
+                    Q(facility_specialists=None).negate() | 
+                    Q(facility_contacts=None).negate() |
+                    Q(facility_coordinates_through=None).negate() | 
+                    Q(facility_specialists=None).negate() 
+                )
                 
             ).exclude(id__in=fac_pend_appr_facility_ids)
         else:
