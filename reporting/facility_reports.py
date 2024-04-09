@@ -133,7 +133,7 @@ class FilterReportMixin(object):
             return self._get_facility_count(keph=True)
 
         # New facility report Facility
-        if report_type == 'facility_report_all_hierachies':
+        if report_type == 'facility_report_all_hierachies': # Server Error: Value error
             county_id = self.request.query_params.get('county', None)
             constituency_id = self.request.query_params.get(
                 'constituency', None
@@ -154,7 +154,7 @@ class FilterReportMixin(object):
             }, filters=filters)
 
         # New facility multi report
-        if report_type == 'all_facility_details':
+        if report_type == 'all_facility_details': # Responding but Slow (has a race condition)
 
             county_id = self.request.query_params.get('county', None)
             constituency_id = self.request.query_params.get(
@@ -176,7 +176,7 @@ class FilterReportMixin(object):
             }, filters=filters)
 
         # New report format keph levels
-        if report_type == 'facility_keph_level_report_all_hierachies':
+        if report_type == 'facility_keph_level_report_all_hierachies': # Filters: report_groupby = (county | sub_county | ward | year | keph | facility_type | owner)   
             county_id = self.request.query_params.get('county', None)
             constituency_id = self.request.query_params.get(
                 'constituency', None
@@ -198,7 +198,7 @@ class FilterReportMixin(object):
             }, filters=filters)
 
         # New report Format regulatory body
-        if report_type == 'facility_regulatory_body_report_all_hierachies':
+        if report_type == 'facility_regulatory_body_report_all_hierachies': # Filters: report_groupby = (county | sub_county | ward | year | keph | facility_type | owner)   
             county_id = self.request.query_params.get('county', None)
             constituency_id = self.request.query_params.get(
                 'constituency', None
@@ -219,7 +219,7 @@ class FilterReportMixin(object):
             }, filters=filters)
 
         # New report Format Facility Type 
-        if report_type == 'facility_type_report_all_hierachies':
+        if report_type == 'facility_type_report_all_hierachies': # Filters: report_groupby = (county | sub_county | ward | year | keph | facility_type | owner)   
             county_id = self.request.query_params.get('county', None)
             constituency_id = self.request.query_params.get(
                 'constituency', None
@@ -240,7 +240,7 @@ class FilterReportMixin(object):
             }, filters=filters)
 
         # New report Format Facility services and service category
-        if report_type == 'facility_services_report_all_hierachies':
+        if report_type == 'facility_services_report_all_hierachies': # Filters: report_groupby = (county | sub_county | ward | year | keph | facility_type | owner)   
             county_id = self.request.query_params.get('county', None)
             constituency_id = self.request.query_params.get(
                 'constituency', None
@@ -261,7 +261,7 @@ class FilterReportMixin(object):
             }, filters=filters)
 
         # New report Format Facility infrastructure and infrastructure category
-        if report_type == 'facility_infrastructure_report_all_hierachies':
+        if report_type == 'facility_infrastructure_report_all_hierachies': # Filters: report_groupby = (county | sub_county | ward | year | keph | facility_type | owner)   
             county_id = self.request.query_params.get('county', None)
             constituency_id = self.request.query_params.get(
                 'constituency', None
@@ -283,7 +283,7 @@ class FilterReportMixin(object):
 
         # New report format for facility human resource category
 
-        if report_type == 'facility_human_resource_category_report_all_hierachies':
+        if report_type == 'facility_human_resource_category_report_all_hierachies': # Filters: report_groupby = (county | sub_county | ward | year | keph | facility_type | owner)   
             county_id = self.request.query_params.get('county', None)
             constituency_id = self.request.query_params.get(
                 'constituency', None
@@ -305,7 +305,7 @@ class FilterReportMixin(object):
 
 
         # New report Format facility owner 
-        if report_type == 'facility_owner_report_all_hierachies':
+        if report_type == 'facility_owner_report_all_hierachies': # Filters: report_groupby = (county | sub_county | ward | year | keph | facility_type | owner)   
             county_id = self.request.query_params.get('county', None)
             constituency_id = self.request.query_params.get(
                 'constituency', None
@@ -343,11 +343,11 @@ class FilterReportMixin(object):
         if report_type == 'facility_count_by_facility_type_details':
             return self._get_facility_count_by_facility_type_details()
 
-        if report_type == 'gis':
+        if report_type == 'gis': # Filters: report_groupby = (county | sub_county | ward | year | keph | facility_type | owner)   
             return self._get_gis_report()
 
         # New Report format (beds and cots filter)
-        if report_type == 'beds_and_cots_by_all_hierachies':
+        if report_type == 'beds_and_cots_by_all_hierachies': # Filters: report_groupby = (county | sub_county | ward | year | keph | facility_type | owner)   
             county_id = self.request.query_params.get('county', None)
             constituency_id = self.request.query_params.get(
                 'constituency', None
@@ -373,7 +373,7 @@ class FilterReportMixin(object):
                 'ward__sub_county__county': 'county'
             })
 
-        if report_type == 'beds_and_cots_by_constituency':
+        if report_type == ' ':
             county_id = self.request.query_params.get('county', None)
             filters = (
                 {} if county_id is None
@@ -429,7 +429,24 @@ class FilterReportMixin(object):
 
         report_config = REPORTS.get(report_type, None)
         if report_config is None:
-            raise NotFound(detail='Report not found.')
+            raise NotFound(detail={
+                "message": 'Report not found',
+                "report_types":  {
+                    "facility": [
+                        "facility_keph_level_report_all_hierachies",
+                        "facility_regulatory_body_report_all_hierachies",
+                        "facility_type_report_all_hierachies",
+                        "facility_services_report_all_hierachies",
+                        "facility_infrastructure_report_all_hierachies",
+                        "facility_human_resource_category_report_all_hierachies",
+                        "facility_owner_report_all_hierachies",
+                        "beds_and_cots_by_all_hierachies",
+                        "gis",
+                    ],
+                    
+                }
+                
+            })
 
         group_by = report_config.get('group_by')
         app_label, model_name = report_config.get(
