@@ -133,7 +133,7 @@ class FilterReportMixin(object):
             return self._get_facility_count(keph=True)
 
         # New facility report Facility
-        if report_type == 'facility_report_all_hierachies': # Server Error: Value error
+        if report_type == 'facility_report_all_hierachies':
             county_id = self.request.query_params.get('county', None)
             constituency_id = self.request.query_params.get(
                 'constituency', None
@@ -154,7 +154,7 @@ class FilterReportMixin(object):
             }, filters=filters)
 
         # New facility multi report
-        if report_type == 'all_facility_details': # Responding but Slow (has a race condition)
+        if report_type == 'all_facility_details':
 
             county_id = self.request.query_params.get('county', None)
             constituency_id = self.request.query_params.get(
@@ -176,7 +176,7 @@ class FilterReportMixin(object):
             }, filters=filters)
 
         # New report format keph levels
-        if report_type == 'facility_keph_level_report_all_hierachies': # Filters: report_groupby = (county | sub_county | ward | year | keph | facility_type | owner)   
+        if report_type == 'facility_keph_level_report_all_hierachies':
             county_id = self.request.query_params.get('county', None)
             constituency_id = self.request.query_params.get(
                 'constituency', None
@@ -198,7 +198,7 @@ class FilterReportMixin(object):
             }, filters=filters)
 
         # New report Format regulatory body
-        if report_type == 'facility_regulatory_body_report_all_hierachies': # Filters: report_groupby = (county | sub_county | ward | year | keph | facility_type | owner)   
+        if report_type == 'facility_regulatory_body_report_all_hierachies':
             county_id = self.request.query_params.get('county', None)
             constituency_id = self.request.query_params.get(
                 'constituency', None
@@ -218,8 +218,8 @@ class FilterReportMixin(object):
                 'ward': 'ward'
             }, filters=filters)
 
-        # New report Format Facility Type 
-        if report_type == 'facility_type_report_all_hierachies': # Filters: report_groupby = (county | sub_county | ward | year | keph | facility_type | owner)   
+        # New report Format Facility Type
+        if report_type == 'facility_type_report_all_hierachies':
             county_id = self.request.query_params.get('county', None)
             constituency_id = self.request.query_params.get(
                 'constituency', None
@@ -240,7 +240,7 @@ class FilterReportMixin(object):
             }, filters=filters)
 
         # New report Format Facility services and service category
-        if report_type == 'facility_services_report_all_hierachies': # Filters: report_groupby = (county | sub_county | ward | year | keph | facility_type | owner)   
+        if report_type == 'facility_services_report_all_hierachies':
             county_id = self.request.query_params.get('county', None)
             constituency_id = self.request.query_params.get(
                 'constituency', None
@@ -261,7 +261,7 @@ class FilterReportMixin(object):
             }, filters=filters)
 
         # New report Format Facility infrastructure and infrastructure category
-        if report_type == 'facility_infrastructure_report_all_hierachies': # Filters: report_groupby = (county | sub_county | ward | year | keph | facility_type | owner)   
+        if report_type == 'facility_infrastructure_report_all_hierachies':
             county_id = self.request.query_params.get('county', None)
             constituency_id = self.request.query_params.get(
                 'constituency', None
@@ -283,7 +283,7 @@ class FilterReportMixin(object):
 
         # New report format for facility human resource category
 
-        if report_type == 'facility_human_resource_category_report_all_hierachies': # Filters: report_groupby = (county | sub_county | ward | year | keph | facility_type | owner)   
+        if report_type == 'facility_human_resource_category_report_all_hierachies':
             county_id = self.request.query_params.get('county', None)
             constituency_id = self.request.query_params.get(
                 'constituency', None
@@ -304,8 +304,8 @@ class FilterReportMixin(object):
             }, filters=filters)
 
 
-        # New report Format facility owner 
-        if report_type == 'facility_owner_report_all_hierachies': # Filters: report_groupby = (county | sub_county | ward | year | keph | facility_type | owner)   
+        # New report Format facility owner
+        if report_type == 'facility_owner_report_all_hierachies':
             county_id = self.request.query_params.get('county', None)
             constituency_id = self.request.query_params.get(
                 'constituency', None
@@ -343,11 +343,11 @@ class FilterReportMixin(object):
         if report_type == 'facility_count_by_facility_type_details':
             return self._get_facility_count_by_facility_type_details()
 
-        if report_type == 'gis': # Filters: report_groupby = (county | sub_county | ward | year | keph | facility_type | owner)   
+        if report_type == 'gis':
             return self._get_gis_report()
 
         # New Report format (beds and cots filter)
-        if report_type == 'beds_and_cots_by_all_hierachies': # Filters: report_groupby = (county | sub_county | ward | year | keph | facility_type | owner)   
+        if report_type == 'beds_and_cots_by_all_hierachies':
             county_id = self.request.query_params.get('county', None)
             constituency_id = self.request.query_params.get(
                 'constituency', None
@@ -373,7 +373,7 @@ class FilterReportMixin(object):
                 'ward__sub_county__county': 'county'
             })
 
-        if report_type == ' ':
+        if report_type == 'beds_and_cots_by_constituency':
             county_id = self.request.query_params.get('county', None)
             filters = (
                 {} if county_id is None
@@ -429,24 +429,7 @@ class FilterReportMixin(object):
 
         report_config = REPORTS.get(report_type, None)
         if report_config is None:
-            raise NotFound(detail={
-                "message": 'Report not found',
-                "report_types":  {
-                    "facility": [
-                        "facility_keph_level_report_all_hierachies",
-                        "facility_regulatory_body_report_all_hierachies",
-                        "facility_type_report_all_hierachies",
-                        "facility_services_report_all_hierachies",
-                        "facility_infrastructure_report_all_hierachies",
-                        "facility_human_resource_category_report_all_hierachies",
-                        "facility_owner_report_all_hierachies",
-                        "beds_and_cots_by_all_hierachies",
-                        "gis",
-                    ],
-                    
-                }
-                
-            })
+            raise NotFound(detail='Report not found.')
 
         group_by = report_config.get('group_by')
         app_label, model_name = report_config.get(
@@ -685,8 +668,8 @@ class FilterReportMixin(object):
         #     total_beds += item['beds']
 
         return list(items), {'total_cots': total_cots, 'total_beds': total_beds}
-        # items = Facility.objects.values( 
-        #        'name',                         
+        # items = Facility.objects.values(
+        #        'name',
         #     # 'number_of_beds',
         #     # 'number_of_inpatient_beds',
         #     # 'number_of_cots',
@@ -697,12 +680,12 @@ class FilterReportMixin(object):
         #     # 'number_of_isolation_beds',
         #     # 'number_of_general_theatres',
         #     # 'number_of_maternity_theatres',
-        #     'facility_services', 
-        #     # 'facility_infrastructure', 
-        #     'facility_contacts', 
+        #     'facility_services',
+        #     # 'facility_infrastructure',
+        #     'facility_contacts',
         #     # 'facility_humanresources',
-        #     # 'owner', 
-        #     # 'facility_type', 
+        #     # 'owner',
+        #     # 'facility_type',
         #     # 'keph_level',
         #     # 'regulatory_body')
         # ).distinct()
@@ -758,9 +741,20 @@ class FilterReportMixin(object):
         fields = vals.keys()
         usertoplevel = self._get_user_top_level()
         groupby = usertoplevel['usergroupby']
+        # user custom filters
         yearfilterby = self.request.query_params.get('report_year', '')
+        filter_keph = self.request.query_params.get('filter_keph', '')
+        filter_type = self.request.query_params.get('filter_type', '')
+        filter_owner = self.request.query_params.get('filter_owner', '')
         if yearfilterby is not '':
             filters['date_established__year'] = yearfilterby
+        if filter_keph is not '':
+            filters['keph_level'] = filter_keph
+        if filter_type is not '':
+            filters['facility_type'] = filter_type
+        if filter_owner is not '':
+            filters['owner'] = filter_owner
+
         if usertoplevel['usertoplevel'] == 'county':
             filters['ward__sub_county__county__id'] = self.request.user.countyid
         if usertoplevel['usertoplevel'] == 'sub_county':
@@ -905,9 +899,19 @@ class FilterReportMixin(object):
         usertoplevel = self._get_user_top_level()
         groupby = usertoplevel['usergroupby']
         filters={}
+        # user custom filters
         yearfilterby = self.request.query_params.get('report_year', '')
+        filter_keph = self.request.query_params.get('filter_keph', '')
+        filter_type = self.request.query_params.get('filter_type', '')
+        filter_owner = self.request.query_params.get('filter_owner', '')
         if yearfilterby is not '':
             filters['facility__date_established__year'] = yearfilterby
+        if filter_keph is not '':
+            filters['facility__keph_level'] = filter_keph
+        if filter_type is not '':
+            filters['facility__facility_type'] = filter_type
+        if filter_owner is not '':
+            filters['facility__owner'] = filter_owner
         if usertoplevel['usertoplevel'] == 'county':
             filters['facility__ward__sub_county__county__id'] = self.request.user.countyid
             allcounties = County.objects.filter(id=self.request.user.countyid)
@@ -1019,9 +1023,20 @@ class FilterReportMixin(object):
         fields = vals.keys()
         usertoplevel = self._get_user_top_level()
         groupby = usertoplevel['usergroupby']
+        # user custom filters
         yearfilterby = self.request.query_params.get('report_year', '')
+        filter_keph = self.request.query_params.get('filter_keph', '')
+        filter_type = self.request.query_params.get('filter_type', '')
+        filter_owner = self.request.query_params.get('filter_owner', '')
         if yearfilterby is not '':
             filters['date_established__year'] = yearfilterby
+        if filter_keph is not '':
+            filters['keph_level'] = filter_keph
+        if filter_type is not '':
+            filters['facility_type'] = filter_type
+        if filter_owner is not '':
+            filters['owner'] = filter_owner
+
         if usertoplevel['usertoplevel'] == 'county':
             filters['ward__sub_county__county__id'] = self.request.user.countyid
         if usertoplevel['usertoplevel'] == 'sub_county':
@@ -1069,9 +1084,19 @@ class FilterReportMixin(object):
         fields = vals.keys()
         usertoplevel = self._get_user_top_level()
         groupby = usertoplevel['usergroupby']
+        # user custom filters
         yearfilterby = self.request.query_params.get('report_year', '')
+        filter_keph = self.request.query_params.get('filter_keph', '')
+        filter_type = self.request.query_params.get('filter_type', '')
+        filter_owner = self.request.query_params.get('filter_owner', '')
         if yearfilterby is not '':
             filters['date_established__year'] = yearfilterby
+        if filter_keph is not '':
+            filters['keph_level'] = filter_keph
+        if filter_type is not '':
+            filters['facility_type'] = filter_type
+        if filter_owner is not '':
+            filters['owner'] = filter_owner
         if usertoplevel['usertoplevel'] == 'county':
             filters['ward__sub_county__county__id'] = self.request.user.countyid
         if usertoplevel['usertoplevel'] == 'sub_county':
@@ -1126,9 +1151,20 @@ class FilterReportMixin(object):
         fields = vals.keys()
         usertoplevel = self._get_user_top_level()
         groupby = usertoplevel['usergroupby']
+        # user custom filters
         yearfilterby = self.request.query_params.get('report_year', '')
+        filter_keph = self.request.query_params.get('filter_keph', '')
+        filter_type = self.request.query_params.get('filter_type', '')
+        filter_owner = self.request.query_params.get('filter_owner', '')
         if yearfilterby is not '':
             filters['date_established__year'] = yearfilterby
+        if filter_keph is not '':
+            filters['keph_level'] = filter_keph
+        if filter_type is not '':
+            filters['facility_type'] = filter_type
+        if filter_owner is not '':
+            filters['owner'] = filter_owner
+
         if usertoplevel['usertoplevel'] == 'county':
             filters['ward__sub_county__county__id'] = self.request.user.countyid
         if usertoplevel['usertoplevel'] == 'sub_county':
@@ -1185,9 +1221,20 @@ class FilterReportMixin(object):
         fields = vals.keys()
         usertoplevel = self._get_user_top_level()
         groupby = usertoplevel['usergroupby']
+        # user custom filters
         yearfilterby = self.request.query_params.get('report_year', '')
+        filter_keph = self.request.query_params.get('filter_keph', '')
+        filter_type = self.request.query_params.get('filter_type', '')
+        filter_owner = self.request.query_params.get('filter_owner', '')
         if yearfilterby is not '':
             filters['date_established__year'] = yearfilterby
+        if filter_keph is not '':
+            filters['keph_level'] = filter_keph
+        if filter_type is not '':
+            filters['facility_type'] = filter_type
+        if filter_owner is not '':
+            filters['owner'] = filter_owner
+
         if usertoplevel['usertoplevel'] == 'county':
             filters['ward__sub_county__county__id'] = self.request.user.countyid
         if usertoplevel['usertoplevel'] == 'sub_county':
@@ -1243,13 +1290,26 @@ class FilterReportMixin(object):
         fields = vals.keys()
         usertoplevel = self._get_user_top_level()
         groupby = usertoplevel['usergroupby']
+
+        # user custom filters
         yearfilterby = self.request.query_params.get('report_year', '')
+        filter_keph = self.request.query_params.get('filter_keph', '')
+        filter_type = self.request.query_params.get('filter_type', '')
+        filter_owner = self.request.query_params.get('filter_owner', '')
         if yearfilterby is not '':
             filters['facility__date_established__year'] = yearfilterby
+        if filter_keph is not '':
+            filters['facility__keph_level'] = filter_keph
+        if filter_type is not '':
+            filters['facility__facility_type'] = filter_type
+        if filter_owner is not '':
+            filters['facility__owner'] = filter_owner
+
         if usertoplevel['usertoplevel'] == 'county':
             filters['facility__ward__sub_county__county__id'] = self.request.user.countyid
         if usertoplevel['usertoplevel'] == 'sub_county':
             filters['facility__ward__sub_county__id'] = self.request.user.sub_countyid
+
         services = Service.objects.values('id', 'name', 'category_id', )
         servicescategory = ServiceCategory.objects.values('id','name')
         annotation = {}
@@ -1303,9 +1363,21 @@ class FilterReportMixin(object):
         fields = vals.keys()
         usertoplevel = self._get_user_top_level()
         groupby = usertoplevel['usergroupby']
+        # user custom filters
         yearfilterby = self.request.query_params.get('report_year', '')
+        filter_keph = self.request.query_params.get('filter_keph', '')
+        filter_type = self.request.query_params.get('filter_type', '')
+        filter_owner = self.request.query_params.get('filter_owner', '')
+
         if yearfilterby is not '':
             filters['facility__date_established__year'] = yearfilterby
+        if filter_keph is not '':
+            filters['facility__keph_level'] = filter_keph
+        if filter_type is not '':
+            filters['facility__facility_type'] = filter_type
+        if filter_owner is not '':
+            filters['facility__owner'] = filter_owner
+
         if usertoplevel['usertoplevel'] == 'county':
             filters['facility__ward__sub_county__county__id'] = self.request.user.countyid
         if usertoplevel['usertoplevel'] == 'sub_county':
@@ -1390,13 +1462,24 @@ class FilterReportMixin(object):
         fields = vals.keys()
         usertoplevel = self._get_user_top_level()
         groupby = usertoplevel['usergroupby']
-        yearfilterby = self.request.query_params.get('report_year', '')
-        if yearfilterby is not '':
-            filters['facility__date_established__year'] = yearfilterby
         if usertoplevel['usertoplevel'] == 'county':
             filters['facility__ward__sub_county__county__id'] = self.request.user.countyid
         if usertoplevel['usertoplevel'] == 'sub_county':
             filters['facility__ward__sub_county__id'] = self.request.user.sub_countyid
+        # user custom filters
+        yearfilterby = self.request.query_params.get('report_year', '')
+        filter_keph = self.request.query_params.get('filter_keph', '')
+        filter_type = self.request.query_params.get('filter_type', '')
+        filter_owner = self.request.query_params.get('filter_owner', '')
+
+        if yearfilterby is not '':
+            filters['facility__date_established__year'] = yearfilterby
+        if filter_keph is not '':
+            filters['facility__keph_level'] = filter_keph
+        if filter_type is not '':
+            filters['facility__facility_type'] = filter_type
+        if filter_owner is not '':
+            filters['facility__owner'] = filter_owner
 
         speciality = Speciality.objects.values('id', 'name', 'category_id', 'category_id__name')
         annotation = {}
