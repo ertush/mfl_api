@@ -7,7 +7,7 @@ BASE_DIR = os.path.dirname(
 # Override in production via env
 
 env = environ.Env(
-    DATABASE_URL=(str, 'postgres://mfl:mfl@localhost:5433/mfl'),
+    DATABASE_URL=(str, 'postgres://mfl:mfl@localhost:5432/mfl_testing'),
     DEBUG=(bool, True),
     FRONTEND_URL=(str, "http://localhost:8062"),
     REALTIME_INDEX=(bool, False),
@@ -23,14 +23,13 @@ env = environ.Env(
     ADMINS=(str, "admin:admin@example.com,"),
     SERVER_EMAIL=(str, "root@localhost"),
     ALLOWED_HOSTS=(str, "localhost"),
-    DHIS_ENDPOINT=(str, "https://test.hiskenya.org/"),
+    DHIS_ENDPOINT=(str, "https://hiskenya.org/"),
     DHIS_USERNAME=(str, 'kmhfl_integration'),
     DHIS_PASSWORD=(str, ''),
-    DHIS_CLIENT_ID=(str, '102'),
-    PUSH_TO_DHIS=(bool, True),
-    DHIS_CLIENT_SECRET=(str, '')
+    DHIS_CLIENT_ID=(str, 'KMHFL'),
+    DHIS_CLIENT_SECRET=(str, '65df9a025-31df-079d-14d5-a01e08ea947')
 )
-# env.read_env(os.path.join(BASE_DIR, '.env'))
+env.read_env(os.path.join(BASE_DIR, '.env'))
 
 ADMINS = tuple(
     tuple(name.split(':')) for name in env('ADMINS').split(',') if name != ''
@@ -44,11 +43,11 @@ ENV_DB = env.db()
 DATABASES = {
     'default': {
         'ENGINE': 'django.contrib.gis.db.backends.postgis',
-        'HOST': '127.0.0.1',
-        'NAME': 'mfl',
-        'PASSWORD': 'mfl@pa55w0rd',
-        'PORT': '5433',
-        'USER': 'mfladmin',
+        'HOST': ENV_DB['HOST'],
+        'NAME': ENV_DB['NAME'],
+        'PASSWORD': ENV_DB['PASSWORD'],
+        'PORT': ENV_DB['PORT'],
+        'USER': ENV_DB['USER'],
     }
 }  # Env should have DATABASE_URL
 MIDDLEWARE = (
@@ -395,10 +394,6 @@ SEARCH = {
                     "fields": ["name"]
                 },
                 {
-                    "name": "FacilityAdmissionStatus",
-                    "fields": ["name"]
-                },
-                {
                     "name": "FacilityType",
                     "fields": ["name"]
                 },
@@ -531,10 +526,9 @@ CELERY_TIMEZONE = TIME_ZONE
 EXCEL_EXCEPT_FIELDS_FOR_PUBLIC_USERS = EXCEL_EXCEPT_FIELDS + ['lat', 'long']
 
 # KMHFL - DHIS2 Configurations
-PUSH_TO_DHIS = not DEBUG
+PUSH_TO_DHIS = DEBUG
 DHIS_ENDPOINT = env('DHIS_ENDPOINT')
 DHIS_USERNAME = env('DHIS_USERNAME')
 DHIS_PASSWORD = env('DHIS_PASSWORD')
 DHIS_CLIENT_ID = env('DHIS_CLIENT_ID')
 DHIS_CLIENT_SECRET = env('DHIS_CLIENT_SECRET')
-

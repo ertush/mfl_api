@@ -1,0 +1,12 @@
+{
+    "workbench.colorTheme": "poimandres-noitalics",
+    "workbench.iconTheme": "material-icon-theme",
+    "workbench.productIconTheme": "icons-carbon",
+    "editor.renderWhitespace": "none",
+    "editor.minimap.renderCharacters": false,
+    "editor.fontSize": 13.5,
+    "editor.fontFamily": "MartianMono NF",
+    "editor.fontLigatures": false,
+    "window.zoomLevel": 0.5,
+    "editor.guides.indentation": false
+}

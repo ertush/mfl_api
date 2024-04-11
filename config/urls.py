@@ -50,8 +50,7 @@ apipatterns = (
 urlpatterns = (
     url(r'^$', root_redirect_view, name='root_redirect'),
     url(r'^api/', include((apipatterns, None), namespace='api')),
-    url(r'^accounts/',
-        include('rest_framework.urls', namespace='rest_framework')),
+    url(r'^accounts/', include('rest_framework.urls', namespace='rest_framework')),
     url(r'^api/token/', ObtainAuthToken.as_view()),
     url(r'^o/', include('oauth2_provider.urls', namespace='oauth2_provider')),
 )

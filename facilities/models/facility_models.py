@@ -131,12 +131,12 @@ class DhisAuth(ApiAuthentication):
             },
             params={
                 "filter": "code:eq:"+str(code),
-                "fields": "[id]",
+                "fields": "id",
                 "paging": "false"
             }
         )
         print("Get Org Unit ID Response", r.text, str(code))
-        if len(r.json()["organisationUnits"]) is 1:
+        if len(r.json()["organisationUnits"]) is 1 and "id" in r.json()["organisationUnits"][0]:
             # raise ValidationError(
             #     {
             #         "Error!": ["This facility is already available in DHIS2. Please ensure details are correct"]
@@ -170,17 +170,19 @@ class DhisAuth(ApiAuthentication):
             },
             params={
                 "query": "KE_Ward_" + str(ward_id),
-                "fields": "[id,name]",
+                "fields": "id,name",
                 "filter": "level:in:[4]",
                 "paging": "false"
             }
         )
         dhis2_facility = r.json()["organisationUnits"]
 
-        if len(dhis2_facility) == 0:
+        dhis2_facility = dhis2_facility if "id" in dhis2_facility[0] else [{"id": None}]
+
+        if dhis2_facility[0]["id"] is None:
             raise ValidationError(
                 {
-                    "Error!": ["Unable to resolve exact parent of the new facility in DHIS2"]
+                    "Error!": ["Unable to resolve exact parent of the facility in DHIS2"]
                 }
             )
         else:
@@ -200,15 +202,26 @@ class DhisAuth(ApiAuthentication):
             )
             LOGGER.info("Create Facility Response: %s" % r.text)
         else:
-            r = requests.put(
+            facility = requests.get(
                 settings.DHIS_ENDPOINT + "api/organisationUnits/" + new_facility_payload.pop('id'),
                 auth=(settings.DHIS_USERNAME, settings.DHIS_PASSWORD),
                 headers={
                     "Accept": "application/json"
-                },
-                json=new_facility_payload
+                }
+
+
             )
-            LOGGER.info("Update Facility Response: %s" % r.text)
+
+            if facility.json()['id'] == new_facility_payload.pop('id'):
+                r = requests.put(
+                    settings.DHIS_ENDPOINT + "api/organisationUnits/" + new_facility_payload.pop('id'),
+                    auth=(settings.DHIS_USERNAME, settings.DHIS_PASSWORD),
+                    headers={
+                        "Accept": "application/json"
+                    },
+                    json=new_facility_payload
+                )
+                LOGGER.info("Update Facility Response: %s" % r.text)
         if r.json()["status"] != "OK":
             LOGGER.error('Facility feedback: %s' % r.text)
             raise ValidationError(
@@ -265,7 +278,7 @@ class DhisAuth(ApiAuthentication):
 
     def push_facility_updates_to_dhis2(self, org_unit_id, facility_updates_payload):
         r = requests.put(
-            settings.DHIS_ENDPOINT + "api/organisationUnits/"+org_unit_id,
+            settings.DHIS_ENDPOINT + "api/organisationUnits/" + org_unit_id[0],
             auth=(settings.DHIS_USERNAME, settings.DHIS_PASSWORD),
             headers={
                 "Accept": "application/json"
@@ -273,14 +286,18 @@ class DhisAuth(ApiAuthentication):
             json=facility_updates_payload
         )
 
-        print("Update Facility Response", r.url, r.status_code, r.json())
+        LOGGER.info("PUSH_FACILITY_UPDATES_RESPONSE => {}".format(r.json()))
+        LOGGER.info("PUSH_FACILITY_UPDATES_STATUS_CODE => {}".format(r.json()["status"]))
 
         if r.json()["status"] != "OK":
-            raise ValidationError(
-                {
-                    "Error!": ["Unable to push facility updates to DHIS2"]
-                }
-            )
+            r = requests.post(
+            settings.DHIS_ENDPOINT + "api/organisationUnits/",
+            auth=(settings.DHIS_USERNAME, settings.DHIS_PASSWORD),
+            headers={
+                "Accept": "application/json"
+            },
+            json=facility_updates_payload
+        )
 
     def format_coordinates(self, str_coordinates):
         coordinates_str_list = str_coordinates.split(" ")
@@ -977,6 +994,24 @@ class FacilityExportExcelMaterialView(models.Model):
         models.UUIDField(null=True, blank=True), null=True, blank=True
     )
     service_names = ArrayField(
+        models.CharField(null=True, blank=True), null=True, blank=True
+    )
+    infrastructure = ArrayField(
+        models.UUIDField(null=True, blank=True), null=True, blank=True
+    )
+    infrastructure_names = ArrayField(
+        models.CharField(null=True, blank=True), null=True, blank=True
+    )
+    infrastructure_categories = ArrayField(
+        models.UUIDField(null=True, blank=True), null=True, blank=True
+    )
+    speciality = ArrayField(
+        models.UUIDField(null=True, blank=True), null=True, blank=True
+    )
+    speciality_names = ArrayField(
+        models.CharField(null=True, blank=True), null=True, blank=True
+    )
+    speciality_categories = ArrayField(
         models.UUIDField(null=True, blank=True), null=True, blank=True
     )
     approved = models.BooleanField(default=False)
@@ -1179,6 +1214,8 @@ class Facility(SequenceMixin, AbstractBase):
         ' the regulator')
     closed_date = models.DateTimeField(
         null=True, blank=True, help_text='Date the facility was closed')
+    approvalrejection_date = models.DateTimeField(
+        null=True, blank=True, help_text='Date the facility was approved or rejected')
     closing_reason = models.TextField(
         null=True, blank=True, help_text="Reason for closing the facility")
     date_established = models.DateField(
@@ -1321,30 +1358,6 @@ class Facility(SequenceMixin, AbstractBase):
         else:
             pass
 
-    def push_facility_updates(self):
-        pass
-        # if self.approved_national_level:
-        #     from mfl_gis.models import FacilityCoordinates
-        #     import re
-        #     self.dhis2_api_auth.get_oauth2_token()
-        #
-        #     dhis2_parent_id = self.dhis2_api_auth.get_parent_id(self.ward.code)
-        #     dhis2_org_unit_id = self.dhis2_api_auth.get_org_unit_id(self.code)
-        #     new_facility_updates_payload = {
-        #         "code": str(self.code),
-        #         "name": str(self.name),
-        #         "shortName": str(self.name),
-        #         "displayName": str(self.official_name),
-        #         "parent": {
-        #             "id": dhis2_parent_id
-        #         },
-        #         "openingDate": self.facility.date_established.strftime("%Y-%m-%d"),
-        #         "coordinates": self.dhis2_api_auth.format_coordinates(
-        #             re.search(r'\((.*?)\)', str(FacilityCoordinates.objects.values('coordinates')
-        #                                         .get(facility_id=self.id)['coordinates'])).group(1))
-        #     }
-        #
-        #     self.dhis2_api_auth.push_facility_updates_to_dhis2(dhis2_org_unit_id, new_facility_updates_payload)
 
     def validate_facility_name(self):
         if self.pk:
@@ -1612,6 +1625,8 @@ class Facility(SequenceMixin, AbstractBase):
             }
             for h_r in hr
         ]
+
+
 
 
     @property
@@ -2063,9 +2078,9 @@ class FacilityUpdates(AbstractBase):
 
                 setattr(self.facility, field_name, value)
             self.facility.save(allow_save=True)
-            if self.facility.code and self.facility.is_complete and self.facility.approved_national_level:
-                self.facility.push_new_facility(self.facility.code)
-            # self.push_facility_updates()
+            # if self.facility.code and self.facility.is_complete and self.facility.approved_national_level:
+            #     self.facility.push_new_facility(self.facility.code)
+            self.push_facility_updates()
 
 
     def update_facility_services(self):
@@ -2199,7 +2214,8 @@ class FacilityUpdates(AbstractBase):
         dhis2_parent_id = self.dhis2_api_auth.get_parent_id(self.facility.ward.code)
         dhis2_org_unit_id = self.dhis2_api_auth.get_org_unit_id(self.facility.code)
 
-        new_facility_updates_payload = {
+        if dhis2_parent_id is not None:
+            new_facility_updates_payload = {
             "code": str(self.facility.code),
             "name": str(self.facility.name),
             "shortName": str(self.facility.name),
@@ -2211,12 +2227,16 @@ class FacilityUpdates(AbstractBase):
             "coordinates": self.dhis2_api_auth.format_coordinates(
                 re.search(r'\((.*?)\)', str(FacilityCoordinates.objects.values('coordinates')
                                             .get(facility_id=self.facility.id)['coordinates'])).group(1))
-        }
+            }
+        else:
+            error = {"Error": "DHIS 2 parent ID could not be found"}
+            raise ValidationError(error)
 
-        # print("Names;", "Official Name:", self.facility.official_name, "Name:", self.facility.name)
-        #
-        # print("New Facility Push Payload => ", new_facility_updates_payload)
-        self.dhis2_api_auth.push_facility_updates_to_dhis2(dhis2_org_unit_id, new_facility_updates_payload)
+            # print("Names;", "Official Name:", self.facility.official_name, "Name:", self.facility.name)
+            #
+            # print("New Facility Push Payload => ", new_facility_updates_payload)
+        
+            self.dhis2_api_auth.push_facility_updates_to_dhis2(dhis2_org_unit_id, new_facility_updates_payload)
 
     def clean(self, *args, **kwargs):
         self.validate_only_one_update_at_a_time()

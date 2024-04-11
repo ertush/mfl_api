@@ -1,8 +1,10 @@
+import http.client
 import six
 
 from collections import OrderedDict
 
 from django.contrib.gis.geos import Point
+from django.http import HttpResponse
 from rest_framework import generics, views, status
 from rest_framework import settings as rest_settings
 from rest_framework.permissions import DjangoModelPermissions
@@ -206,6 +208,8 @@ class FacilityCoordinatesCreationAndListing(
     def create(self, request, *args, **kwargs):
         request.data['created_by'] = request.user.id
         request.data['updated_by'] = request.user.id
+        raw_coordinates = request.data['coordinates']['coordinates']
+        request.data['coordinates'] = Point(x=raw_coordinates[0], y=raw_coordinates[1])
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         facility_id = request.data.get('facility')
