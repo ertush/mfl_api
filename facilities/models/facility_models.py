@@ -994,13 +994,13 @@ class FacilityExportExcelMaterialView(models.Model):
         models.UUIDField(null=True, blank=True), null=True, blank=True
     )
     service_names = ArrayField(
-        models.CharField(null=True, blank=True), null=True, blank=True
+        models.CharField(null=True, blank=True, max_length=1000), null=True, blank=True
     )
     infrastructure = ArrayField(
         models.UUIDField(null=True, blank=True), null=True, blank=True
     )
     infrastructure_names = ArrayField(
-        models.CharField(null=True, blank=True), null=True, blank=True
+        models.CharField(null=True, blank=True, max_length=1000), null=True, blank=True
     )
     infrastructure_categories = ArrayField(
         models.UUIDField(null=True, blank=True), null=True, blank=True
@@ -1009,7 +1009,7 @@ class FacilityExportExcelMaterialView(models.Model):
         models.UUIDField(null=True, blank=True), null=True, blank=True
     )
     speciality_names = ArrayField(
-        models.CharField(null=True, blank=True), null=True, blank=True
+        models.CharField(null=True, blank=True, max_length=1000), null=True, blank=True
     )
     speciality_categories = ArrayField(
         models.UUIDField(null=True, blank=True), null=True, blank=True

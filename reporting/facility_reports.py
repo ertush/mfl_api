@@ -346,6 +346,9 @@ class FilterReportMixin(object):
         if report_type == 'gis':
             return self._get_gis_report()
 
+        if report_type == 'facility_nhif_accreditation':
+            return self._get_nhif_accreditation()
+
         # New Report format (beds and cots filter)
         if report_type == 'beds_and_cots_by_all_hierachies':
             county_id = self.request.query_params.get('county', None)
@@ -795,6 +798,9 @@ class FilterReportMixin(object):
 
             if group_byvalue not in county_totals:
                 county_totals[group_byvalue] = {
+                    'general_totalbeds': int(item.get('cots',0) or 0)+int(item.get('beds',0) or 0)+int(item.get('maternity_beds',0) or 0)+int(item.get('isolation_beds',0) or 0)+
+                                         int(item.get('hdu_beds', 0) or 0)+int(item.get('icu_beds',0) or 0)+int(item.get('emergency_casualty_beds',0) or 0)+int(item.get('inpatient_beds',0) or 0)+
+                                         int(item.get('general_theaters', 0) or 0)+int(item.get('maternity_theaters',0) or 0),
                     'total_cots': int(item.get('cots',0) or 0),
                     'total_beds': int(item.get('beds',0) or 0),
                     'total_maternity_beds': int(item.get('maternity_beds',0) or 0),
@@ -811,6 +817,18 @@ class FilterReportMixin(object):
                     'date_established':item['date_established']
                 }
             else:
+                # Get total beds
+                county_totals[group_byvalue]['general_totalbeds'] += int(item.get('cots',0) or 0)
+                county_totals[group_byvalue]['general_totalbeds'] += int(item.get('beds',0) or 0)
+                county_totals[group_byvalue]['general_totalbeds'] += int(item.get('maternity_beds',0) or 0)
+                county_totals[group_byvalue]['general_totalbeds'] += int(item.get('isolation_beds',0) or 0)
+                county_totals[group_byvalue]['general_totalbeds'] += int(item.get('hdu_beds',0) or 0)
+                county_totals[group_byvalue]['general_totalbeds'] += int(item.get('icu_beds',0) or 0)
+                county_totals[group_byvalue]['general_totalbeds'] += int(item.get('emergency_casualty_beds',0) or 0)
+                county_totals[group_byvalue]['general_totalbeds'] += int(item.get('inpatient_beds',0) or 0)
+                county_totals[group_byvalue]['general_totalbeds'] += int(item.get('general_theaters',0) or 0)
+                county_totals[group_byvalue]['general_totalbeds'] += int(item.get('maternity_theaters',0) or 0)
+               # add specific beds
                 county_totals[group_byvalue]['total_cots'] += int(item.get('cots',0) or 0)
                 county_totals[group_byvalue]['total_beds'] += int(item.get('beds',0) or 0)
                 county_totals[group_byvalue]['total_maternity_beds'] += int(item.get('maternity_beds',0) or 0)
@@ -884,6 +902,7 @@ class FilterReportMixin(object):
 
         return data, []
 
+
     def _get_gis_report(self):
 
         county = self.request.query_params.get('county', None)
@@ -898,7 +917,7 @@ class FilterReportMixin(object):
 
         usertoplevel = self._get_user_top_level()
         groupby = usertoplevel['usergroupby']
-        filters={}
+        filters = {}
         # user custom filters
         yearfilterby = self.request.query_params.get('report_year', '')
         filter_keph = self.request.query_params.get('filter_keph', '')
@@ -936,43 +955,21 @@ class FilterReportMixin(object):
                 facility__ward_id__in=ward.split('.'))
 
         result_summary = {}
-
+        results_total_count=0
         if groupby == 'county':
             paginator = Paginator(list(allcounties), page_size)
+            results_total_count=len(allcounties)
             if paginate:
                 allcounties = paginator.page(page)
 
             for group in allcounties:
-                 annotated_queryset = queryset.filter(facility__ward__sub_county__county__id= group.id).annotate(
+                annotated_queryset = queryset.filter(facility__ward__sub_county__county__id=group.id).annotate(
                     facility_date_established=F('facility__date_established'),
                     facility_code=F('facility__code'),
                     facility_name=F('facility__name'),
-                    facility_county=F('facility__ward__constituency__county__name'),
-                    facility_ward=F('facility__ward__name'),
-                    facility_lat=Func("coordinates", function="ST_Y", output_field=FloatField()),
-                    facility_long=Func("coordinates", function="ST_X", output_field=FloatField()),
-                    facility_sub_county=F('facility__ward__sub_county__name')
-                 ).values(
-                    'facility_date_established',
-                    'facility_code',
-                    'facility_name',
-                    'facility_county',
-                    'facility_ward',
-                    'facility_lat',
-                    'facility_long',
-                    'facility_sub_county')
-
-                 result_summary[group.name] = list(annotated_queryset)
-        if groupby == 'sub_county':
-            page_size = self.request.query_params.get('page_size', 20)
-            paginator = Paginator(list(allsubcounties), page_size)
-            if paginate:
-                allsubcounties = paginator.page(page)
-            for group in allsubcounties:
-                annotated_queryset = queryset.filter(facility__ward__sub_county__id=group.id).annotate(
-                    facility_date_established=F('facility__date_established'),
-                    facility_code=F('facility__code'),
-                    facility_name=F('facility__name'),
+                    facility_keph_level=F('facility__keph_level__name'),
+                    facility_type_name=F('facility__facility_type__name'),
+                    facility_owner=F('facility__owner__name'),
                     facility_county=F('facility__ward__constituency__county__name'),
                     facility_ward=F('facility__ward__name'),
                     facility_lat=Func("coordinates", function="ST_Y", output_field=FloatField()),
@@ -982,6 +979,42 @@ class FilterReportMixin(object):
                     'facility_date_established',
                     'facility_code',
                     'facility_name',
+                    'facility_keph_level',
+                    'facility_type_name',
+                    'facility_owner',
+                    'facility_county',
+                    'facility_ward',
+                    'facility_lat',
+                    'facility_long',
+                    'facility_sub_county')
+
+                result_summary[group.name] = list(annotated_queryset)
+        if groupby == 'sub_county':
+            page_size = self.request.query_params.get('page_size', 20)
+            results_total_count = len(allsubcounties)
+            paginator = Paginator(list(allsubcounties), page_size)
+            if paginate:
+                allsubcounties = paginator.page(page)
+            for group in allsubcounties:
+                annotated_queryset = queryset.filter(facility__ward__sub_county__id=group.id).annotate(
+                    facility_date_established=F('facility__date_established'),
+                    facility_code=F('facility__code'),
+                    facility_name=F('facility__name'),
+                    facility_keph_level=F('facility__keph_level__name'),
+                    facility_type_name=F('facility__facility_type__name'),
+                    facility_owner=F('facility__owner__name'),
+                    facility_county=F('facility__ward__constituency__county__name'),
+                    facility_ward=F('facility__ward__name'),
+                    facility_lat=Func("coordinates", function="ST_Y", output_field=FloatField()),
+                    facility_long=Func("coordinates", function="ST_X", output_field=FloatField()),
+                    facility_sub_county=F('facility__ward__sub_county__name')
+                ).values(
+                    'facility_date_established',
+                    'facility_code',
+                    'facility_name',
+                    'facility_keph_level',
+                    'facility_type_name',
+                    'facility_owner',
                     'facility_county',
                     'facility_ward',
                     'facility_lat',
@@ -991,6 +1024,7 @@ class FilterReportMixin(object):
                 result_summary[group.name] = list(annotated_queryset)
         if groupby == 'ward':
             page_size = self.request.query_params.get('page_size', 150)
+            results_total_count = len(allwards)
             paginator = Paginator(list(allwards), page_size)
             if paginate:
                 allwards = paginator.page(page)
@@ -999,6 +1033,9 @@ class FilterReportMixin(object):
                     facility_date_established=F('facility__date_established'),
                     facility_code=F('facility__code'),
                     facility_name=F('facility__name'),
+                    facility_keph_level=F('facility__keph_level__name'),
+                    facility_type_name=F('facility__facility_type__name'),
+                    facility_owner=F('facility__owner__name'),
                     facility_county=F('facility__ward__constituency__county__name'),
                     facility_ward=F('facility__ward__name'),
                     facility_lat=Func("coordinates", function="ST_Y", output_field=FloatField()),
@@ -1008,6 +1045,9 @@ class FilterReportMixin(object):
                     'facility_date_established',
                     'facility_code',
                     'facility_name',
+                    'facility_keph_level',
+                    'facility_type_name',
+                    'facility_owner',
                     'facility_county',
                     'facility_ward',
                     'facility_lat',
@@ -1016,7 +1056,163 @@ class FilterReportMixin(object):
 
                 result_summary[group.name] = list(annotated_queryset)
 
-        return {'groupedby': groupby, 'results': result_summary}, [len(result_summary)]
+        return {'groupedby': groupby, 'results': result_summary}, [results_total_count]
+
+    # New report for nhif acredited facilities
+    def _get_nhif_accreditation(self):
+
+        county = self.request.query_params.get('county', None)
+        sub_county = self.request.query_params.get('sub_county', None)
+        ward = self.request.query_params.get('ward', None)
+        page = self.request.query_params.get('page', 1)
+        page_size = self.request.query_params.get('page_size', 10)
+        paginate = self.request.query_params.get('paginate', True)
+        allcounties = County.objects.all()
+        allsubcounties = SubCounty.objects.all()
+        allwards = Ward.objects.all()
+
+        usertoplevel = self._get_user_top_level()
+        groupby = usertoplevel['usergroupby']
+        filters = {}
+        # user custom filters
+        yearfilterby = self.request.query_params.get('report_year', '')
+        filter_keph = self.request.query_params.get('filter_keph', '')
+        filter_type = self.request.query_params.get('filter_type', '')
+        filter_owner = self.request.query_params.get('filter_owner', '')
+        filter_isnhifaccredited = self.request.query_params.get('filter_nhifaccredited', '')
+        if yearfilterby is not '':
+            filters['date_established__year'] = yearfilterby
+        if filter_keph is not '':
+            filters['keph_level'] = filter_keph
+        if filter_type is not '':
+            filters['facility_type'] = filter_type
+        if filter_owner is not '':
+            filters['owner'] = filter_owner
+        if filter_isnhifaccredited is not '':
+            filters['nhif_accreditation'] = filter_isnhifaccredited
+        else:
+            filters['nhif_accreditation'] = True
+
+        if usertoplevel['usertoplevel'] == 'county':
+            filters['ward__sub_county__county__id'] = self.request.user.countyid
+            allcounties = County.objects.filter(id=self.request.user.countyid)
+            allsubcounties = SubCounty.objects.filter(county__id=self.request.user.countyid)
+            allwards = Ward.objects.filter(sub_county__county__id=self.request.user.countyid)
+        if usertoplevel['usertoplevel'] == 'sub_county':
+            filters['ward__sub_county__id'] = self.request.user.sub_countyid
+            allcounties = County.objects.filter(id=self.request.user.countyid)
+            allsubcounties = SubCounty.objects.filter(id=self.request.user.sub_countyid)
+            allwards = Ward.objects.filter(sub_county__id=self.request.user.sub_countyid)
+
+        queryset = Facility.objects.filter(**filters).all()
+
+        if county:
+            queryset = queryset.filter(
+                ward__sub_county__county_id__in=county.split(','))
+        if sub_county:
+            queryset = queryset.filter(
+                ward__sub_county_id__in=sub_county.split('.'))
+        if ward:
+            queryset = queryset.filter(
+                ward_id__in=ward.split('.'))
+
+        result_summary = {}
+        results_total_count=0
+        if groupby == 'county':
+            paginator = Paginator(list(allcounties), page_size)
+            results_total_count=len(allcounties)
+            if paginate:
+                allcounties = paginator.page(page)
+
+            for group in allcounties:
+                annotated_queryset = queryset.filter(ward__sub_county__county__id=group.id).annotate(
+                    facility_date_established=F('date_established'),
+                    facility_code=F('code'),
+                    facility_name=F('name'),
+                    facility_keph_level=F('keph_level__name'),
+                    facility_type_name=F('facility_type__name'),
+                    facility_owner=F('owner__name'),
+                    facility_accredited=F('nhif_accreditation'),
+                    facility_county=F('ward__constituency__county__name'),
+                    facility_ward=F('ward__name'),
+                    facility_sub_county=F('ward__sub_county__name')
+                ).values(
+                    'facility_date_established',
+                    'facility_code',
+                    'facility_name',
+                    'facility_keph_level',
+                    'facility_type_name',
+                    'facility_owner',
+                    'facility_accredited',
+                    'facility_county',
+                    'facility_ward',
+                    'facility_sub_county')
+
+                result_summary[group.name] = list(annotated_queryset)
+        if groupby == 'sub_county':
+            page_size = self.request.query_params.get('page_size', 20)
+            results_total_count = len(allsubcounties)
+            paginator = Paginator(list(allsubcounties), page_size)
+            if paginate:
+                allsubcounties = paginator.page(page)
+            for group in allsubcounties:
+                annotated_queryset = queryset.filter(ward__sub_county__id=group.id).annotate(
+                    facility_date_established=F('date_established'),
+                    facility_code=F('code'),
+                    facility_name=F('name'),
+                    facility_keph_level=F('keph_level__name'),
+                    facility_type_name=F('facility_type__name'),
+                    facility_owner=F('owner__name'),
+                    facility_accredited=F('nhif_accreditation'),
+                    facility_county=F('ward__constituency__county__name'),
+                    facility_ward=F('ward__name'),
+                    facility_sub_county=F('ward__sub_county__name')
+                ).values(
+                    'facility_date_established',
+                    'facility_code',
+                    'facility_name',
+                    'facility_keph_level',
+                    'facility_type_name',
+                    'facility_owner',
+                    'facility_accredited',
+                    'facility_county',
+                    'facility_ward',
+                    'facility_sub_county')
+
+                result_summary[group.name] = list(annotated_queryset)
+        if groupby == 'ward':
+            page_size = self.request.query_params.get('page_size', 150)
+            results_total_count = len(allwards)
+            paginator = Paginator(list(allwards), page_size)
+            if paginate:
+                allwards = paginator.page(page)
+            for group in allwards:
+                annotated_queryset = queryset.filter(ward__id=group.id).annotate(
+                    facility_date_established=F('facility__date_established'),
+                    facility_code=F('code'),
+                    facility_name=F('name'),
+                    facility_keph_level=F('keph_level__name'),
+                    facility_type_name=F('facility_type__name'),
+                    facility_owner=F('owner__name'),
+                    facility_accredited=F('nhif_accreditation'),
+                    facility_county=F('ward__constituency__county__name'),
+                    facility_ward=F('ward__name'),
+                    facility_sub_county=F('ward__sub_county__name')
+                ).values(
+                    'facility_date_established',
+                    'facility_code',
+                    'facility_name',
+                    'facility_keph_level',
+                    'facility_type_name',
+                    'facility_owner',
+                    'facility_accredited',
+                    'facility_county',
+                    'facility_ward',
+                    'facility_sub_county')
+
+                result_summary[group.name] = list(annotated_queryset)
+
+        return {'groupedby': groupby, 'results': result_summary}, [results_total_count]
 
     # New report regulatory body
     def _get_facility_count_regulatory_body(self, vals={}, filters={}):
@@ -1053,6 +1249,12 @@ class FilterReportMixin(object):
             'ward__sub_county__county__name',
             'ward__sub_county__county',
             'date_established',
+            'keph_level',
+            'keph_level__name',
+            'owner',
+            'owner__name',
+            'facility_type',
+            'facility_type__name',
             *fields
         ).filter(**filters).annotate(
             **annotate_dict
@@ -1074,6 +1276,18 @@ class FilterReportMixin(object):
                 result_summary[group_byvalue]['ward__sub_county__county__name'] = item['ward__sub_county__county__name']
                 result_summary[group_byvalue]['ward__sub_county__name'] = item['ward__sub_county__name']
                 result_summary[group_byvalue]['ward__name'] = item['ward__name']
+                if filter_keph is not '':
+                    result_summary[group_byvalue]['facility_keph_level'] = item['keph_level__name']
+                else:
+                    result_summary[group_byvalue]['facility_keph_level'] = 'All'
+                if filter_type is not '':
+                    result_summary[group_byvalue]['facility_type'] = item['facility_type__name']
+                else:
+                    result_summary[group_byvalue]['facility_type'] = 'All'
+                if filter_owner is not '':
+                    result_summary[group_byvalue]['facility_owner'] = item['owner__name']
+                else:
+                    result_summary[group_byvalue]['facility_owner'] = 'All'
             else:
                 for category in allcategories:
                     result_summary[group_byvalue][str(category.name).strip().replace(" ", '_')] += item[str(category.name)]
@@ -1115,6 +1329,12 @@ class FilterReportMixin(object):
             'ward__name',
             'ward',
             'date_established',
+            'keph_level',
+            'keph_level__name',
+            'owner',
+            'owner__name',
+            'facility_type',
+            'facility_type__name',
             *fields
         ).filter(**filters).annotate(
             **annotate_dict
@@ -1139,6 +1359,18 @@ class FilterReportMixin(object):
                         'ward__sub_county__county__name']
                 result_summary[group_byvalue]['ward__sub_county__name'] = item['ward__sub_county__name']
                 result_summary[group_byvalue]['ward__name'] = item['ward__name']
+                if filter_keph is not '':
+                    result_summary[group_byvalue]['facility_keph_level'] = item['keph_level__name']
+                else:
+                    result_summary[group_byvalue]['facility_keph_level'] = 'All'
+                if filter_type is not '':
+                    result_summary[group_byvalue]['facility_type'] = item['facility_type__name']
+                else:
+                    result_summary[group_byvalue]['facility_type'] = 'All'
+                if filter_owner is not '':
+                    result_summary[group_byvalue]['facility_owner'] = item['owner__name']
+                else:
+                    result_summary[group_byvalue]['facility_owner'] = 'All'
                 # Add more properties here...
             else:
                 for category in allcategories:
@@ -1185,6 +1417,12 @@ class FilterReportMixin(object):
             'ward__sub_county__county__name',
             'ward__sub_county__county',
             'date_established',
+            'keph_level',
+            'keph_level__name',
+            'owner',
+            'owner__name',
+            'facility_type',
+            'facility_type__name',
             *fields
         ).filter(**filters).annotate(**annotate_dict)
 
@@ -1209,6 +1447,18 @@ class FilterReportMixin(object):
                 result_summary[group_byvalue]['ward__sub_county__county__name'] = item['ward__sub_county__county__name']
                 result_summary[group_byvalue]['ward__sub_county__name'] = item['ward__sub_county__name']
                 result_summary[group_byvalue]['ward__name'] = item['ward__name']
+                if filter_keph is not '':
+                    result_summary[group_byvalue]['facility_keph_level'] = item['keph_level__name']
+                else:
+                    result_summary[group_byvalue]['facility_keph_level'] = 'All'
+                if filter_type is not '':
+                    result_summary[group_byvalue]['facility_type'] = item['facility_type__name']
+                else:
+                    result_summary[group_byvalue]['facility_type'] = 'All'
+                if filter_owner is not '':
+                    result_summary[group_byvalue]['facility_owner'] = item['owner__name']
+                else:
+                    result_summary[group_byvalue]['facility_owner'] = 'All'
             else:
                 for category in allcategories:
                     result_summary[group_byvalue][str(category.name).strip().replace(" ", '_')] += item.get(category.name,0)
@@ -1255,6 +1505,12 @@ class FilterReportMixin(object):
             'ward__name',
             'ward',
             'date_established',
+            'keph_level',
+            'keph_level__name',
+            'owner',
+            'owner__name',
+            'facility_type',
+            'facility_type__name',
             *fields
         ).filter(**filters).annotate(
             **annotate_dict
@@ -1279,9 +1535,23 @@ class FilterReportMixin(object):
                 result_summary[group_byvalue]['ward__sub_county__county__name'] = item['ward__sub_county__county__name']
                 result_summary[group_byvalue]['ward__sub_county__name'] = item['ward__sub_county__name']
                 result_summary[group_byvalue]['ward__name'] = item['ward__name']
+                if filter_keph is not '':
+                    result_summary[group_byvalue]['facility_keph_level'] = item['keph_level__name']
+                else:
+                    result_summary[group_byvalue]['facility_keph_level'] = 'All'
+                if filter_type is not '':
+                    result_summary[group_byvalue]['facility_type'] = item['facility_type__name']
+                else:
+                    result_summary[group_byvalue]['facility_type'] = 'All'
+                if filter_owner is not '':
+                    result_summary[group_byvalue]['facility_owner'] = item['owner__name']
+                else:
+                    result_summary[group_byvalue]['facility_owner'] = 'All'
+
             else:
                 for category in allcategories:
                     result_summary[group_byvalue][str(category.name).strip().replace(" ", '_')] += item.get(str(category.name), 0)
+
         return {'groupedby': groupby, 'results': result_summary}, []
 
         # New report faciity service
@@ -1329,6 +1599,12 @@ class FilterReportMixin(object):
             'facility__ward__name',
             'facility__ward',
             'facility__date_established',
+            'facility__keph_level',
+            'facility__keph_level__name',
+            'facility__owner',
+            'facility__owner__name',
+            'facility__facility_type',
+            'facility__facility_type__name',
         ).filter(**filters).annotate(**annotation)
 
         items = items.annotate(**annotation2).order_by()
@@ -1351,13 +1627,24 @@ class FilterReportMixin(object):
                 result_summary[group_byvalue]['ward__sub_county__county__name'] = item['facility__ward__sub_county__county__name']
                 result_summary[group_byvalue]['ward__sub_county__name'] = item['facility__ward__sub_county__name']
                 result_summary[group_byvalue]['ward__name'] = item['facility__ward__name']
+                if filter_keph is not '':
+                    result_summary[group_byvalue]['facility_keph_level'] = item['facility__keph_level__name']
+                else:
+                    result_summary[group_byvalue]['facility_keph_level'] = 'All'
+                if filter_type is not '':
+                    result_summary[group_byvalue]['facility_type'] = item['facility__facility_type__name']
+                else:
+                    result_summary[group_byvalue]['facility_type'] = 'All'
+                if filter_owner is not '':
+                    result_summary[group_byvalue]['facility_owner'] = item['facility__owner__name']
+                else:
+                    result_summary[group_byvalue]['facility_owner'] = 'All'
             else:
                 for category in allcategories:
                     result_summary[group_byvalue][str(category.name).strip().replace(" ", '_')] += item.get(str(category.name),0)
         return {'groupedby': groupby, 'results': result_summary}, []
 
         # New Facility report infrastructure
-
 
     def _get_facility_infrustructure(self, vals={}, filters={}):
         fields = vals.keys()
@@ -1402,6 +1689,12 @@ class FilterReportMixin(object):
             'facility__ward__name',
             'facility__ward',
             'facility__date_established',
+            'facility__keph_level',
+            'facility__keph_level__name',
+            'facility__owner',
+            'facility__owner__name',
+            'facility__facility_type',
+            'facility__facility_type__name',
         ).filter(**filters).annotate(**annotation)
         items = items.annotate(**annotation2).order_by()
 
@@ -1428,6 +1721,18 @@ class FilterReportMixin(object):
                 result_summary_category[group_byvalue]['ward__sub_county__county__name'] = item['facility__ward__sub_county__county__name']
                 result_summary_category[group_byvalue]['ward__sub_county__name'] = item['facility__ward__sub_county__name']
                 result_summary_category[group_byvalue]['ward__name'] = item['facility__ward__name']
+                if filter_keph is not '':
+                    result_summary_category[group_byvalue]['facility_keph_level'] = item['facility__keph_level__name']
+                else:
+                    result_summary_category[group_byvalue]['facility_keph_level'] = 'All'
+                if filter_type is not '':
+                    result_summary_category[group_byvalue]['facility_type'] = item['facility__facility_type__name']
+                else:
+                    result_summary_category[group_byvalue]['facility_type'] = 'All'
+                if filter_owner is not '':
+                    result_summary_category[group_byvalue]['facility_owner'] = item['facility__owner__name']
+                else:
+                    result_summary_category[group_byvalue]['facility_owner'] = 'All'
             else:
                 for category in allcategories:
                     result_summary_category[group_byvalue][str(category.name).strip().replace(" ",'_')] += item[str(category.name)]
@@ -1445,6 +1750,18 @@ class FilterReportMixin(object):
             if group_byvalue not in result_summary:
                 result_summary[group_byvalue] = {}
                 result_summary[group_byvalue]['facility__date_established']=item['facility__date_established']
+                if filter_keph is not '':
+                    result_summary[group_byvalue]['facility_keph_level'] = item['facility__keph_level__name']
+                else:
+                    result_summary[group_byvalue]['facility_keph_level'] = 'All'
+                if filter_type is not '':
+                    result_summary[group_byvalue]['facility_type'] = item['facility__facility_type__name']
+                else:
+                    result_summary[group_byvalue]['facility_type'] = 'All'
+                if filter_owner is not '':
+                    result_summary[group_byvalue]['facility_owner'] = item['facility__owner__name']
+                else:
+                    result_summary[group_byvalue]['facility_owner'] = 'All'
                 for infra in allinfrastructure:
                     result_summary[group_byvalue][str(infra.name).strip().replace(" ", '_')] = item[str(infra.name)]
 
@@ -1456,7 +1773,6 @@ class FilterReportMixin(object):
                         result_summary[group_byvalue][str(infra.name).strip().replace(" ", '_')] += item[str(infra.name)]
 
         return {'groupedby': groupby, 'results_bycategory':result_summary_category, 'results': result_summary}, []
-
 
     def _get_facility_humanresource(self, vals={}, filters={}):
         fields = vals.keys()
@@ -1500,6 +1816,12 @@ class FilterReportMixin(object):
             'facility__ward__name',
             'facility__ward',
             'facility__date_established',
+            'facility__keph_level',
+            'facility__keph_level__name',
+            'facility__owner',
+            'facility__owner__name',
+            'facility__facility_type',
+            'facility__facility_type__name',
         ).filter(**filters).annotate(**annotation)
 
         items = items.annotate(**annotation2).order_by()
@@ -1525,6 +1847,18 @@ class FilterReportMixin(object):
                 result_summary_category[group_byvalue]['ward__sub_county__county__name'] = item['facility__ward__sub_county__county__name']
                 result_summary_category[group_byvalue]['ward__sub_county__name'] = item['facility__ward__sub_county__name']
                 result_summary_category[group_byvalue]['ward__name'] = item['facility__ward__name']
+                if filter_keph is not '':
+                    result_summary_category[group_byvalue]['facility_keph_level'] = item['facility__keph_level__name']
+                else:
+                    result_summary_category[group_byvalue]['facility_keph_level'] = 'All'
+                if filter_type is not '':
+                    result_summary_category[group_byvalue]['facility_type'] = item['facility__facility_type__name']
+                else:
+                    result_summary_category[group_byvalue]['facility_type'] = 'All'
+                if filter_owner is not '':
+                    result_summary_category[group_byvalue]['facility_owner'] = item['facility__owner__name']
+                else:
+                    result_summary_category[group_byvalue]['facility_owner'] = 'All'
             else:
                 for category in allcategories:
                     result_summary_category[group_byvalue][str(category.name).strip().replace(" ",'_')] += item[str(category.name)]
@@ -1541,6 +1875,18 @@ class FilterReportMixin(object):
                 if group_byvalue not in result_summary:
                     result_summary[group_byvalue] = {}
                     result_summary[group_byvalue]['facility__date_established']=item['facility__date_established']
+                    if filter_keph is not '':
+                        result_summary[group_byvalue]['facility_keph_level'] = item['facility__keph_level__name']
+                    else:
+                        result_summary[group_byvalue]['facility_keph_level'] = 'All'
+                    if filter_type is not '':
+                        result_summary[group_byvalue]['facility_type'] = item['facility__facility_type__name']
+                    else:
+                        result_summary[group_byvalue]['facility_type'] = 'All'
+                    if filter_owner is not '':
+                        result_summary[group_byvalue]['facility_owner'] = item['facility__owner__name']
+                    else:
+                        result_summary[group_byvalue]['facility_owner'] = 'All'
                     for speciality in allspecialities:
                         result_summary[group_byvalue][str(speciality.name).strip().replace(" ", '_')] = item[str(speciality.name)]
 
@@ -1554,6 +1900,7 @@ class FilterReportMixin(object):
                                 str(speciality.name)]
 
         return {'groupedby': groupby, 'results_bycategory': result_summary_category,'results': result_summary}, []
+
     def _get_facility_count(self, category=True, f_type=False, keph=False):
         county = self.request.query_params.get('county', None)
         sub_county = self.request.query_params.get('sub_county', None)
