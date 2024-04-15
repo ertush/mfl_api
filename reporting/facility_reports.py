@@ -744,6 +744,9 @@ class FilterReportMixin(object):
         fields = vals.keys()
         usertoplevel = self._get_user_top_level()
         groupby = usertoplevel['usergroupby']
+        page = self.request.query_params.get('page', 1)
+        page_size = self.request.query_params.get('page_size', 10)
+        paginate = self.request.query_params.get('paginate', True)
         # user custom filters
         yearfilterby = self.request.query_params.get('report_year', '')
         filter_keph = self.request.query_params.get('filter_keph', '')
@@ -771,6 +774,12 @@ class FilterReportMixin(object):
             'ward__name',
             'ward',
             'date_established',
+            'keph_level',
+            'keph_level__name',
+            'facility_type',
+            'facility_type__name',
+            'owner',
+            'owner__name',
             *fields
         ).filter(**filters).annotate(
             cots=Sum('number_of_cots'),
@@ -792,6 +801,7 @@ class FilterReportMixin(object):
             if groupby == 'county':
                 group_byvalue = item['ward__sub_county__county__name']
             if groupby == 'sub_county':
+                # page_size=50  implement paging later
                 group_byvalue = item['ward__sub_county__name']
             if groupby == 'ward':
                 group_byvalue = item['ward__name']
@@ -814,7 +824,10 @@ class FilterReportMixin(object):
                     'ward__sub_county__county__name' :item.get('ward__sub_county__county__name',''),
                     'ward__sub_county__name' :item.get('ward__sub_county__name',''),
                     'ward__name' :item.get('ward__name',''),
-                    'date_established':item['date_established']
+                    'date_established':item['date_established'],
+                    'facility_keph_level':item['keph_level__name'],
+                    'facility_owner':item['owner__name'],
+                    'facility_type_name':item['facility_type__name']
                 }
             else:
                 # Get total beds
@@ -2535,6 +2548,12 @@ class CommunityHealthUnitReport(APIView):
     def get_services_report_all_hierachies(self, filters={}):
         usertoplevel = self._get_user_top_level()
         groupby = usertoplevel['usergroupby']
+
+        page = self.request.query_params.get('page', 1)
+        page_size = self.request.query_params.get('page_size', 50)
+        paginate = self.request.query_params.get('paginate', True)
+        current_page = page
+        total_pages = 1
         yearfilterby = self.request.query_params.get('report_year', '')
         if yearfilterby is not '':
             filters['health_unit__date_established__year'] = yearfilterby
@@ -2553,29 +2572,47 @@ class CommunityHealthUnitReport(APIView):
             for county in allcounties:
                 result_summary[county.name] = {}
                 result_summary[county.name]['health_unit__date_established'] = yearfilterby if yearfilterby else 'all'
+                result_summary[county.name]['health_unit__countyname'] = county.name
+                result_summary[county.name]['health_unit__subcountyname'] = 'all'
+                result_summary[county.name]['health_unit__wardname'] = 'all'
                 for serv in services:
                     service_counts = allchuservicelinks.filter(service_id=serv['id'],
                                                                          health_unit__facility__ward__sub_county__county=county)
                     result_summary[county.name][serv['name']] = len(service_counts)
 
         if groupby == 'sub_county':
+            page_size=50
+            total_pages=6
+            paginator = Paginator(list(allsubcounties), page_size)
+            allsubcounties=paginator.page(page)
+
             for subcounty in allsubcounties:
                 result_summary[subcounty.name] = {}
                 result_summary[subcounty.name]['health_unit__year_established'] = yearfilterby if yearfilterby else 'all'
+                result_summary[subcounty.name]['health_unit__countyname'] = subcounty.county.name
+                result_summary[subcounty.name]['health_unit__subcountyname'] = subcounty.name
+                result_summary[subcounty.name]['health_unit__wardname'] = 'all'
                 for serv in services:
                     service_counts = allchuservicelinks.filter(service_id=serv['id'],
                                                                          health_unit__facility__ward__sub_county=subcounty)
                     result_summary[subcounty.name][serv['name']] = len(service_counts)
         if groupby == 'ward':
+            page_size = 150
+            total_pages=10
+            paginator = Paginator(list(allwards), page_size)
+            allwards = paginator.page(page)
             for ward in allwards:
                 result_summary[ward.name] = {}
                 result_summary[ward.name]['health_unit__year_established']=yearfilterby if yearfilterby else 'all'
+                result_summary[ward.name]['health_unit__countyname']=ward.sub_county.county.name
+                result_summary[ward.name]['health_unit__subcountyname']=ward.sub_county.name
+                result_summary[ward.name]['health_unit__wardname']=ward.name
                 for serv in services:
                     service_counts = allchuservicelinks.filter(service_id=serv['id'],
                                                                          health_unit__facility__ward=ward)
                     result_summary[ward.name][serv['name']] = len(service_counts)
 
-        return result_summary, []
+        return {'total_pages':total_pages,'current_page':current_page,'result_summary':result_summary}, []
 
         # new CHUL report  count chus
 
