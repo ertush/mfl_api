@@ -2495,8 +2495,12 @@ class CommunityHealthUnitReport(APIView):
         page = self.request.query_params.get('page', 1)
         total_items=0
         yearfilterby = self.request.query_params.get('report_year', '')
+        chustatusfilterby = self.request.query_params.get('filter_chustatus', '')
+
         if yearfilterby is not '':
             filters['facility__date_established__year'] = yearfilterby
+        if chustatusfilterby is not '':
+            filters['status__name'] = chustatusfilterby
         if usertoplevel['usertoplevel'] == 'county':
             filters['facility__ward__sub_county__county__id'] = self.request.user.countyid
         if usertoplevel['usertoplevel'] == 'sub_county':
@@ -2543,6 +2547,10 @@ class CommunityHealthUnitReport(APIView):
                 result_summary[group_byvalue]['facility__ward']=item['facility__ward__name']
                 result_summary[group_byvalue]['facility__subcounty']=item['facility__ward__sub_county__name']
                 result_summary[group_byvalue]['facility__county']=item['facility__ward__sub_county__county__name']
+                if chustatusfilterby is not '':
+                    result_summary[group_byvalue]['chu_status'] = chustatusfilterby
+                else:
+                    result_summary[group_byvalue]['chu_status'] = 'all'
                 for status in allstatuses:
                     result_summary[group_byvalue][str(status.name).strip().replace(" ", '_')] = item[str(status.name)]
 
@@ -2562,6 +2570,9 @@ class CommunityHealthUnitReport(APIView):
         usertoplevel = self._get_user_top_level()
         groupby = usertoplevel['usergroupby']
 
+        allwards = Ward.objects.all()
+        allcounties = County.objects.all()
+        allsubcounties = SubCounty.objects.all()
         page = self.request.query_params.get('page', 1)
         page_size = self.request.query_params.get('page_size', 50)
         paginate = self.request.query_params.get('paginate', True)
@@ -2569,17 +2580,23 @@ class CommunityHealthUnitReport(APIView):
         total_pages = 1
         total_items = 0
         yearfilterby = self.request.query_params.get('report_year', '')
+        chustatusfilterby = self.request.query_params.get('filter_chustatus', '')
         if yearfilterby is not '':
             filters['health_unit__date_established__year'] = yearfilterby
+        if chustatusfilterby is not '':
+            filters['health_unit__status__name'] = chustatusfilterby
         if usertoplevel['usertoplevel'] == 'county':
             filters['health_unit__facility__ward__sub_county__county__id'] = self.request.user.countyid
+            allcounties = allcounties.filter(id=self.request.user.countyid)
+            allsubcounties = allsubcounties.filter(id=self.request.user.sub_countyid)
+            allwards = allwards.filter(sub_county__county__id=self.request.user.countyid)
         if usertoplevel['usertoplevel'] == 'sub_county':
             filters['health_unit__facility__ward__sub_county__id'] = self.request.user.sub_countyid
+            allcounties = allcounties.filter(id=self.request.user.countyid)
+            allsubcounties = allsubcounties.filter(id=self.request.user.sub_countyid)
+            allwards = allwards.filter(sub_county__id=self.request.user.sub_countyid)
 
         services = CHUService.objects.values('id', 'name')
-        allcounties = County.objects.all()
-        allsubcounties=SubCounty.objects.all()
-        allwards=Ward.objects.all()
         allchuservicelinks=CHUServiceLink.objects.filter(**filters)
         result_summary={}
         if groupby=='county':
@@ -2590,6 +2607,10 @@ class CommunityHealthUnitReport(APIView):
                 result_summary[county.name]['facility_county'] = county.name
                 result_summary[county.name]['facility_subcounty'] = 'all'
                 result_summary[county.name]['facility_ward'] = 'all'
+                if chustatusfilterby is not '':
+                    result_summary[county.name]['chu_status'] = chustatusfilterby
+                else:
+                    result_summary[county.name]['chu_status'] = 'all'
                 for serv in services:
                     service_counts = allchuservicelinks.filter(service_id=serv['id'],
                                                                          health_unit__facility__ward__sub_county__county=county)
@@ -2608,6 +2629,10 @@ class CommunityHealthUnitReport(APIView):
                 result_summary[subcounty.name]['facility_county'] = subcounty.county.name
                 result_summary[subcounty.name]['facility_subcounty'] = subcounty.name
                 result_summary[subcounty.name]['facility_ward'] = 'all'
+                if chustatusfilterby is not '':
+                    result_summary[subcounty.name]['chu_status'] = chustatusfilterby
+                else:
+                    result_summary[subcounty.name]['chu_status'] = 'all'
                 for serv in services:
                     service_counts = allchuservicelinks.filter(service_id=serv['id'],
                                                                          health_unit__facility__ward__sub_county=subcounty)
@@ -2621,9 +2646,13 @@ class CommunityHealthUnitReport(APIView):
             for ward in allwards:
                 result_summary[ward.name] = {}
                 result_summary[ward.name]['health_unit__year_established']=yearfilterby if yearfilterby else 'all'
-                result_summary[subcounty.name]['facility_county'] = ward.subcounty.county.name
-                result_summary[subcounty.name]['facility_subcounty'] = ward.subcounty.name
-                result_summary[subcounty.name]['facility_ward'] = ward.name
+                result_summary[ward.name]['facility_county'] = ward.sub_county.county.name
+                result_summary[ward.name]['facility_subcounty'] = ward.sub_county.name
+                result_summary[ward.name]['facility_ward'] = ward.name
+                if chustatusfilterby is not '':
+                    result_summary[ward.name]['chu_status'] = chustatusfilterby
+                else:
+                    result_summary[ward.name]['chu_status'] = 'all'
                 for serv in services:
                     service_counts = allchuservicelinks.filter(service_id=serv['id'],
                                                                          health_unit__facility__ward=ward)
@@ -2668,29 +2697,28 @@ class CommunityHealthUnitReport(APIView):
         usertoplevel = self._get_user_top_level()
         groupby = usertoplevel['usergroupby']
         toplevel_user = usertoplevel['usertoplevel']
-        usercounty = self.request.query_params.get('report_year', '')
         yearfilterby = self.request.query_params.get('report_year', '')
-        filters={}
-        if yearfilterby is not '':
-            filters['facility__date_established__year'] = yearfilterby
-        if usertoplevel['usertoplevel'] == 'county':
-            filters['facility__ward__sub_county__county__id'] = self.request.user.countyid
-        if usertoplevel['usertoplevel'] == 'sub_county':
-            filters['facility__ward__sub_county__id'] = self.request.user.sub_countyid
-        newqueryset=queryset.filter(**filters)
-        result_summary = {}
+        chustatusfilterby = self.request.query_params.get('filter_chustatus', '')
         allwards = Ward.objects.all()
         allcounties = County.objects.all()
         allsubcounties = SubCounty.objects.all()
+        filters={}
+        if yearfilterby is not '':
+            filters['facility__date_established__year'] = yearfilterby
+        if chustatusfilterby is not '':
+            filters['status__name'] = chustatusfilterby
         if usertoplevel['usertoplevel'] == 'county':
+            filters['facility__ward__sub_county__county__id'] = self.request.user.countyid
             allcounties = allcounties.filter(id=self.request.user.countyid)
-            allsubcounties = allsubcounties.filter(county__id=self.request.user.countyid)
-            allsubcounties = allsubcounties.filter(county__id=self.request.user.countyid)
-
+            allsubcounties = allsubcounties.filter(county__id=self.request.user.sub_countyid)
+            allwards = allwards.filter(sub_county__county__id=self.request.user.countyid)
         if usertoplevel['usertoplevel'] == 'sub_county':
+            filters['facility__ward__sub_county__id'] = self.request.user.sub_countyid
             allcounties = allcounties.filter(id=self.request.user.countyid)
-            allsubcounties = allsubcounties.filter(id=self.request.user.countyid)
-
+            allsubcounties = allsubcounties.filter(id=self.request.user.sub_countyid)
+            allwards = allwards.filter(sub_county__id=self.request.user.sub_countyid)
+        newqueryset=queryset.filter(**filters)
+        result_summary = {}
         total_chus = len(newqueryset)
         if groupby == 'county':
             for county in allcounties:
@@ -2707,7 +2735,11 @@ class CommunityHealthUnitReport(APIView):
                     result_summary[groupby_value]['chews'] = total_chews
                     result_summary[groupby_value]['facility_ward'] = 'all'
                     result_summary[groupby_value]['facility_subcounty'] = 'all'
-                    result_summary[groupby_value]['facility_Ward'] = groupby_value
+                    result_summary[groupby_value]['facility_county'] = groupby_value
+                    if chustatusfilterby is not '':
+                        result_summary[groupby_value]['chu_status'] = chustatusfilterby
+                    else:
+                        result_summary[groupby_value]['chu_status'] = 'all'
         if groupby== 'sub_county':
             for subcounty in allsubcounties:
                 groupby_value = subcounty.name
@@ -2723,7 +2755,11 @@ class CommunityHealthUnitReport(APIView):
                     result_summary[groupby_value]['chews'] = total_chews
                     result_summary[groupby_value]['facility_ward'] = 'all'
                     result_summary[groupby_value]['facility_subcounty'] = groupby_value
-                    result_summary[groupby_value]['facility_Ward'] = subcounty.county.name
+                    result_summary[groupby_value]['facility_county'] = subcounty.county.name
+                    if chustatusfilterby is not '':
+                        result_summary[groupby_value]['chu_status'] = chustatusfilterby
+                    else:
+                        result_summary[groupby_value]['chu_status'] = 'all'
         if groupby == 'ward':
             for ward in allwards:
                 groupby_value = ward.name
@@ -2740,6 +2776,10 @@ class CommunityHealthUnitReport(APIView):
                     result_summary[groupby_value]['facility_ward'] = groupby_value
                     result_summary[groupby_value]['facility_subcounty'] = ward.sub_county.name
                     result_summary[groupby_value]['facility_county'] = ward.sub_county.county.name
+                    if chustatusfilterby is not '':
+                        result_summary[groupby_value]['chu_status'] = chustatusfilterby
+                    else:
+                        result_summary[groupby_value]['chu_status'] = 'all'
 
         return {'result_summary':result_summary,"groupedby":groupby}, total_chus
 
