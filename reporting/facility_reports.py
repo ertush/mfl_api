@@ -780,6 +780,7 @@ class FilterReportMixin(object):
             'facility_type__name',
             'owner',
             'owner__name',
+            'owner__owner_type__name',
             *fields
         ).filter(**filters).annotate(
             cots=Sum('number_of_cots'),
@@ -1268,6 +1269,7 @@ class FilterReportMixin(object):
             'owner__name',
             'facility_type',
             'facility_type__name',
+            'owner__owner_type__name',
             *fields
         ).filter(**filters).annotate(
             **annotate_dict
@@ -1348,6 +1350,7 @@ class FilterReportMixin(object):
             'owner__name',
             'facility_type',
             'facility_type__name',
+            'owner__owner_type__name',
             *fields
         ).filter(**filters).annotate(
             **annotate_dict
@@ -1436,6 +1439,7 @@ class FilterReportMixin(object):
             'owner__name',
             'facility_type',
             'facility_type__name',
+            'owner__owner_type__name',
             *fields
         ).filter(**filters).annotate(**annotate_dict)
 
@@ -1524,6 +1528,7 @@ class FilterReportMixin(object):
             'owner__name',
             'facility_type',
             'facility_type__name',
+            'owner__owner_type__name',
             *fields
         ).filter(**filters).annotate(
             **annotate_dict
