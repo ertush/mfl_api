@@ -1621,6 +1621,7 @@ class FilterReportMixin(object):
             'facility__keph_level__name',
             'facility__owner',
             'facility__owner__name',
+            'facility__owner__owner_type__name',
             'facility__facility_type',
             'facility__facility_type__name',
         ).filter(**filters).annotate(**annotation)
@@ -1711,6 +1712,7 @@ class FilterReportMixin(object):
             'facility__keph_level__name',
             'facility__owner',
             'facility__owner__name',
+            'facility__owner__owner_type__name',
             'facility__facility_type',
             'facility__facility_type__name',
         ).filter(**filters).annotate(**annotation)
@@ -1838,6 +1840,7 @@ class FilterReportMixin(object):
             'facility__keph_level__name',
             'facility__owner',
             'facility__owner__name',
+            'facility__owner__owner_type__name',
             'facility__facility_type',
             'facility__facility_type__name',
         ).filter(**filters).annotate(**annotation)
