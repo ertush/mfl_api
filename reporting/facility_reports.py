@@ -2500,7 +2500,7 @@ class CommunityHealthUnitReport(APIView):
         if yearfilterby is not '':
             filters['facility__date_established__year'] = yearfilterby
         if chustatusfilterby is not '':
-            filters['status__name'] = chustatusfilterby
+            filters['status__name__iexact'] = chustatusfilterby
         if usertoplevel['usertoplevel'] == 'county':
             filters['facility__ward__sub_county__county__id'] = self.request.user.countyid
         if usertoplevel['usertoplevel'] == 'sub_county':
@@ -2740,6 +2740,10 @@ class CommunityHealthUnitReport(APIView):
                         result_summary[groupby_value]['chu_status'] = chustatusfilterby
                     else:
                         result_summary[groupby_value]['chu_status'] = 'all'
+                    if yearfilterby is not '':
+                        result_summary[groupby_value]['date_establised'] = yearfilterby
+                    else:
+                        result_summary[groupby_value]['date_establised'] = 'all'
         if groupby== 'sub_county':
             for subcounty in allsubcounties:
                 groupby_value = subcounty.name
@@ -2760,6 +2764,10 @@ class CommunityHealthUnitReport(APIView):
                         result_summary[groupby_value]['chu_status'] = chustatusfilterby
                     else:
                         result_summary[groupby_value]['chu_status'] = 'all'
+                    if yearfilterby is not '':
+                        result_summary[groupby_value]['date_establised'] = yearfilterby
+                    else:
+                        result_summary[groupby_value]['date_establised'] = 'all'
         if groupby == 'ward':
             for ward in allwards:
                 groupby_value = ward.name
@@ -2780,6 +2788,10 @@ class CommunityHealthUnitReport(APIView):
                         result_summary[groupby_value]['chu_status'] = chustatusfilterby
                     else:
                         result_summary[groupby_value]['chu_status'] = 'all'
+                    if yearfilterby is not '':
+                        result_summary[groupby_value]['date_establised'] = yearfilterby
+                    else:
+                        result_summary[groupby_value]['date_establised'] = 'all'
 
         return {'result_summary':result_summary,"groupedby":groupby}, total_chus
 
