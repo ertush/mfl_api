@@ -2603,7 +2603,7 @@ class CommunityHealthUnitReport(APIView):
             total_items=allcounties.count()
             for county in allcounties:
                 result_summary[county.name] = {}
-                result_summary[county.name]['health_unit__date_established'] = yearfilterby if yearfilterby else 'all'
+                result_summary[county.name]['health_unit__year_established'] = yearfilterby if yearfilterby else 'all'
                 result_summary[county.name]['facility_county'] = county.name
                 result_summary[county.name]['facility_subcounty'] = 'all'
                 result_summary[county.name]['facility_ward'] = 'all'
