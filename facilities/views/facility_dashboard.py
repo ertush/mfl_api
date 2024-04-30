@@ -167,15 +167,15 @@ class DashBoard(QuerysetFilterMixin, APIView):
         if self.request.query_params.get('ward'):
             myqueryset = self.get_queryset().filter(created__gte=period_start, created__lte=period_end,
                                                                                ward=self.request.query_params.get(
-                                                                                   'ward')).count()
+                                                                                   'ward'))
         elif self.request.query_params.get('sub_county'):
             myqueryset = self.get_queryset().filter(created__gte=period_start, created__lte=period_end,
                                                                                sub_county=self.request.query_params.get(
-                                                                                   'sub_county')).count()
+                                                                                   'sub_county'))
         elif self.request.query_params.get('county'):
             myqueryset = self.get_queryset().filter(created__gte=period_start, created__lte=period_end,
                                                                                county=self.request.query_params.get(
-                                                                                   'county')).count()
+                                                                                   'county'))
 
         for category in all_categories:
             summaries[category] = myqueryset.filter(facility_type__sub_division=category).count()
