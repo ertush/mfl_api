@@ -456,24 +456,41 @@ class FacilityFilter(CommonFieldsFilterset):
             return qs.exclude(id__in=[facility.id for facility in incomplete])
 
     def facilities_pending_approval(self, qs, name, value):
-        incomplete = qs.filter(code=not None)
-        incomplete_facility_ids = [facility.id for facility in incomplete]
+        approved_national_facilities = qs.filter(code=not None)
+        approved_national_facilities_ids = [facility.id for facility in approved_national_facilities]
+        incomplete_facilities = qs.filter(
+             Q (
+               Q(facility_services=None) |   
+               Q(facility_infrastructure=None) |
+               Q(facility_specialists=None) |
+               Q(facility_contacts=None) |
+               Q(facility_coordinates_through=None) |
+               Q(facility_specialists=None) 
+                )
+             )
+        incomplete_facilities_ids = [facility.id for facility in incomplete_facilities]
         if value in TRUTH_NESS:
-            return qs.filter(
-                Q(
-                    Q(rejected=False),
-                    Q(has_edits=True) |
-                    Q(approved=None,rejected=False)
-                ) |
-                Q(
-                    Q(rejected=False),
-                    Q(has_edits=True) | Q(approved=None,rejected=False))
-            ).exclude(id__in=incomplete_facility_ids)
+            # return qs.filter(
+            #     Q(
+            #         Q(rejected=False),
+            #         Q(has_edits=True) |
+            #         Q(approved=None,rejected=False)
+            #     ) |
+            #     Q(
+            #         Q(rejected=False),
+            #         Q(has_edits=True) | Q(approved=None,rejected=False))
+            # ).exclude(id__in=approved_national_facilities_ids)
+
+            pending_validation = qs.filter(Q(Q(approved=None) & Q(rejected=False)))
+            exclude_incomplete = pending_validation.exclude(id__in=incomplete_facilities_ids)
+            exclude_approved_national = exclude_incomplete.exclude(id__in=approved_national_facilities_ids)
+
+            return exclude_approved_national
         else:
             return qs.filter(
                 Q(rejected=True) |
                 Q(has_edits=False) & Q(approved=None)
-            ).exclude(id__in=incomplete_facility_ids)
+            ).exclude(id__in=approved_national_facilities_ids)
 
     def filter_national_rejected(self, qs, name, value):
         rejected_national = qs.filter(rejected=False,code=None,
