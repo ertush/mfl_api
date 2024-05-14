@@ -74,7 +74,7 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
     curative health services
     """
     name = models.CharField(max_length=100)
-    code = SequenceField(unique=True)
+    code = SequenceField(unique=True, null=True)
     facility = models.ForeignKey(
         Facility,
         help_text='The facility on which the health unit is tied to.')
@@ -217,11 +217,30 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
     @property
     def pending_updates(self):
         try:
-            chu = ChuUpdateBuffer.objects.get(
+            chu_update_buffer = ChuUpdateBuffer.objects.filter(
                 is_approved=False,
                 is_rejected=False,
                 health_unit=self
             )
+
+            chu = chu_update_buffer[0] if len(chu_update_buffer) > 0 else ChuUpdateBuffer.objects.get(
+                is_approved=False,
+                is_rejected=False,
+                health_unit=self
+            )
+
+
+            # if 'facility' in str(chu.updates):
+            #     chu['updates'] = {
+            #         'basic': {
+            #             'facility': str(chu.updates).split("facility:")[1]
+            #           }
+            #     }
+
+            #     LOGGER.info("updates_pending: {}".format(chu.updates))
+
+
+
             return chu.updates
         except ChuUpdateBuffer.DoesNotExist:
             return {}
@@ -229,12 +248,20 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
     @property
     def latest_update(self):
         try:
-            chu = ChuUpdateBuffer.objects.get(
+            chu_updates = ChuUpdateBuffer.objects.filter(
                 is_approved=False,
                 is_rejected=False,
                 health_unit=self
             )
+
+            chu = chu_updates[0] if len(chu_updates) > 1 else ChuUpdateBuffer.objects.get(
+                is_approved=False,
+                is_rejected=False,
+                health_unit=self
+            )
+
             return chu
+        
         except ChuUpdateBuffer.DoesNotExist:
             return None
 
@@ -263,7 +290,7 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
         import requests
         dhisauth = DhisAuth()
         dhisauth.get_oauth2_token()
-        facility_dhis_id = self.get_facility_dhis2_parent_id()
+        facility_dhis_id = self.get_facility_dhis2_parent_id() if self.facility.reporting_in_dhis else None
         unit_uuid_status = dhisauth.get_org_unit_id(self.code)
         unit_uuid = unit_uuid_status[0]
         new_chu_payload = {
@@ -277,45 +304,51 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
             },
             "openingDate": self.date_operational.strftime("%Y-%m-%d"),
         }
+
+
         
         metadata_payload = {
             "keph": 'axUnguN4QDh'
         }
 
-        if unit_uuid_status[1] == 'retrieved':
-            r = requests.put(
-                settings.DHIS_ENDPOINT + "api/organisationUnits/" + new_chu_payload.pop('id'),
-                auth=(settings.DHIS_USERNAME, settings.DHIS_PASSWORD),
-                headers={
-                    "Accept": "application/json"
-                },
-                json=new_chu_payload
-            )
-            print("Update CHU Response", r.url, r.status_code, r.json())
-            LOGGER.info("Update CHU Response: %s" % r.text)
-        else:
-            r = requests.post(
-                settings.DHIS_ENDPOINT + "api/organisationUnits",
-                auth=(settings.DHIS_USERNAME, settings.DHIS_PASSWORD),
-                headers={
-                    "Accept": "application/json"
-                },
-                json=new_chu_payload
-            )
+        if facility_dhis_id is not None:
+            if unit_uuid_status[1] == 'retrieved':
+                LOGGER.info("[>>>>>] Retrieved CHU")
 
-            print("Create CHU Response", r.url, r.status_code, r.json())
-            LOGGER.info("Create CHU Response: %s" % r.text)
+                r = requests.put(
+                    settings.DHIS_ENDPOINT + "api/organisationUnits/" + new_chu_payload.pop('id'),
+                    auth=(settings.DHIS_USERNAME, settings.DHIS_PASSWORD),
+                    headers={
+                        "Accept": "application/json"
+                    },
+                    json=new_chu_payload
+                )
+                print("Update CHU Response", r.url, r.status_code, r.json())
+                LOGGER.info("Update CHU Response: %s" % r.text)
+            else:
+                LOGGER.info("[>>>>>] Payload for new CHU: {}".format(new_chu_payload));
+                r = requests.post(
+                    settings.DHIS_ENDPOINT + "api/organisationUnits",
+                    auth=(settings.DHIS_USERNAME, settings.DHIS_PASSWORD),
+                    headers={
+                        "Accept": "application/json"
+                    },
+                    json=new_chu_payload
+                )
 
-        if r.json()["status"] != "OK":
-            LOGGER.error("Failed PUSH: error -> {}".format(r.text))
-            raise ValidationError(
-                {
-                    "Error!": ["An error occured while pushing Community Unit to DHIS2. This is may be caused by the "
-                               "existance of an organisation unit with as similar name as to the one you are creating. "
-                               "Or some specific information like codes are not unique"]
-                }
-            )
-        self.push_chu_metadata(metadata_payload, unit_uuid)
+                print("Create CHU Response", r.url, r.status_code, r.json())
+                LOGGER.info("Create CHU Response: %s" % r.text)
+
+            if r.json()["status"] != "OK":
+                LOGGER.error("Failed PUSH: error -> {}".format(r.text))
+                raise ValidationError(
+                    {
+                        "Error!": ["An error occured while pushing Community Unit to DHIS2. This is may be caused by the "
+                                "existance of an organisation unit with as similar name as to the one you are creating. "
+                                "Or some specific information like codes are not unique"]
+                    }
+                )
+            self.push_chu_metadata(metadata_payload, unit_uuid)
 
     def push_chu_metadata(self, metadata_payload, chu_uid):
         # Keph Level
@@ -342,13 +375,13 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
             },
             params={
                 "query": self.facility.code,
-                "fields": "[id,name]",
+                "fields": "id,name",
                 "filter": "level:in:[5]",
                 "paging": "false"
             }
         )
 
-        if len(r.json()["organisationUnits"]) is 1:
+        if len(r.json()["organisationUnits"]) is 1 and "id" in r.json()["organisationUnits"][0]:
             if r.json()["organisationUnits"][0]["id"]:
                 return r.json()["organisationUnits"][0]["id"]
         else:
@@ -492,14 +525,22 @@ class ChuUpdateBuffer(AbstractBase):
             raise ValidationError({"__all__": ["Nothing was edited"]})
 
     def update_basic_details(self):
+        # Because the basic property of ChuUpdateBuffer receives {"basic": {"facilities": <facility_id>}"}
+        # if "basic" in self.basic:
         basic_details = json.loads(self.basic)
+            # LOGGER.info("[INFO >>>>>>>>>>>>] CHU Basic Details {}\nself.basic: {}".format(basic_details, self.basic))
+        # else:
+        #     basic_details = json.loads(self.basic)
+
+
+
         if 'status' in basic_details:
             basic_details['status_id'] = basic_details.get(
                 'status').get('status_id')
             basic_details.pop('status')
         if 'facility' in basic_details:
             basic_details['facility_id'] = basic_details.get(
-                'facility').get('facility_id')
+                'facility')
             basic_details.pop('facility')
         
         
@@ -577,9 +618,10 @@ class ChuUpdateBuffer(AbstractBase):
 
     @property
     def updates(self):
+        LOGGER.info('INFO: {}'.format(self.basic))
         updates = {}
         if self.basic:
-            updates['basic'] = json.loads(self.basic)
+            updates['basic'] = json.loads(self.basic)['basic']
         if self.contacts:
             updates['contacts'] = json.loads(self.contacts)
         if self.workers:
