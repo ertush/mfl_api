@@ -2488,7 +2488,7 @@ class CommunityHealthUnitReport(APIView):
                 data.append(chu)
         return data, self.queryset.count()
 
-    # new CHUL report functionality/status
+    # new CHUL report functionality/status edited by felix
     def get_status_report_all_hierachies(self, filters={}):
         usertoplevel = self._get_user_top_level()
         groupby = self._get_user_top_level()['usergroupby']
