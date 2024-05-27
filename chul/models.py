@@ -78,6 +78,12 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
         Facility,
         help_text='The facility on which the health unit is tied to.')
     status = models.ForeignKey(Status, on_delete=models.PROTECT)
+    chps_present = models.PositiveIntegerField(default=0,help_text='Number of Community Health Promoters in the CHU')
+    chps_trained = models.PositiveIntegerField(default=0,help_text='Number of trained Community Health Promoters  in the CHU')
+    chas_present = models.PositiveIntegerField(default=0,help_text='Number of Community Health Assistants  in the CHU')
+    chas_trained = models.PositiveIntegerField(default=0,help_text='Number of trained Community Health Assistants in the CHU')
+    chcs_present = models.PositiveIntegerField(default=0,help_text='Number of Community Health Commitee Members in the CHU')
+    chcs_trained = models.PositiveIntegerField(default=0,help_text='Number of trained Community Health Commitee Members in the CHU')
     households_monitored = models.PositiveIntegerField(
         default=0,
         help_text='The number of house holds a CHU is in-charge of')
