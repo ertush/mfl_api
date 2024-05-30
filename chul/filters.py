@@ -96,6 +96,9 @@ class CommunityHealthUnitFilter(CommonFieldsFilterset):
     pending_approval = django_filters.CharFilter(
         method='chu_pending_approval')
 
+    partners = django_filters.CharFilter(
+        lookup_expr='icontains')
+
     class Meta(CommonFieldsFilterset.Meta):
         model = CommunityHealthUnit
 
