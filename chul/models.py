@@ -10,6 +10,9 @@ from django.core.exceptions import ValidationError
 from django.core import validators
 from django.utils import timezone, encoding
 from django.conf import settings
+from django.contrib.postgres.fields import ArrayField
+from django.contrib.postgres.fields import JSONField
+from django_filters import filters
 
 from common.models import AbstractBase, Contact, SequenceMixin
 from common.fields import SequenceField
@@ -104,6 +107,10 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
     number_of_chvs = models.PositiveIntegerField(
         default=0,
         help_text='Number of Community Health volunteers in the CHU')
+    partners = ArrayField(models.CharField(max_length=255,null=True), default=list,null=True, blank=True)
+    has_iga = models.BooleanField(default=False, help_text='Has Income Generating Activities')
+    has_iec_materials = models.BooleanField(default=False,
+                                            help_text='Has Information, education and communication materials')
 
     def __str__(self):
         return self.name
@@ -370,6 +377,7 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
             )
 
     class Meta(AbstractBase.Meta):
+
         unique_together = ('name', 'facility',)
         permissions = (
             (
@@ -416,6 +424,8 @@ class CommunityHealthWorker(AbstractBase):
         CommunityHealthUnit, on_delete=models.PROTECT,
         help_text='The health unit the worker is in-charge of',
         related_name='health_unit_workers')
+    mobile_no = models.CharField(max_length=50, null=True, blank=True)
+    email = models.CharField(max_length=50, null=True, blank=True)
 
     def __str__(self):
         return "{} ({})".format(self.first_name, self.health_unit.name)
