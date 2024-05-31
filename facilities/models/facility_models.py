@@ -1023,7 +1023,12 @@ class FacilityExportExcelMaterialView(models.Model):
     long = models.CharField(max_length=30, null=True, blank=True)
     lat = models.CharField(max_length=30, null=True, blank=True)
     approved_national_level = models.BooleanField(default=False)
-
+    # number_of_minor_theatres = models.PositiveIntegerField(
+    #     default=0)
+    # number_of_eye_theatres = models.PositiveIntegerField(
+    #     default=0)
+    # new_born_unit = models.BooleanField(default=False)
+    # out_reach_services = models.BooleanField(default=False)
     class Meta(object):
         managed = False
         ordering = ('-created', )
@@ -1102,7 +1107,18 @@ class Facility(SequenceMixin, AbstractBase):
     number_of_maternity_theatres = models.PositiveIntegerField(
         default=0,
         help_text="The number of maternity theatres "
-        " that a facility has e.g 0")  
+        " that a facility has e.g 0")
+
+    number_of_minor_theatres = models.PositiveIntegerField(
+        default=0,
+        help_text="The number of minor theatres "
+                  " that a facility has e.g 0")
+    number_of_eye_theatres = models.PositiveIntegerField(
+        default=0,
+        help_text="The number of eye theatres "
+                  " that a facility has e.g 0")
+    new_born_unit = models.BooleanField(default=False)
+    out_reach_services = models.BooleanField(default=False)
     open_whole_day = models.BooleanField(
         default=False,
         help_text="Does the facility operate 24 hours a day")
