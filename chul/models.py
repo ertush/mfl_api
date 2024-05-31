@@ -229,11 +229,30 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
     @property
     def pending_updates(self):
         try:
-            chu = ChuUpdateBuffer.objects.filter(is_approved=False, is_rejected=False, health_unit=self)[0] if len(
-                ChuUpdateBuffer.objects.filter(is_approved=False, is_rejected=False,
-                                               health_unit=self)) else ChuUpdateBuffer.objects.get(is_approved=False,
-                                                                                                   is_rejected=False,
-                                                                                                   health_unit=self)
+            chu_update_buffer = ChuUpdateBuffer.objects.filter(
+                is_approved=False,
+                is_rejected=False,
+                health_unit=self
+            )
+
+            chu = chu_update_buffer[0] if len(chu_update_buffer) > 0 else ChuUpdateBuffer.objects.get(
+                is_approved=False,
+                is_rejected=False,
+                health_unit=self
+            )
+
+
+            # if 'facility' in str(chu.updates):
+            #     chu['updates'] = {
+            #         'basic': {
+            #             'facility': str(chu.updates).split("facility:")[1]
+            #           }
+            #     }
+
+            #     LOGGER.info("updates_pending: {}".format(chu.updates))
+
+
+
             return chu.updates
         except ChuUpdateBuffer.DoesNotExist:
             return {}
@@ -241,12 +260,20 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
     @property
     def latest_update(self):
         try:
-            chu = ChuUpdateBuffer.objects.filter(is_approved=False, is_rejected=False, health_unit=self)[0] if len(
-                ChuUpdateBuffer.objects.filter(is_approved=False, is_rejected=False,
-                                               health_unit=self)) else ChuUpdateBuffer.objects.get(is_approved=False,
-                                                                                                   is_rejected=False,
-                                                                                                   health_unit=self)
+            chu_updates = ChuUpdateBuffer.objects.filter(
+                is_approved=False,
+                is_rejected=False,
+                health_unit=self
+            )
+
+            chu = chu_updates[0] if len(chu_updates) > 1 else ChuUpdateBuffer.objects.get(
+                is_approved=False,
+                is_rejected=False,
+                health_unit=self
+            )
+
             return chu
+        
         except ChuUpdateBuffer.DoesNotExist:
             return None
 
@@ -282,7 +309,7 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
         import requests
         dhisauth = DhisAuth()
         dhisauth.get_oauth2_token()
-        facility_dhis_id = self.get_facility_dhis2_parent_id()
+        facility_dhis_id = self.get_facility_dhis2_parent_id() if self.facility.reporting_in_dhis else None
         unit_uuid_status = dhisauth.get_org_unit_id(self.code)
         unit_uuid = unit_uuid_status[0]
         new_chu_payload = {
@@ -301,40 +328,50 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
             "keph": 'axUnguN4QDh'
         }
 
-        if unit_uuid_status[1] == 'retrieved':
-            r = requests.put(
-                settings.DHIS_ENDPOINT + "api/organisationUnits/" + new_chu_payload.pop('id'),
-                auth=(settings.DHIS_USERNAME, settings.DHIS_PASSWORD),
-                headers={
-                    "Accept": "application/json"
-                },
-                json=new_chu_payload
-            )
-            print("Update CHU Response", r.url, r.status_code, r.json())
-            LOGGER.info("Update CHU Response: %s" % r.text)
+        if facility_dhis_id is not None:
+            if unit_uuid_status[1] == 'retrieved':
+                LOGGER.info("[>>>>>] Retrieved CHU")
+
+                r = requests.put(
+                    settings.DHIS_ENDPOINT + "api/organisationUnits/" + new_chu_payload.pop('id'),
+                    auth=(settings.DHIS_USERNAME, settings.DHIS_PASSWORD),
+                    headers={
+                        "Accept": "application/json"
+                    },
+                    json=new_chu_payload
+                )
+                print("Update CHU Response", r.url, r.status_code, r.json())
+                LOGGER.info("Update CHU Response: %s" % r.text)
+            else:
+                LOGGER.info("[>>>>>] Payload for new CHU: {}".format(new_chu_payload));
+                r = requests.post(
+                    settings.DHIS_ENDPOINT + "api/organisationUnits",
+                    auth=(settings.DHIS_USERNAME, settings.DHIS_PASSWORD),
+                    headers={
+                        "Accept": "application/json"
+                    },
+                    json=new_chu_payload
+                )
+
+                print("Create CHU Response", r.url, r.status_code, r.json())
+                LOGGER.info("Create CHU Response: %s" % r.text)
+
+            if r.json()["status"] != "OK":
+                LOGGER.error("Failed PUSH: error -> {}".format(r.text))
+                raise ValidationError(
+                    {
+                        "Error!": ["An error occured while pushing Community Unit to DHIS2. This is may be caused by the "
+                                "existance of an organisation unit with as similar name as to the one you are creating. "
+                                "Or some specific information like codes are not unique"]
+                    }
+                )
+            self.push_chu_metadata(metadata_payload, unit_uuid)
         else:
-            r = requests.post(
-                settings.DHIS_ENDPOINT + "api/organisationUnits",
-                auth=(settings.DHIS_USERNAME, settings.DHIS_PASSWORD),
-                headers={
-                    "Accept": "application/json"
-                },
-                json=new_chu_payload
-            )
-
-            print("Create CHU Response", r.url, r.status_code, r.json())
-            LOGGER.info("Create CHU Response: %s" % r.text)
-
-        if r.json()["status"] != "OK":
-            LOGGER.error("Failed PUSH: error -> {}".format(r.text))
             raise ValidationError(
-                {
-                    "Error!": ["An error occured while pushing Community Unit to DHIS2. This is may be caused by the "
-                               "existance of an organisation unit with as similar name as to the one you are creating. "
-                               "Or some specific information like codes are not unique"]
-                }
-            )
-        self.push_chu_metadata(metadata_payload, unit_uuid)
+                    {
+                        "Error!": ["Could not find Facility DHIS ID, when pushing CU to DHIS"]
+                    }
+                )
 
     def push_chu_metadata(self, metadata_payload, chu_uid):
         # Keph Level
@@ -366,7 +403,7 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
             }
         )
 
-        if len(r.json()["organisationUnits"]) is 1:
+        if len(r.json()["organisationUnits"]) is 1 and "id" in r.json()["organisationUnits"][0]:
             if r.json()["organisationUnits"][0]["id"]:
                 return r.json()["organisationUnits"][0]["id"]
         else:
@@ -583,8 +620,9 @@ class ChuUpdateBuffer(AbstractBase):
     @property
     def updates(self):
         updates = {}
-        if self.basic:
-            updates['basic'] = json.loads(self.basic)['basic']
+        if self.basic and self.basic is not None:
+            json_basic = json.loads(self.basic)
+            updates['basic'] = json_basic['basic'] if 'basic' in json_basic else json_basic 
         if self.contacts:
             updates['contacts'] = json.loads(self.contacts)
         if self.workers:
