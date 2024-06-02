@@ -361,9 +361,9 @@ class CHUDetailReport(DownloadPDFMixin, generics.RetrieveAPIView):
     def get(self, *args, **kwargs):
         report_date = timezone.now().isoformat()
         chu = self.get_object()
-        context = {
+        context = Context({
             "chu": self.get_serializer(instance=chu).data,
             "report_date": report_date
-        }
+        })
         template = loader.get_template("chu_details.html")
         return self.download_file(template.render(context), chu.name)

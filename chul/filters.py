@@ -67,13 +67,13 @@ class CommunityHealthUnitFilter(CommonFieldsFilterset):
                 Q(is_approved=None, is_rejected=True, has_edits=False)
             )
         
-    def chu_approved(self, qs, name, value):
-        if value in TRUTH_NESS:
-            return qs.filter(
-                Q(is_approved=True, is_rejected=False, has_edits=False) |
-                Q(is_approved=True, is_rejected=False, has_edits=True) |
-                Q(is_approved=True, is_rejected=True, has_edits=True)
-            )
+    # def chu_approved(self, qs, name, value):
+    #     if value in TRUTH_NESS:
+    #         return qs.filter(
+    #             Q(is_approved=True, is_rejected=False, has_edits=False) |
+    #             Q(is_approved=True, is_rejected=False, has_edits=True) |
+    #             Q(is_approved=True, is_rejected=True, has_edits=True)
+    #         )
 
     name = django_filters.CharFilter(lookup_expr='icontains')
     ward = ListCharFilter(name='facility__ward')
@@ -85,8 +85,9 @@ class CommunityHealthUnitFilter(CommonFieldsFilterset):
     sub_county = ListCharFilter(
         name='facility__ward__sub_county')
 
-    is_approved = django_filters.CharFilter(
-        method='chu_approved')
+    is_approved = django_filters.TypedChoiceFilter(
+        choices=BOOLEAN_CHOICES, coerce=strtobool
+    )
     is_rejected = django_filters.TypedChoiceFilter(
         choices=BOOLEAN_CHOICES, coerce=strtobool
     )
