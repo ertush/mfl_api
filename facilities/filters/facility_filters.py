@@ -429,14 +429,21 @@ class FacilityFilter(CommonFieldsFilterset):
         incomplete = qs.filter(
             Q(
             
-               Q(facility_services=None) |   
-               Q(facility_infrastructure=None) |
-               Q(facility_specialists=None) |
-               Q(facility_contacts=None) |
-               Q(facility_coordinates_through=None) |
-               Q(facility_specialists=None)
+            #    Q(facility_services=None) |   
+            #    Q(facility_infrastructure=None) |
+            #    Q(facility_specialists=None) |
+            #    Q(facility_contacts=None) |
+            #    Q(facility_coordinates_through=None) |
+            #    Q(facility_specialists=None)
             
-
+            Q(
+                facility_specialists=None, 
+                facility_infrastructure=None, 
+                facility_specialists=None, 
+                facility_contacts=None,
+                facility_coordinates_through=None,
+                facility_specialists=None
+            )
             # Q(facility_services=None)
 
             # Q(facility_infrastructure=None)
