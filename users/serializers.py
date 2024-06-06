@@ -491,7 +491,7 @@ class MflUserSerializer(PartialResponseMixin, serializers.ModelSerializer):
         instance.save()
 
         self._create_user_constituency(instance, constituencies)
-        self._create_user_county(instance, counties)
+        if not instance.is_national: self._create_user_county(instance, counties)
         self._update_or_create_contacts(instance, contacts)
         self._create_regulator(instance, regulators)
         self._create_user_sub_counties(instance, sub_counties)
