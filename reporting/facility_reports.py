@@ -1339,10 +1339,10 @@ class FilterReportMixin(object):
         if usertoplevel['usertoplevel'] == 'sub_county':
             filters['ward__sub_county__id'] = self.request.user.sub_countyid
 
-        regulatory_body = KephLevel.objects.values('id', 'name')
+        all_kephs = KephLevel.objects.values('id', 'name')
         annotate_dict = {
             reg['name']: Sum(Case(When(keph_level_id=reg['id'], then=1), output_field=IntegerField(), default=0)) for
-            reg in regulatory_body
+            reg in all_kephs
         }
 
         items = Facility.objects.values(
@@ -1767,15 +1767,16 @@ class FilterReportMixin(object):
             filters['facility__ward__sub_county__id'] = self.request.user.sub_countyid
 
         infrastructure = Infrastructure.objects.values('id', 'name', 'category_id', 'category_id__name')
+        infrastructure_cat= InfrastructureCategory.objects.values('id','name')
         annotation = {}
         annotation2 = {}
 
         annotation = {
             reg['name']: Sum(Case(When(infrastructure_id=reg['id'], then=1), output_field=IntegerField(), default=0))
             for reg in infrastructure}
-        annotation2 = {reg['category_id__name']: Sum(
-            Case(When(infrastructure_id__category=reg['category_id'], then=1), output_field=IntegerField(), default=0))
-                       for reg in infrastructure}
+        annotation2 = {reg['name']: Sum(
+            Case(When(infrastructure_id__category=reg['id'], then=1), output_field=IntegerField(), default=0))
+                       for reg in infrastructure_cat}
 
         items = FacilityInfrastructure.objects.values(
             'facility__ward__sub_county__county__name',
@@ -1794,7 +1795,6 @@ class FilterReportMixin(object):
             'facility__facility_type__name',
         ).filter(**filters).annotate(**annotation)
         items = items.annotate(**annotation2).order_by()
-
 
         result_summary = {}
         result_summary_category = {}
