@@ -1308,35 +1308,42 @@ class FilterReportMixin(object):
                     result_summary[group_byvalue][str(category.name).strip().replace(" ", '_')] += item[str(category.name)]
         return {'groupedby': groupby, 'results': result_summary}, []
 
-    def _get_facility_count_keph_level(self, vals={}, filters={}, ):
+    #with annotaion of count
+    def _get_facility_count_keph_level_oldannotation(self, vals=None, filters=None):
+        if vals is None:
+            vals = {}
+        if filters is None:
+            filters = {}
 
         fields = vals.keys()
         usertoplevel = self._get_user_top_level()
         groupby = usertoplevel['usergroupby']
-        # user custom filters
+
+        # User custom filters
         yearfilterby = self.request.query_params.get('report_year', '')
         filter_keph = self.request.query_params.get('filter_keph', '')
         filter_type = self.request.query_params.get('filter_type', '')
         filter_owner = self.request.query_params.get('filter_owner', '')
-        if yearfilterby is not '':
+
+        if yearfilterby:
             filters['date_established__year'] = yearfilterby
-        if filter_keph is not '':
+        if filter_keph:
             filters['keph_level'] = filter_keph
-        if filter_type is not '':
+        if filter_type:
             filters['facility_type'] = filter_type
-        if filter_owner is not '':
+        if filter_owner:
             filters['owner__owner_type'] = filter_owner
+
         if usertoplevel['usertoplevel'] == 'county':
             filters['ward__sub_county__county__id'] = self.request.user.countyid
         if usertoplevel['usertoplevel'] == 'sub_county':
             filters['ward__sub_county__id'] = self.request.user.sub_countyid
 
         regulatory_body = KephLevel.objects.values('id', 'name')
-        annotate_dict = {}  # Initialize the dictionary outside the loop
-
         annotate_dict = {
             reg['name']: Sum(Case(When(keph_level_id=reg['id'], then=1), output_field=IntegerField(), default=0)) for
-            reg in regulatory_body}
+            reg in regulatory_body
+        }
 
         items = Facility.objects.values(
             'ward__sub_county__name',
@@ -1359,38 +1366,108 @@ class FilterReportMixin(object):
         result_summary = {}
         allcategories = KephLevel.objects.all()
         for item in items:
+            group_byvalue = None
             if groupby == 'county':
-                group_byvalue = item['ward__sub_county__county__name']
-            if groupby == 'sub_county':
-                group_byvalue = item['ward__sub_county__name']
-            if groupby == 'ward':
-                group_byvalue = item['ward__name']
+                group_byvalue = item.get('ward__sub_county__county__name')
+            elif groupby == 'sub_county':
+                group_byvalue = item.get('ward__sub_county__name')
+            elif groupby == 'ward':
+                group_byvalue = item.get('ward__name')
 
             if group_byvalue not in result_summary:
-                result_summary[group_byvalue] = {}
-                for category in allcategories:
-                    result_summary[group_byvalue][str(category.name).strip().replace(" ", '_')] =  item[category.name]
+                result_summary[group_byvalue] = {
+                    str(category.name).strip().replace(" ", '_'): item.get(category.name, 0) for category in
+                    allcategories
+                }
                 result_summary[group_byvalue]['year_established'] = item['date_established']
-                result_summary[group_byvalue]['ward__sub_county__county__name'] = item[
-                        'ward__sub_county__county__name']
+                result_summary[group_byvalue]['ward__sub_county__county__name'] = item['ward__sub_county__county__name']
                 result_summary[group_byvalue]['ward__sub_county__name'] = item['ward__sub_county__name']
                 result_summary[group_byvalue]['ward__name'] = item['ward__name']
-                if filter_keph is not '':
-                    result_summary[group_byvalue]['facility_keph_level'] = item['keph_level__name']
-                else:
-                    result_summary[group_byvalue]['facility_keph_level'] = 'All'
-                if filter_type is not '':
-                    result_summary[group_byvalue]['facility_type'] = item['facility_type__name']
-                else:
-                    result_summary[group_byvalue]['facility_type'] = 'All'
-                if filter_owner is not '':
-                    result_summary[group_byvalue]['facility_owner'] = item['owner__owner_type__name']
-                else:
-                    result_summary[group_byvalue]['facility_owner'] = 'All'
-                # Add more properties here...
+                result_summary[group_byvalue]['facility_keph_level'] = item[
+                    'keph_level__name'] if filter_keph else 'All'
+                result_summary[group_byvalue]['facility_type'] = item['facility_type__name'] if filter_type else 'All'
+                result_summary[group_byvalue]['facility_owner'] = item[
+                    'owner__owner_type__name'] if filter_owner else 'All'
             else:
                 for category in allcategories:
-                    result_summary[group_byvalue][str(category.name).strip().replace(" ", '_')] += item.get(category.name, 0)
+                    result_summary[group_byvalue][str(category.name).strip().replace(" ", '_')] += item.get(
+                        category.name, 0)
+
+        return {'groupedby': groupby, 'results': result_summary}, []
+
+    def _get_facility_count_keph_level(self, vals=None, filters=None):
+        if vals is None:
+            vals = {}
+        if filters is None:
+            filters = {}
+
+        fields = vals.keys()
+        usertoplevel = self._get_user_top_level()
+        groupby = usertoplevel['usergroupby']
+
+        # User custom filters
+        yearfilterby = self.request.query_params.get('report_year', '')
+        filter_keph = self.request.query_params.get('filter_keph', '')
+        filter_type = self.request.query_params.get('filter_type', '')
+        filter_owner = self.request.query_params.get('filter_owner', '')
+
+        if yearfilterby:
+            filters['date_established__year'] = yearfilterby
+        if filter_keph:
+            filters['keph_level'] = filter_keph
+        if filter_type:
+            filters['facility_type'] = filter_type
+        if filter_owner:
+            filters['owner__owner_type'] = filter_owner
+
+        if usertoplevel['usertoplevel'] == 'county':
+            filters['ward__sub_county__county__id'] = self.request.user.countyid
+        if usertoplevel['usertoplevel'] == 'sub_county':
+            filters['ward__sub_county__id'] = self.request.user.sub_countyid
+
+        regulatory_body = KephLevel.objects.values('id', 'name')
+        keph_levels = {reg['id']: reg['name'] for reg in regulatory_body}
+
+        facilities = Facility.objects.values(
+            'ward__sub_county__name',
+            'ward__sub_county__county__name',
+            'ward__name',
+            'date_established',
+            'keph_level_id',
+            'keph_level__name',
+            'owner__owner_type__name',
+            'facility_type__name',
+            *fields
+        ).filter(**filters)
+
+        result_summary = {}
+        allcategories = KephLevel.objects.all()
+        for item in facilities:
+            group_byvalue = None
+            if groupby == 'county':
+                group_byvalue = item.get('ward__sub_county__county__name')
+            elif groupby == 'sub_county':
+                group_byvalue = item.get('ward__sub_county__name')
+            elif groupby == 'ward':
+                group_byvalue = item.get('ward__name')
+
+            if group_byvalue not in result_summary:
+                result_summary[group_byvalue] = {
+                    str(category.name).strip().replace(" ", '_'): 0 for category in allcategories
+                }
+                result_summary[group_byvalue]['year_established'] = item['date_established']
+                result_summary[group_byvalue]['ward__sub_county__county__name'] = item['ward__sub_county__county__name']
+                result_summary[group_byvalue]['ward__sub_county__name'] = item['ward__sub_county__name']
+                result_summary[group_byvalue]['ward__name'] = item['ward__name']
+                result_summary[group_byvalue]['facility_keph_level'] = item[
+                    'keph_level__name'] if filter_keph else 'All'
+                result_summary[group_byvalue]['facility_type'] = item['facility_type__name'] if filter_type else 'All'
+                result_summary[group_byvalue]['facility_owner'] = item[
+                    'owner__owner_type__name'] if filter_owner else 'All'
+
+            for category in allcategories:
+                if item['keph_level_id'] == category.id:
+                    result_summary[group_byvalue][str(category.name).strip().replace(" ", '_')] += 1
 
         return {'groupedby': groupby, 'results': result_summary}, []
 
