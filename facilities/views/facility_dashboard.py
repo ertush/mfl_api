@@ -1,7 +1,8 @@
-from datetime import timedelta, datetime
+from datetime import timedelta, datetime, date
 from itertools import count
 import json
 
+from dateutil.relativedelta import relativedelta
 from django.utils import timezone
 from django.db.models import Q
 
@@ -22,6 +23,18 @@ from ..views import QuerysetFilterMixin
 
 class DashBoard(QuerysetFilterMixin, APIView):
     queryset = Facility.objects.all()
+    recency_period = 3  # the default recency period
+
+    def convert_string_to_number(self,mystring):
+        try:
+
+            # Try to convert to integer
+            number = int(mystring)
+            self.recency_period = number
+        except ValueError:
+            # return default value
+            number = 3
+            self.recency_period = number
 
     def get_chu_count_in_county_summary(self, county):
         return CommunityHealthUnit.objects.filter(
@@ -252,96 +265,94 @@ class DashBoard(QuerysetFilterMixin, APIView):
 
         return summary_array
 
-    def get_recently_created_facilities(self, cty, period_start, period_end):
-
+    def get_recently_created_facilities(self, cty, recency_period_startdate):
         if self.request.query_params.get('ward'):
-            return self.get_queryset().filter(created__gte=period_start, created__lte=period_end,
+            return self.get_queryset().filter(created__gte= self.recency_period_startdate,
                                               ward=self.request.query_params.get('ward')).count()
         elif self.request.query_params.get('sub_county'):
-            return self.get_queryset().filter(created__gte=period_start, created__lte=period_end,
+            return self.get_queryset().filter(created__gte=recency_period_startdate,
                                               sub_county=self.request.query_params.get('sub_county')).count()
         elif self.request.query_params.get('county'):
-            return self.get_queryset().filter(created__gte=period_start, created__lte=period_end,
+            return self.get_queryset().filter(created__gte=recency_period_startdate,
                                               county=self.request.query_params.get('county')).count()
         elif self.request.user.is_national:
-            return self.get_queryset().filter(created__gte=period_start, created__lte=period_end).count()
+            return self.get_queryset().filter(created__gte=recency_period_startdate).count()
         else:
             if (self.mfluser.user_groups.get('is_sub_county_level')):
-                return self.get_queryset().filter(created__gte=period_start, created__lte=period_end,
+                return self.get_queryset().filter(created__gte=recency_period_startdate,
                                                   sub_county=self.usersubcounty).count()
             elif (self.mfluser.user_groups.get('is_county_level')):
-                return self.get_queryset().filter(created__gte=period_start, created__lte=period_end,
+                return self.get_queryset().filter(created__gte=recency_period_startdate,
                                                   county=self.usercounty).count()
             else:
                 return 0
 
-    def get_recently_updated_facilities(self, cty, period_start, period_end):
+    def get_recently_updated_facilities(self, cty, period_start):
 
         if self.request.query_params.get('ward'):
-            return self.get_queryset().filter(updated__gte=period_start, updated__lte=period_end,
+            return self.get_queryset().filter(updated__gte=period_start,
                                               ward=self.request.query_params.get('ward')).count()
         elif self.request.query_params.get('sub_county'):
-            return self.get_queryset().filter(updated__gte=period_start, updated__lte=period_end,
+            return self.get_queryset().filter(updated__gte=period_start,
                                               sub_county=self.request.query_params.get('sub_county')).count()
         elif self.request.query_params.get('county'):
-            return self.get_queryset().filter(updated__gte=period_start, updated__lte=period_end,
+            return self.get_queryset().filter(updated__gte=period_start,
                                               county=self.request.query_params.get('county')).count()
         elif self.request.user.is_national:
-            return self.get_queryset().filter(updated__gte=period_start, updated__lte=period_end).count()
+            return self.get_queryset().filter(updated__gte=period_start).count()
         else:
             if (self.mfluser.user_groups.get('is_sub_county_level')):
-                return self.get_queryset().filter(updated__gte=period_start, updated__lte=period_end,
+                return self.get_queryset().filter(updated__gte=period_start,
                                                   sub_county=self.usersubcounty).count()
             elif (self.mfluser.user_groups.get('is_county_level')):
-                return self.get_queryset().filter(updated__gte=period_start, updated__lte=period_end,
+                return self.get_queryset().filter(updated__gte=period_start,
                                                   county=self.usercounty).count()
             else:
                 return 0
 
-    def get_recently_created_chus(self, cty, period_start, period_end):
+    def get_recently_created_chus(self, cty, period_start):
 
         if self.request.query_params.get('ward'):
-            return CommunityHealthUnit.objects.filter(created__gte=period_start, created__lte=period_end,
-                                                      facility__ward=self.request.query_params.get('ward'),
+            return CommunityHealthUnit.objects.filter(created__gte=period_start,  facility__ward=self.request.query_params.get('ward'),
                                                       facility__in=self.get_queryset()).count()
         elif self.request.query_params.get('sub_county'):
-            return CommunityHealthUnit.objects.filter(created__gte=period_start, created__lte=period_end,
+            return CommunityHealthUnit.objects.filter(created__gte=period_start,
                                                       facility__ward__sub_county=self.request.query_params.get(
                                                           'sub_county'), facility__in=self.get_queryset()).count()
         elif self.request.query_params.get('county'):
-            return CommunityHealthUnit.objects.filter(created__gte=period_start, created__lte=period_end,
+            return CommunityHealthUnit.objects.filter(created__gte=period_start,
                                                       facility__ward__sub_county__county=self.request.query_params.get(
                                                           'county'), facility__in=self.get_queryset()).count()
         elif self.request.user.is_national:
-            return self.get_queryset().filter(created__gte=period_start, created__lte=period_end).count()
+            return self.get_queryset().filter(created__gte=period_start).count()
         else:
             if (self.mfluser.user_groups.get('is_sub_county_level')):
-                return CommunityHealthUnit.objects.filter(created__gte=period_start, created__lte=period_end,
+                return CommunityHealthUnit.objects.filter(created__gte=period_start,
                                                           facility__ward__sub_county=self.usersubcounty,
                                                           facility__in=self.get_queryset()).count()
             elif (self.mfluser.user_groups.get('is_county_level')):
-                return CommunityHealthUnit.objects.filter(created__gte=period_start, created__lte=period_end,
+                return CommunityHealthUnit.objects.filter(created__gte=period_start,
                                                           facility__ward__sub_county__county=self.usercounty,
                                                           facility__in=self.get_queryset()).count()
             else:
                 return 0
 
-    def get_recently_updated_chus(self, cty, period_start, period_end):
+    def get_recently_updated_chus(self, cty, period_start):
 
         if self.request.query_params.get('ward'):
-            return CommunityHealthUnit.objects.filter(updated__gte=period_start, updated__lte=period_end,
+            return CommunityHealthUnit.objects.filter(updated__gte=period_start,
                                                       facility__ward=self.request.query_params.get('ward'),
                                                       facility__in=self.get_queryset()).count()
         elif self.request.query_params.get('sub_county'):
-            return CommunityHealthUnit.objects.filter(updated__gte=period_start, updated__lte=period_end,
+            return CommunityHealthUnit.objects.filter(updated__gte=period_start,
                                                       facility__ward__sub_county=self.request.query_params.get(
                                                           'sub_county'), facility__in=self.get_queryset()).count()
         elif self.request.query_params.get('county'):
-            return CommunityHealthUnit.objects.filter(updated__gte=period_start, updated__lte=period_end,
+            return CommunityHealthUnit.objects.filter(updated__gte=period_start,
                                                       facility__ward__sub_county__county=self.request.query_params.get(
                                                           'county'), facility__in=self.get_queryset()).count()
         else:
-            return self.get_queryset().filter(updated__gte=period_start, updated__lte=period_end).count()
+            return self.get_queryset().filter(updated__gte=period_start).count()
 
 
     def facilities_pending_approval_count(self, cty, period_start, period_end):
@@ -536,6 +547,13 @@ class DashBoard(QuerysetFilterMixin, APIView):
         self.usersubcounty = muser.sub_countyid
         period_start = self.request.query_params.get('datefrom')
         period_end = self.request.query_params.get('dateto')
+        if self.request.query_params.get('recency_period'):
+            self.convert_string_to_number(self.request.query_params.get('recency_period'))
+        else:
+            self.convert_string_to_number("")
+
+        # Subtract  months
+        recency_period_startdate = date.today() - relativedelta(months=self.recency_period)
         total_facilities = 0
         if not period_end:
             period_end = datetime.max
@@ -600,10 +618,11 @@ class DashBoard(QuerysetFilterMixin, APIView):
             "types_summary": self.get_facility_type_summary(county_, period_start, period_end),
             "status_summary": self.get_facility_status_summary(county_, period_start, period_end),
             "owner_types": self.get_facility_owner_types_summary(county_, period_start, period_end),
-            "recently_created": self.get_recently_created_facilities(county_, period_start, period_end),
-            "recently_updated": self.get_recently_updated_facilities(county_, period_start, period_end),
-            "recently_created_chus": self.get_recently_created_chus(county_, period_start, period_end),
-            "recently_updated_chus": self.get_recently_updated_chus(county_, period_start, period_end),
+            "recency_period": self.recency_period,
+            "recently_created": self.get_recently_created_facilities(county_, recency_period_startdate),
+            "recently_updated": self.get_recently_updated_facilities(county_, recency_period_startdate),
+            "recently_created_chus": self.get_recently_created_chus(county_, recency_period_startdate),
+            "recently_updated_chus": self.get_recently_updated_chus(county_, recency_period_startdate),
             "pending_updates": self.facilities_pending_approval_count(county_, period_start, period_end),
             "validation_rejected_facilities_count": self.get_rejected_validation_facilities_count(county_, period_start, period_end),
             "national_rejected_facilities_count": self.get_rejected_at_national_facilities_count(county_, period_start, period_end),
