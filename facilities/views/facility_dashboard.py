@@ -338,7 +338,6 @@ class DashBoard(QuerysetFilterMixin, APIView):
                 return 0
 
     def get_recently_updated_chus(self, cty, period_start):
-        print(period_start)
         if self.request.query_params.get('ward'):
             return CommunityHealthUnit.objects.filter(updated__gte=period_start,
                                                       facility__ward=self.request.query_params.get('ward'),
