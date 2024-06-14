@@ -324,7 +324,7 @@ class DashBoard(QuerysetFilterMixin, APIView):
                                                       facility__ward__sub_county__county=self.request.query_params.get(
                                                           'county'), facility__in=self.get_queryset()).count()
         elif self.request.user.is_national:
-            return self.get_queryset().filter(created__gte=period_start).count()
+            return CommunityHealthUnit.objects.filter(created__gte=period_start,facility__in=self.get_queryset()).count()
         else:
             if (self.mfluser.user_groups.get('is_sub_county_level')):
                 return CommunityHealthUnit.objects.filter(created__gte=period_start,
@@ -352,7 +352,7 @@ class DashBoard(QuerysetFilterMixin, APIView):
                                                       facility__ward__sub_county__county=self.request.query_params.get(
                                                           'county'), facility__in=self.get_queryset()).count()
         else:
-            return self.get_queryset().filter(updated__gte=period_start).count()
+            return CommunityHealthUnit.objects.filter(updated__gte=period_start,facility__in=self.get_queryset()).count()
 
 
     def facilities_pending_approval_count(self, cty, period_start, period_end):
