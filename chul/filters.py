@@ -66,6 +66,15 @@ class CommunityHealthUnitFilter(CommonFieldsFilterset):
                 Q(is_approved=None, is_rejected=False, has_edits=False) |
                 Q(is_approved=None, is_rejected=True, has_edits=False)
             )
+        
+    # def chu_approved(self, qs, name, value):
+    #     if value in TRUTH_NESS:
+    #         return qs.filter(
+    #             Q(is_approved=True, is_rejected=False, has_edits=False) |
+    #             Q(is_approved=True, is_rejected=False, has_edits=True) |
+    #             Q(is_approved=True, is_rejected=True, has_edits=True)
+    #         )
+
     name = django_filters.CharFilter(lookup_expr='icontains')
     ward = ListCharFilter(name='facility__ward')
     code = ListCharFilter(name='code')
@@ -87,6 +96,9 @@ class CommunityHealthUnitFilter(CommonFieldsFilterset):
     )
     pending_approval = django_filters.CharFilter(
         method='chu_pending_approval')
+
+    partners = django_filters.CharFilter(
+        lookup_expr='icontains')
 
     class Meta(CommonFieldsFilterset.Meta):
         model = CommunityHealthUnit
