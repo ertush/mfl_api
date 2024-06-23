@@ -100,7 +100,8 @@ class FacilityExportExcelMaterialViewFilter(django_filters.FilterSet):
 
     class Meta(CommonFieldsFilterset.Meta):
         model = FacilityExportExcelMaterialView
-        exclude = ('services', 'categories', 'service_names', )
+        exclude = ('services', 'categories', 'service_names', 'infrastructure', 'infrastructure_names',
+                   'infrastructure_categories', 'speciality', 'speciality_names', 'speciality_categories')
 
 
 class RegulatorSyncFilter(CommonFieldsFilterset):
@@ -352,15 +353,44 @@ class FacilityContactFilter(CommonFieldsFilterset):
 class FacilityFilter(CommonFieldsFilterset):
 
     def service_filter(self, qs, name, value):
-        categories = value.split(',')
+        services = value.split(',')
         facility_ids = []
 
-        for facility in self.filter():
-            for cat in categories:
+        for facility in qs.filter():
+            for _service in services:
                 service_count = FacilityService.objects.filter(
-                    service__category=cat,
+                    service=_service,
                     facility=facility).count()
                 if service_count > 0:
+                    facility_ids.append(facility.id)
+
+        return qs.filter(id__in=list(set(facility_ids)))
+
+    def infrastructure_filter(self, qs, name, value):
+        infrastructure = value.split(',')
+        facility_ids = []
+
+        for facility in qs.filter():
+            for _infra in infrastructure:
+                infrastructure_count = FacilityInfrastructure.objects.filter(
+                    infrastructure=_infra,
+                    facility=facility).count()
+                if infrastructure_count > 0:
+                    facility_ids.append(facility.id)
+
+        return qs.filter(id__in=list(set(facility_ids)))
+
+
+    def hr_filter(self, qs, name, value):
+        specialities = value.split(',')
+        facility_ids = []
+
+        for facility in qs.filter():
+            for _speciality in specialities:
+                speciality_count = FacilitySpecialist.objects.filter(
+                    speciality=_speciality,
+                    facility=facility).count()
+                if speciality_count > 0:
                     facility_ids.append(facility.id)
 
         return qs.filter(id__in=list(set(facility_ids)))
@@ -368,65 +398,59 @@ class FacilityFilter(CommonFieldsFilterset):
     def filter_approved_facilities(self, qs, name, value):
 
         if value in TRUTH_NESS:
-            return qs.filter(Q(approved=True) | Q(rejected=True))
+            return qs.filter(Q(approved=True))   
         else:
-            return qs.filter(rejected=False, approved=False)
+            return qs.filter(Q(approved=None) | Q(rejected=True))
 
     def filter_unpublished_facilities_national_level(self, qs, name, value):
         """
         This is in order to allow the facilities to be seen
         so that they can be approved at the national level and assigned an MFL code.
         """
-        incomplete_facilities = qs.filter(
-             Q (
-               Q(facility_services=None) |   
-               Q(facility_infrastructure=None) |
-               Q(facility_specialists=None) |
-               Q(facility_contacts=None) |
-               Q(facility_coordinates_through=None) 
-                )
-             )
+       
+        incomplete_facilities = [facility.id for facility in qs.filter(code=None) if not facility.is_complete]
         
-        return qs.filter(
-            approved_national_level=None, code=None, approved=True, has_edits=False, closed=False
-        ).exclude(id__in=[facility.id for facility in incomplete_facilities])
+        if value in TRUTH_NESS:
+            return qs.filter(
+                approved_national_level=None, approved=True, has_edits=False, closed=False, rejected=False,
+            ).exclude(id__in=incomplete_facilities)
+        else:
+             return qs.filter(
+                approved_national_level=True, approved=True, has_edits=False, closed=False, rejected=False,
+            ).exclude(id__in=incomplete_facilities)
 
     def filter_incomplete_facilities(self, qs, name, value):
         """
         Filter the incomplete/complete facilities
         """
-        incomplete_facilities = qs.filter(
-             Q (
-               Q(facility_services=None) |   
-               Q(facility_infrastructure=None) |
-               Q(facility_specialists=None) |
-               Q(facility_contacts=None) |
-               Q(facility_coordinates_through=None) 
-                )
-             )
+        incomplete_facilities = [facility for facility in qs.filter() if not facility.is_complete]
+
         if value in TRUTH_NESS:
             return incomplete_facilities
         else:
-            return qs.exclude(id__in=[facility.id for facility in incomplete_facilities])
+            return qs.exclude(id__in=incomplete_facilities)
 
     def facilities_pending_approval(self, qs, name, value):
-        incomplete_facilities = qs.filter(
-             Q (
-               Q(facility_services=None) |   
-               Q(facility_infrastructure=None) |
-               Q(facility_specialists=None) |
-               Q(facility_contacts=None) |
-               Q(facility_coordinates_through=None) 
-                )
-             )
+        # incomplete = qs.filter(code=not None)
+        # incomplete_facility_ids = [facility.id for facility in incomplete]
+        incomplete_facilities = [facility.id for facility in qs.filter(code=None) if not facility.is_complete]
         if value in TRUTH_NESS:
-            pending_validation = qs.filter(Q(approved=None, rejected=False, has_edits=False))
-            return pending_validation.exclude(id__in=[facility.id for facility in incomplete_facilities])
+            return qs.filter(
+                Q(
+                    has_edits=False,
+                    approved=None,
+                    rejected=False,
+                    approved_national_level=None
+                 )).exclude(id__in=incomplete_facilities)
         else:
             return qs.filter(
-                Q(approved=None, rejected=False)
-            ).exclude(id__in=[facility.id for facility in incomplete_facilities])
-
+                rejected=False,
+                has_edits=False,
+                approved=True,
+                approved_national_level=None
+            ).exclude(id__in=incomplete_facilities)
+        
+       
     def filter_national_rejected(self, qs, name, value):
         rejected_national = qs.filter(rejected=False,code=None,
             approved=True,approved_national_level=False)
@@ -490,8 +514,12 @@ class FacilityFilter(CommonFieldsFilterset):
         coerce=strtobool)
     is_approved = django_filters.CharFilter(
         method='filter_approved_facilities')
-    service_category = django_filters.CharFilter(
+    service = django_filters.CharFilter(
         method=service_filter)
+    infrastructure = django_filters.CharFilter(
+        method='infrastructure_filter')
+    speciality = django_filters.CharFilter(
+        method='hr_filter')
     has_edits = django_filters.TypedChoiceFilter(
         choices=BOOLEAN_CHOICES,
         coerce=strtobool)

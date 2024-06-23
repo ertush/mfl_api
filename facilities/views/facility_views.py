@@ -216,6 +216,30 @@ class QuerysetFilterMixin(object):
                 self.queryset.model, 'regulatory_body'):
             self.queryset = self.queryset.filter(
                 regulatory_body=self.request.user.regulator)
+            
+    def filter_for_infrastructure(self):
+        if self.request.user and hasattr(self.request, 'infrastruture'):
+        # if self.request.user.has_perm("facilities.view_infrastructure") \
+        #     is False and ('infrastructure' in [
+        #         field.name for field in
+        #         self.queryset.model._meta.get_fields()]):
+            self.queryset = self.queryset.filter(infrastructure=self.request.infrastructure)
+
+
+    def filter_for_services(self):
+        if self.request.user.has_perm("facilities.view_facilityservice") \
+            is False and ('service' in [
+                field.name for field in
+                self.queryset.model._meta.get_fields()]):
+            self.queryset = self.queryset.filter(service=self.request.service)
+
+    def filter_for_speciality(self):
+        if self.request.user and hasattr(self.request, 'speciality'):
+        # if self.request.user.has_perm("facilities.view_facilityservice") \
+        #     is False and ('service' in [
+        #         field.name for field in
+        #         self.queryset.model._meta.get_fields()]):
+            self.queryset = self.queryset.filter(speciality=self.request.speciality)
 
     def get_queryset(self, *args, **kwargs):
         custom_queryset = kwargs.pop('custom_queryset', None)
@@ -231,6 +255,9 @@ class QuerysetFilterMixin(object):
         self.filter_rejected_facilities()
         self.filter_closed_facilities()
         self.filter_approved_facilities()
+        self.filter_for_infrastructure()
+        self.filter_for_speciality()
+        self.filter_for_services()
 
         return self.queryset
 

@@ -131,7 +131,7 @@ class DhisAuth(ApiAuthentication):
             },
             params={
                 "filter": "code:eq:"+str(code),
-                "fields": "[id]",
+                "fields": "id",
                 "paging": "false"
             }
         )
@@ -170,14 +170,16 @@ class DhisAuth(ApiAuthentication):
             },
             params={
                 "query": "KE_Ward_" + str(ward_id),
-                "fields": "[id,name]",
+                "fields": "id,name",
                 "filter": "level:in:[4]",
                 "paging": "false"
             }
         )
         dhis2_facility = r.json()["organisationUnits"]
 
-        if len(dhis2_facility) == 0:
+        dhis2_facility = dhis2_facility if "id" in dhis2_facility[0] else [{"id": None}]
+
+        if dhis2_facility[0]["id"] is None:
             raise ValidationError(
                 {
                     "Error!": ["Unable to resolve exact parent of the new facility in DHIS2"]
@@ -998,6 +1000,24 @@ class FacilityExportExcelMaterialView(models.Model):
         models.UUIDField(null=True, blank=True), null=True, blank=True
     )
     service_names = ArrayField(
+        models.CharField(null=True, blank=True, max_length=1000), null=True, blank=True
+    )
+    infrastructure = ArrayField(
+        models.UUIDField(null=True, blank=True), null=True, blank=True
+    )
+    infrastructure_names = ArrayField(
+        models.CharField(null=True, blank=True, max_length=1000), null=True, blank=True
+    )
+    infrastructure_categories = ArrayField(
+        models.UUIDField(null=True, blank=True), null=True, blank=True
+    )
+    speciality = ArrayField(
+        models.UUIDField(null=True, blank=True), null=True, blank=True
+    )
+    speciality_names = ArrayField(
+        models.CharField(null=True, blank=True, max_length=1000), null=True, blank=True
+    )
+    speciality_categories = ArrayField(
         models.UUIDField(null=True, blank=True), null=True, blank=True
     )
     approved = models.BooleanField(default=False)
@@ -1067,6 +1087,10 @@ class Facility(SequenceMixin, AbstractBase):
         default=0,
         help_text="The number of High Dependency Units (HDU) beds"
         " that a facility has e.g 0")
+    number_of_inpatient_beds = models.PositiveIntegerField(
+        default=0,
+        help_text="The number of General In-patient beds"
+        " that a facility has e.g 0")
     # <Additions>
     number_of_maternity_beds = models.PositiveIntegerField(
         default=0,
@@ -1084,7 +1108,17 @@ class Facility(SequenceMixin, AbstractBase):
     number_of_maternity_theatres = models.PositiveIntegerField(
         default=0,
         help_text="The number of maternity theatres "
-        " that a facility has e.g 0")  
+        " that a facility has e.g 0")
+    number_of_minor_theatres = models.PositiveIntegerField(
+        default=0,
+        help_text="The number of minor theatres "
+                  " that a facility has e.g 0")
+    number_of_eye_theatres = models.PositiveIntegerField(
+        default=0,
+        help_text="The number of eye theatres "
+                  " that a facility has e.g 0")
+    new_born_unit = models.BooleanField(default=False)
+    out_reach_services = models.BooleanField(default=False)  
     open_whole_day = models.BooleanField(
         default=False,
         help_text="Does the facility operate 24 hours a day")
@@ -1196,6 +1230,8 @@ class Facility(SequenceMixin, AbstractBase):
         ' the regulator')
     closed_date = models.DateTimeField(
         null=True, blank=True, help_text='Date the facility was closed')
+    approvalrejection_date = models.DateTimeField(
+        null=True, blank=True, help_text='Date the facility was approved or rejected')
     closing_reason = models.TextField(
         null=True, blank=True, help_text="Reason for closing the facility")
     date_established = models.DateField(
@@ -1578,14 +1614,14 @@ class Facility(SequenceMixin, AbstractBase):
     def get_facility_infrastructure(self):
         """For the same purpose as the get_facility_contacts above"""
         infra = self.facility_infrastructure.all()
+
         return [
             {
                 "id": inf.id,
-                "infrastructure_id": inf.id,
-                "name": inf.name,
-                "infrastructure_name": inf.name,
-                "infrastructure_category": inf.category.id,
-                "infrastructure_category_name": str(inf.category.name),
+                "name": inf.infrastructure.name,
+                "count":inf.count,
+                "infrastructure_category": inf.infrastructure.category.id,
+                "infrastructure_category_name": str(inf.infrastructure.category.name),
             }
             for inf in infra
         ]
@@ -1593,34 +1629,34 @@ class Facility(SequenceMixin, AbstractBase):
     @property
     def get_facility_specialities(self):
         """For the same purpose as the get_facility_infra... above"""
-        hr = self.facility_specialities.all()
+        hr = self.facility_specialists.all()
+
         return [
             {
                 "id": h_r.id,
-                "speciality_id": h_r.id,
-                "name": h_r.name,
-                "speciality_name": h_r.name,
-                "speciality_category": h_r.category.id,
-                "speciality_category_name": str(h_r.category.name),
+                "name": h_r.speciality.name,
+                "count": h_r.count,
+                "speciality_category": h_r.speciality.category.id,
+                "speciality_category_name": str(h_r.speciality.category.name),
             }
             for h_r in hr
         ]
 
-    @property
-    def get_facility_humanresources(self):
-        """For the same purpose as the get_facility_infra... above"""
-        hr = self.facility_humanresources.all()
-        return [
-            {
-                "id": h_r.id,
-                "speciality_id": h_r.id,
-                "name": h_r.name,
-                "speciality_name": h_r.name,
-                "speciality_category": h_r.category.id,
-                "speciality_category_name": str(h_r.category.name),
-            }
-            for h_r in hr
-        ]
+    # @property
+    # def get_facility_humanresources(self):
+    #     """For the same purpose as the get_facility_infra... above"""
+    #     hr = self.facility_humanresources.all()
+    #     return [
+    #         {
+    #             "id": h_r.id,
+    #             "speciality_id": h_r.id,
+    #             "name": h_r.name,
+    #             "speciality_name": h_r.name,
+    #             "speciality_category": h_r.category.id,
+    #             "speciality_category_name": str(h_r.category.name),
+    #         }
+    #         for h_r in hr
+    #     ]
 
     @property
     def average_rating(self):
@@ -2201,35 +2237,37 @@ class FacilityUpdates(AbstractBase):
                 raise ValidationError(error)
 
     def push_facility_updates(self):
-        from mfl_gis.models import FacilityCoordinates
-        import re
-        self.dhis2_api_auth.get_oauth2_token()
+        # Don't push facility updates to KHIS if facility not validated , approved nationally and reporting to KHIS
+        if self.facility.is_approved and self.facility.approved_national_level and self.facility.reporting_in_dhis:
+            from mfl_gis.models import FacilityCoordinates
+            import re
+            self.dhis2_api_auth.get_oauth2_token()
 
-        dhis2_parent_id = self.dhis2_api_auth.get_parent_id(self.facility.ward.code)
-        dhis2_org_unit_id = self.dhis2_api_auth.get_org_unit_id(self.facility.code)
+            dhis2_parent_id = self.dhis2_api_auth.get_parent_id(self.facility.ward.code)
+            dhis2_org_unit_id = self.dhis2_api_auth.get_org_unit_id(self.facility.code)
 
-        coordinates = self.dhis2_api_auth.format_coordinates(
-                re.search(r'\((.*?)\)', str(FacilityCoordinates.objects.values('coordinates')
-                                            .get(facility_id=self.facility.id)['coordinates'])).group(1))
-        
-        LOGGER.error('[>>>>>Info] coordinates: {}, FacilityCoordinatesObj: {}'.format(coordinates, FacilityCoordinates.objects.values('coordinates')
-                                            .get(facility_id=self.facility.id)['coordinates']))
-        new_facility_updates_payload = {
-            "code": str(self.facility.code),
-            "name": str(self.facility.name),
-            "shortName": str(self.facility.name),
-            "displayName": str(self.facility.official_name),
-            "parent": {
-                "id": dhis2_parent_id
-            },
-            "openingDate": self.facility.date_established.strftime("%Y-%m-%d"),
-            "coordinates": coordinates
-        }
+            coordinates = self.dhis2_api_auth.format_coordinates(
+                    re.search(r'\((.*?)\)', str(FacilityCoordinates.objects.values('coordinates')
+                                                .get(facility_id=self.facility.id)['coordinates'])).group(1))
+            
+            LOGGER.error('[>>>>>Info] coordinates: {}, FacilityCoordinatesObj: {}'.format(coordinates, FacilityCoordinates.objects.values('coordinates')
+                                                .get(facility_id=self.facility.id)['coordinates']))
+            new_facility_updates_payload = {
+                "code": str(self.facility.code),
+                "name": str(self.facility.name),
+                "shortName": str(self.facility.name),
+                "displayName": str(self.facility.official_name),
+                "parent": {
+                    "id": dhis2_parent_id
+                },
+                "openingDate": self.facility.date_established.strftime("%Y-%m-%d"),
+                "coordinates": coordinates
+            }
 
-        # print("Names;", "Official Name:", self.facility.official_name, "Name:", self.facility.name)
-        #
-        print("New Facility Push Payload => ", new_facility_updates_payload)
-        self.dhis2_api_auth.push_facility_updates_to_dhis2(dhis2_org_unit_id, new_facility_updates_payload)
+            # print("Names;", "Official Name:", self.facility.official_name, "Name:", self.facility.name)
+            #
+            print("New Facility Push Payload => ", new_facility_updates_payload)
+            self.dhis2_api_auth.push_facility_updates_to_dhis2(dhis2_org_unit_id, new_facility_updates_payload)
 
     def clean(self, *args, **kwargs):
         self.validate_only_one_update_at_a_time()
@@ -2627,7 +2665,7 @@ class FacilityService(AbstractBase):
         'CHRIO')
     # For services that do not have options, the service will be linked
     # directly to the
-    service = models.ForeignKey(Service, on_delete=models.PROTECT,)
+    service = models.ForeignKey(Service, related_name='service_id', on_delete=models.PROTECT)
 
     @property
     def service_has_options(self):
@@ -2902,7 +2940,7 @@ class FacilitySpecialist(AbstractBase):
         Facility, related_name='facility_specialists',
         on_delete=models.PROTECT)
 
-    speciality = models.ForeignKey(Speciality, on_delete=models.PROTECT,)
+    speciality = models.ForeignKey(Speciality, related_name='speciality', on_delete=models.PROTECT)
 
     count = models.IntegerField(
         default=0, 
@@ -3021,8 +3059,9 @@ class FacilityInfrastructure(AbstractBase):
         on_delete=models.PROTECT)
 
     infrastructure = models.ForeignKey(
-        Infrastructure, 
-        on_delete=models.PROTECT,)
+        Infrastructure,
+        related_name='infrastructure', 
+        on_delete=models.PROTECT)
 
     count = models.IntegerField(
         default=0, 

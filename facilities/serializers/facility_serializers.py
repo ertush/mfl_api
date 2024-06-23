@@ -101,7 +101,11 @@ class FacilityExportExcelMaterialViewSerializer(serializers.ModelSerializer):
             "services",
             "categories",
             "service_names",
-            "approved",
+            "infrastructure",
+            "infrastructure_names",
+            "infrastructure_categories",
+            "speciality_names",
+            "speciality_categories",
             "is_public_visible",
             "created",
             "closed",
@@ -464,9 +468,9 @@ class FacilitySerializer(
         source="get_facility_services")
     facility_infrastructure = serializers.ReadOnlyField(
         source="get_facility_infrastructure")
+    facility_contacts = serializers.ReadOnlyField(
+        source="get_facility_contacts")
     facility_humanresources = serializers.ReadOnlyField(
-        source="get_facility_humanresources")
-    facility_specialities = serializers.ReadOnlyField(
         source="get_facility_specialities")
     is_approved = serializers.ReadOnlyField()
     has_edits = serializers.ReadOnlyField()
@@ -685,13 +689,19 @@ class FacilityDetailSerializer(FacilitySerializer):
     constituency_code = serializers.ReadOnlyField(
         source='ward.constituency.code'
     )
+
     facility_specialists = FacilitySpecialistSerializer(many=True, required=False)
+    # specialists = serializers.ReadOnlyField(
+    #     source="get_facility_specialities")
+
     ward_code = serializers.ReadOnlyField(source='ward.code')
     service_catalogue_active = serializers.ReadOnlyField()
     facility_units = FacilityUnitSerializer(many=True, required=False)
     facility_infrastructure = FacilityInfrastructureSerializer(many=True, required=False)
+    # infrastructure = serializers.ReadOnlyField(
+    #     source="get_facility_infrastructure")
     officer_in_charge = serializers.ReadOnlyField()
-    keph_level_name = serializers.ReadOnlyField(source='keph_level.name')
+    keph_level_name = serializers.ReadOnlyField(source='keph_level.name')   
 
     class Meta(object):
         model = Facility

@@ -187,6 +187,8 @@ class CommunityHealthUnitSerializer(
                 chew_obj.first_name = chew['first_name']
                 chew_obj.last_name = chew['last_name']
                 chew_obj.is_incharge = chew['is_incharge']
+                chew_obj.mobile_no = chew['mobile_no']
+                chew_obj.email = chew['email'] 
                 chew_obj.save()
             else:
                 chew['health_unit'] = instance.id
