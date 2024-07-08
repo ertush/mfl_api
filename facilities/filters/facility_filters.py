@@ -431,8 +431,10 @@ class FacilityFilter(CommonFieldsFilterset):
             return qs.exclude(id__in=incomplete_facilities)
 
     def facilities_pending_approval(self, qs, name, value):
+
         # incomplete = qs.filter(code=not None)
         # incomplete_facility_ids = [facility.id for facility in incomplete]
+
         incomplete_facilities = [facility.id for facility in qs.filter(code=None) if not facility.is_complete]
         if value in TRUTH_NESS:
             return qs.filter(
@@ -449,8 +451,7 @@ class FacilityFilter(CommonFieldsFilterset):
                 approved=True,
                 approved_national_level=None
             ).exclude(id__in=incomplete_facilities)
-        
-       
+
     def filter_national_rejected(self, qs, name, value):
         rejected_national = qs.filter(rejected=False,code=None,
             approved=True,approved_national_level=False)
@@ -464,8 +465,8 @@ class FacilityFilter(CommonFieldsFilterset):
         return qs.filter(number_of_beds__gte=1)
 
     def filter_number_cots(self, qs, name, value):
-        return self.filter(number_of_cots__gte=1)
-
+        return qs.filter(number_of_cots__gte=1)
+    
     id = ListCharFilter(lookup_expr='icontains')
     name = django_filters.CharFilter(lookup_expr='icontains')
     code = ListIntegerFilter(lookup_expr='exact')
@@ -514,8 +515,8 @@ class FacilityFilter(CommonFieldsFilterset):
         coerce=strtobool)
     is_approved = django_filters.CharFilter(
         method='filter_approved_facilities')
-    service = django_filters.CharFilter(
-        method=service_filter)
+    service = django_filters.CharFilter(method=service_filter)
+
     infrastructure = django_filters.CharFilter(
         method='infrastructure_filter')
     speciality = django_filters.CharFilter(

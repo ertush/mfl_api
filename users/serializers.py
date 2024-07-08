@@ -133,7 +133,7 @@ class GroupSerializer(PartialResponseMixin, serializers.ModelSerializer):
         county_level = self.initial_data.pop('is_county_level', False)
         sub_county_level = self.initial_data.pop('is_sub_county_level', False)
         permissions = _lookup_permissions(
-            self.context['request'].DATA
+            self.context['request'].data
         )
         validated_data.pop('permissions', None)
 
@@ -491,7 +491,7 @@ class MflUserSerializer(PartialResponseMixin, serializers.ModelSerializer):
         instance.save()
 
         self._create_user_constituency(instance, constituencies)
-        self._create_user_county(instance, counties)
+        if not instance.is_national: self._create_user_county(instance, counties)
         self._update_or_create_contacts(instance, contacts)
         self._create_regulator(instance, regulators)
         self._create_user_sub_counties(instance, sub_counties)

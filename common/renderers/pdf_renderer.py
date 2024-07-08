@@ -17,11 +17,11 @@ class PDFRenderer(DownloadMixin, renderers.BaseRenderer):
         self.update_download_headers(renderer_context)
         template = loader.get_template('pdf/pdf.html')
 
-        context = Context({
+        context = {
             "data": data,
             "title": self.fname.split('.')[0],
 
-        })
+        }
 
         mem_file = cStringIO.StringIO()
 

@@ -136,7 +136,7 @@ class DhisAuth(ApiAuthentication):
             }
         )
         print("Get Org Unit ID Response", r.text, str(code))
-        if len(r.json()["organisationUnits"]) is 1:
+        if len(r.json()["organisationUnits"]) is 1 and "id" in r.json()["organisationUnits"][0]:
             # raise ValidationError(
             #     {
             #         "Error!": ["This facility is already available in DHIS2. Please ensure details are correct"]
@@ -161,7 +161,9 @@ class DhisAuth(ApiAuthentication):
             # )
 
     def get_parent_id(self, ward_id):
+
         # print self.session_store[self.oauth2_token_variable_name]
+
         r = requests.get(
             settings.DHIS_ENDPOINT+"api/organisationUnits.json",
             auth=(settings.DHIS_USERNAME, settings.DHIS_PASSWORD),
@@ -182,7 +184,7 @@ class DhisAuth(ApiAuthentication):
         if dhis2_facility[0]["id"] is None:
             raise ValidationError(
                 {
-                    "Error!": ["Unable to resolve exact parent of the new facility in DHIS2"]
+                    "Error!": ["Unable to resolve exact parent of the facility in DHIS2"]
                 }
             )
         else:
@@ -278,13 +280,16 @@ class DhisAuth(ApiAuthentication):
 
     def push_facility_updates_to_dhis2(self, org_unit_id, facility_updates_payload):
         r = requests.put(
+
             settings.DHIS_ENDPOINT + "api/organisationUnits/"+org_unit_id[0],
+
             auth=(settings.DHIS_USERNAME, settings.DHIS_PASSWORD),
             headers={
                 "Accept": "application/json"
             },
             json=facility_updates_payload
         )
+
 
         print("Update Facility Response", r.url, r.status_code, r.json())
         LOGGER.info('[>>>>>>>>>>>>>] Org_unit_id: {} \n payload: {} \n response: {}'.format(org_unit_id, facility_updates_payload, r.json()))
@@ -299,11 +304,13 @@ class DhisAuth(ApiAuthentication):
             },
             json=facility_updates_payload
         )
+
             # raise ValidationError(
             #     {
             #         "Error!": ["Unable to push facility updates to DHIS2"]
             #     }
             # )
+
 
     def format_coordinates(self, str_coordinates):
         coordinates_str_list = str_coordinates.split(" ")
@@ -1029,7 +1036,12 @@ class FacilityExportExcelMaterialView(models.Model):
     long = models.CharField(max_length=30, null=True, blank=True)
     lat = models.CharField(max_length=30, null=True, blank=True)
     approved_national_level = models.BooleanField(default=False)
-
+    # number_of_minor_theatres = models.PositiveIntegerField(
+    #     default=0)
+    # number_of_eye_theatres = models.PositiveIntegerField(
+    #     default=0)
+    # new_born_unit = models.BooleanField(default=False)
+    # out_reach_services = models.BooleanField(default=False)
     class Meta(object):
         managed = False
         ordering = ('-created', )
@@ -1109,6 +1121,7 @@ class Facility(SequenceMixin, AbstractBase):
         default=0,
         help_text="The number of maternity theatres "
         " that a facility has e.g 0")
+
     number_of_minor_theatres = models.PositiveIntegerField(
         default=0,
         help_text="The number of minor theatres "
@@ -1118,7 +1131,9 @@ class Facility(SequenceMixin, AbstractBase):
         help_text="The number of eye theatres "
                   " that a facility has e.g 0")
     new_born_unit = models.BooleanField(default=False)
+
     out_reach_services = models.BooleanField(default=False)  
+
     open_whole_day = models.BooleanField(
         default=False,
         help_text="Does the facility operate 24 hours a day")
@@ -1282,7 +1297,9 @@ class Facility(SequenceMixin, AbstractBase):
                 "20b86171-0c16-47e1-9277-5e773d485c33": "YQK9pleIoeB",
                 "5eb392ac-d10a-40c9-b525-53dac866ef6c": "lTrpyOiOcM6",
                 "8949eeb0-40b1-43d4-a38d-5d4933dc209f": "lTrpyOiOcM6",
+
                 "0b7f9699-6024-4813-8801-38f188c834f5": "lTrpyOiOcM6",
+
                 "ccc1600e-9a24-499f-889f-bd9f0bdc4b95": "YQK9pleIoeB",
                 "d8d741b1-21c5-45c8-86d0-a2094bf9bda6": "YQK9pleIoeB",
                 "85f2099b-a2f8-49f4-9798-0cb48c0875ff": "YQK9pleIoeB",
@@ -1308,8 +1325,10 @@ class Facility(SequenceMixin, AbstractBase):
                 "87626d3d-fd19-49d9-98da-daca4afe85bf": "mVrepdLAqSD",
                 "79158397-0d87-4d0e-8694-ad680a907a79": "YQK9pleIoeB",
                 "031293d9-fd8a-4682-a91e-a4390d57b0cf": "YQK9pleIoeB",
+
 		"4369eec8-0416-4e16-b013-e635ce46a02f": "YQK9pleIoeB",
 		"9ad22615-48f2-47b3-8241-4355bb7db835" : "rhKJPLo27x7",
+
             }
             kmhfl_dhis2_ownership_mapping = {
                 "d45541f8-3b3d-475b-94f4-17741d468135": "aRxa6o8GqZN",
@@ -1335,6 +1354,7 @@ class Facility(SequenceMixin, AbstractBase):
                 "2e651780-2ed4-4f8c-9061-6e5acf95d581": "AaAF5EmS1fk",
                 "30af7e3f-cd52-4ca0-b5dc-d8b1040a9808": "AaAF5EmS1fk",
                 "d64bbd8a-4013-463b-a238-c346cee66a92": "AaAF5EmS1fk", 
+
             }
             kmhfl_dhis2_keph_mapping = {
                 "ed23da85-4c92-45af-80fa-9b2123769f49": "FpY8vg4gh46",
@@ -1376,7 +1396,6 @@ class Facility(SequenceMixin, AbstractBase):
         else:
             pass
 
-   
 
     def validate_facility_name(self):
         if self.pk:
@@ -1577,6 +1596,7 @@ class Facility(SequenceMixin, AbstractBase):
     def get_facility_services(self):
         """Digests the facility_services for the sake of frontend."""
         services = self.facility_services.all()
+
         return [
             {
                 "id": service.id,
@@ -1599,7 +1619,9 @@ class Facility(SequenceMixin, AbstractBase):
     @property
     def get_facility_contacts(self):
         """For the same purpose as the get_facility_services above"""
+      
         contacts = self.facility_contacts.all()
+
         return [
             {
                 "id": contact.id,
@@ -1657,6 +1679,7 @@ class Facility(SequenceMixin, AbstractBase):
     #         }
     #         for h_r in hr
     #     ]
+
 
     @property
     def average_rating(self):
@@ -2101,15 +2124,19 @@ class FacilityUpdates(AbstractBase):
                     new_date = datetime.date(year=value.year, month=value.month, day=value.day)
                     value = new_date
                 elif field_name == 'sub_county_id':
+
                     print('field_name error', field_changed.get('display_value'))
+
                     value = SubCounty.objects.get(id=field_changed.get('actual_value')).id
                 else:
                     value = field_changed.get("actual_value")
 
                 setattr(self.facility, field_name, value)
             self.facility.save(allow_save=True)
+
             #if self.facility.code and self.facility.is_complete and self.facility.approved_national_level:
             #    self.facility.push_new_facility(self.facility.code)
+
             self.push_facility_updates()
 
 
@@ -2237,6 +2264,7 @@ class FacilityUpdates(AbstractBase):
                 raise ValidationError(error)
 
     def push_facility_updates(self):
+
         # Don't push facility updates to KHIS if facility not validated , approved nationally and reporting to KHIS
         if self.facility.is_approved and self.facility.approved_national_level and self.facility.reporting_in_dhis:
             from mfl_gis.models import FacilityCoordinates
@@ -2267,6 +2295,7 @@ class FacilityUpdates(AbstractBase):
             # print("Names;", "Official Name:", self.facility.official_name, "Name:", self.facility.name)
             #
             print("New Facility Push Payload => ", new_facility_updates_payload)
+
             self.dhis2_api_auth.push_facility_updates_to_dhis2(dhis2_org_unit_id, new_facility_updates_payload)
 
     def clean(self, *args, **kwargs):
@@ -2940,7 +2969,9 @@ class FacilitySpecialist(AbstractBase):
         Facility, related_name='facility_specialists',
         on_delete=models.PROTECT)
 
+
     speciality = models.ForeignKey(Speciality, related_name='speciality', on_delete=models.PROTECT)
+
 
     count = models.IntegerField(
         default=0, 
@@ -3060,8 +3091,10 @@ class FacilityInfrastructure(AbstractBase):
 
     infrastructure = models.ForeignKey(
         Infrastructure,
+
         related_name='infrastructure', 
         on_delete=models.PROTECT)
+
 
     count = models.IntegerField(
         default=0, 

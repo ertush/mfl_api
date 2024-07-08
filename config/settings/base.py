@@ -7,7 +7,7 @@ BASE_DIR = os.path.dirname(
 # Override in production via env
 
 env = environ.Env(
-    DATABASE_URL=(str, 'postgres://mfl:mfl@localhost:5432/mfl'),
+    DATABASE_URL=(str, 'postgres://mfl:mfl@localhost:5432/mfl_alt_prod'),
     DEBUG=(bool, True),
     FRONTEND_URL=(str, "http://localhost:8062"),
     REALTIME_INDEX=(bool, False),
@@ -23,11 +23,11 @@ env = environ.Env(
     ADMINS=(str, "admin:admin@example.com,"),
     SERVER_EMAIL=(str, "root@localhost"),
     ALLOWED_HOSTS=(str, "localhost"),
-    DHIS_ENDPOINT=(str, "http://testhis.uonbi.ac.ke/"),
+    DHIS_ENDPOINT=(str, "https://hiskenya.org/"),
     DHIS_USERNAME=(str, 'kmhfl_integration'),
     DHIS_PASSWORD=(str, ''),
-    DHIS_CLIENT_ID=(str, '102'),
-    DHIS_CLIENT_SECRET=(str, '')
+    DHIS_CLIENT_ID=(str, 'KMHFL'),
+    DHIS_CLIENT_SECRET=(str, '65df9a025-31df-079d-14d5-a01e08ea947')
 )
 env.read_env(os.path.join(BASE_DIR, '.env'))
 
@@ -532,4 +532,3 @@ DHIS_USERNAME = env('DHIS_USERNAME')
 DHIS_PASSWORD = env('DHIS_PASSWORD')
 DHIS_CLIENT_ID = env('DHIS_CLIENT_ID')
 DHIS_CLIENT_SECRET = env('DHIS_CLIENT_SECRET')
-

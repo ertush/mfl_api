@@ -267,7 +267,9 @@ class DashBoard(QuerysetFilterMixin, APIView):
 
     def get_recently_created_facilities(self, cty, recency_period_startdate):
         if self.request.query_params.get('ward'):
+
             return self.get_queryset().filter(created__gte= self.recency_period_startdate,
+
                                               ward=self.request.query_params.get('ward')).count()
         elif self.request.query_params.get('sub_county'):
             return self.get_queryset().filter(created__gte=recency_period_startdate,
@@ -324,7 +326,9 @@ class DashBoard(QuerysetFilterMixin, APIView):
                                                       facility__ward__sub_county__county=self.request.query_params.get(
                                                           'county'), facility__in=self.get_queryset()).count()
         elif self.request.user.is_national:
+
             return self.get_queryset().filter(created__gte=period_start).count()
+
         else:
             if (self.mfluser.user_groups.get('is_sub_county_level')):
                 return CommunityHealthUnit.objects.filter(created__gte=period_start,
@@ -352,7 +356,9 @@ class DashBoard(QuerysetFilterMixin, APIView):
                                                       facility__ward__sub_county__county=self.request.query_params.get(
                                                           'county'), facility__in=self.get_queryset()).count()
         else:
+
             return self.get_queryset().filter(updated__gte=period_start).count()
+
 
 
     def facilities_pending_approval_count(self, cty, period_start, period_end):
@@ -526,7 +532,9 @@ class DashBoard(QuerysetFilterMixin, APIView):
     def _get_user_top_level(self):
         userid = self.request.user.groups.all()[0].id
         resultobject = {'userlevel': ''}
+
         if userid == 5 or userid == 6 or userid == 7:
+
             resultobject['userlevel'] = 'national'
         elif userid == 1 or userid == 12:
             resultobject['userlevel'] = 'county'

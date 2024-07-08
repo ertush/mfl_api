@@ -7,6 +7,8 @@ __pycache__/
 
 # Distribution / packaging
 .Python
+venv/
+venvtest/
 env/
 build/
 clean.py
@@ -19,6 +21,7 @@ lib64/
 parts/
 sdist/
 var/
+.vscode/
 *.egg-info/
 .installed.cfg
 *.egg
@@ -107,3 +110,6 @@ data/data/last/*
 data/data/setup/*
 celerybeat-schedule
 celerybeat.pid
+
+# my base.py file
+/config/settings/base.py
