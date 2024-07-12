@@ -161,7 +161,9 @@ class DhisAuth(ApiAuthentication):
             # )
 
     def get_parent_id(self, ward_id):
-        print (self.session_store[self.oauth2_token_variable_name])
+
+        # print self.session_store[self.oauth2_token_variable_name]
+
         r = requests.get(
             settings.DHIS_ENDPOINT+"api/organisationUnits.json",
             auth=(settings.DHIS_USERNAME, settings.DHIS_PASSWORD),
@@ -278,7 +280,9 @@ class DhisAuth(ApiAuthentication):
 
     def push_facility_updates_to_dhis2(self, org_unit_id, facility_updates_payload):
         r = requests.put(
-            settings.DHIS_ENDPOINT + "api/organisationUnits/" + org_unit_id[0],
+
+            settings.DHIS_ENDPOINT + "api/organisationUnits/"+org_unit_id[0],
+
             auth=(settings.DHIS_USERNAME, settings.DHIS_PASSWORD),
             headers={
                 "Accept": "application/json"
@@ -286,8 +290,10 @@ class DhisAuth(ApiAuthentication):
             json=facility_updates_payload
         )
 
-        LOGGER.info("PUSH_FACILITY_UPDATES_RESPONSE => {}".format(r.json()))
-        LOGGER.info("PUSH_FACILITY_UPDATES_STATUS_CODE => {}".format(r.json()["status"]))
+
+        print("Update Facility Response", r.url, r.status_code, r.json())
+        LOGGER.info('[>>>>>>>>>>>>>] Org_unit_id: {} \n payload: {} \n response: {}'.format(org_unit_id, facility_updates_payload, r.json()))
+
 
         if r.json()["status"] != "OK":
             r = requests.post(
@@ -298,6 +304,13 @@ class DhisAuth(ApiAuthentication):
             },
             json=facility_updates_payload
         )
+
+            # raise ValidationError(
+            #     {
+            #         "Error!": ["Unable to push facility updates to DHIS2"]
+            #     }
+            # )
+
 
     def format_coordinates(self, str_coordinates):
         coordinates_str_list = str_coordinates.split(" ")
@@ -1118,7 +1131,9 @@ class Facility(SequenceMixin, AbstractBase):
         help_text="The number of eye theatres "
                   " that a facility has e.g 0")
     new_born_unit = models.BooleanField(default=False)
-    out_reach_services = models.BooleanField(default=False)
+
+    out_reach_services = models.BooleanField(default=False)  
+
     open_whole_day = models.BooleanField(
         default=False,
         help_text="Does the facility operate 24 hours a day")
@@ -1282,6 +1297,9 @@ class Facility(SequenceMixin, AbstractBase):
                 "20b86171-0c16-47e1-9277-5e773d485c33": "YQK9pleIoeB",
                 "5eb392ac-d10a-40c9-b525-53dac866ef6c": "lTrpyOiOcM6",
                 "8949eeb0-40b1-43d4-a38d-5d4933dc209f": "lTrpyOiOcM6",
+
+                "0b7f9699-6024-4813-8801-38f188c834f5": "lTrpyOiOcM6",
+
                 "ccc1600e-9a24-499f-889f-bd9f0bdc4b95": "YQK9pleIoeB",
                 "d8d741b1-21c5-45c8-86d0-a2094bf9bda6": "YQK9pleIoeB",
                 "85f2099b-a2f8-49f4-9798-0cb48c0875ff": "YQK9pleIoeB",
@@ -1307,7 +1325,10 @@ class Facility(SequenceMixin, AbstractBase):
                 "87626d3d-fd19-49d9-98da-daca4afe85bf": "mVrepdLAqSD",
                 "79158397-0d87-4d0e-8694-ad680a907a79": "YQK9pleIoeB",
                 "031293d9-fd8a-4682-a91e-a4390d57b0cf": "YQK9pleIoeB",
-                "4369eec8-0416-4e16-b013-e635ce46a02f": "YQK9pleIoeB",
+
+		"4369eec8-0416-4e16-b013-e635ce46a02f": "YQK9pleIoeB",
+		"9ad22615-48f2-47b3-8241-4355bb7db835" : "rhKJPLo27x7",
+
             }
             kmhfl_dhis2_ownership_mapping = {
                 "d45541f8-3b3d-475b-94f4-17741d468135": "aRxa6o8GqZN",
@@ -1332,7 +1353,8 @@ class Facility(SequenceMixin, AbstractBase):
                 "6cb92834-107c-404a-91fa-cf60b1eb5333": "aRxa6o8GqZN",
                 "2e651780-2ed4-4f8c-9061-6e5acf95d581": "AaAF5EmS1fk",
                 "30af7e3f-cd52-4ca0-b5dc-d8b1040a9808": "AaAF5EmS1fk",
-                "d64bbd8a-4013-463b-a238-c346cee66a92": "AaAF5EmS1fk",
+                "d64bbd8a-4013-463b-a238-c346cee66a92": "AaAF5EmS1fk", 
+
             }
             kmhfl_dhis2_keph_mapping = {
                 "ed23da85-4c92-45af-80fa-9b2123769f49": "FpY8vg4gh46",
@@ -1642,7 +1664,21 @@ class Facility(SequenceMixin, AbstractBase):
             for h_r in hr
         ]
 
-
+    # @property
+    # def get_facility_humanresources(self):
+    #     """For the same purpose as the get_facility_infra... above"""
+    #     hr = self.facility_humanresources.all()
+    #     return [
+    #         {
+    #             "id": h_r.id,
+    #             "speciality_id": h_r.id,
+    #             "name": h_r.name,
+    #             "speciality_name": h_r.name,
+    #             "speciality_category": h_r.category.id,
+    #             "speciality_category_name": str(h_r.category.name),
+    #         }
+    #         for h_r in hr
+    #     ]
 
 
     @property
@@ -2088,14 +2124,19 @@ class FacilityUpdates(AbstractBase):
                     new_date = datetime.date(year=value.year, month=value.month, day=value.day)
                     value = new_date
                 elif field_name == 'sub_county_id':
+
+                    print('field_name error', field_changed.get('display_value'))
+
                     value = SubCounty.objects.get(id=field_changed.get('actual_value')).id
                 else:
                     value = field_changed.get("actual_value")
 
                 setattr(self.facility, field_name, value)
             self.facility.save(allow_save=True)
-            # if self.facility.code and self.facility.is_complete and self.facility.approved_national_level:
-            #     self.facility.push_new_facility(self.facility.code)
+
+            #if self.facility.code and self.facility.is_complete and self.facility.approved_national_level:
+            #    self.facility.push_new_facility(self.facility.code)
+
             self.push_facility_updates()
 
 
@@ -2223,35 +2264,38 @@ class FacilityUpdates(AbstractBase):
                 raise ValidationError(error)
 
     def push_facility_updates(self):
-        from mfl_gis.models import FacilityCoordinates
-        import re
-        self.dhis2_api_auth.get_oauth2_token()
 
-        dhis2_parent_id = self.dhis2_api_auth.get_parent_id(self.facility.ward.code)
-        dhis2_org_unit_id = self.dhis2_api_auth.get_org_unit_id(self.facility.code)
+        # Don't push facility updates to KHIS if facility not validated , approved nationally and reporting to KHIS
+        if self.facility.is_approved and self.facility.approved_national_level and self.facility.reporting_in_dhis:
+            from mfl_gis.models import FacilityCoordinates
+            import re
+            self.dhis2_api_auth.get_oauth2_token()
 
-        if dhis2_parent_id is not None:
+            dhis2_parent_id = self.dhis2_api_auth.get_parent_id(self.facility.ward.code)
+            dhis2_org_unit_id = self.dhis2_api_auth.get_org_unit_id(self.facility.code)
+
+            coordinates = self.dhis2_api_auth.format_coordinates(
+                    re.search(r'\((.*?)\)', str(FacilityCoordinates.objects.values('coordinates')
+                                                .get(facility_id=self.facility.id)['coordinates'])).group(1))
+            
+            LOGGER.error('[>>>>>Info] coordinates: {}, FacilityCoordinatesObj: {}'.format(coordinates, FacilityCoordinates.objects.values('coordinates')
+                                                .get(facility_id=self.facility.id)['coordinates']))
             new_facility_updates_payload = {
-            "code": str(self.facility.code),
-            "name": str(self.facility.name),
-            "shortName": str(self.facility.name),
-            "displayName": str(self.facility.official_name),
-            "parent": {
-                "id": dhis2_parent_id
-            },
-            "openingDate": self.facility.date_established.strftime("%Y-%m-%d"),
-            "coordinates": self.dhis2_api_auth.format_coordinates(
-                re.search(r'\((.*?)\)', str(FacilityCoordinates.objects.values('coordinates')
-                                            .get(facility_id=self.facility.id)['coordinates'])).group(1))
+                "code": str(self.facility.code),
+                "name": str(self.facility.name),
+                "shortName": str(self.facility.name),
+                "displayName": str(self.facility.official_name),
+                "parent": {
+                    "id": dhis2_parent_id
+                },
+                "openingDate": self.facility.date_established.strftime("%Y-%m-%d"),
+                "coordinates": coordinates
             }
-        else:
-            error = {"Error": "DHIS 2 parent ID could not be found"}
-            raise ValidationError(error)
 
             # print("Names;", "Official Name:", self.facility.official_name, "Name:", self.facility.name)
             #
-            # print("New Facility Push Payload => ", new_facility_updates_payload)
-        
+            print("New Facility Push Payload => ", new_facility_updates_payload)
+
             self.dhis2_api_auth.push_facility_updates_to_dhis2(dhis2_org_unit_id, new_facility_updates_payload)
 
     def clean(self, *args, **kwargs):
@@ -2925,7 +2969,9 @@ class FacilitySpecialist(AbstractBase):
         Facility, related_name='facility_specialists',
         on_delete=models.PROTECT)
 
-    speciality = models.ForeignKey(Speciality, related_name='speciality', on_delete=models.PROTECT,)
+
+    speciality = models.ForeignKey(Speciality, related_name='speciality', on_delete=models.PROTECT)
+
 
     count = models.IntegerField(
         default=0, 
@@ -3045,8 +3091,10 @@ class FacilityInfrastructure(AbstractBase):
 
     infrastructure = models.ForeignKey(
         Infrastructure,
-        related_name='infrastructure',
-            on_delete=models.PROTECT,)
+
+        related_name='infrastructure', 
+        on_delete=models.PROTECT)
+
 
     count = models.IntegerField(
         default=0, 

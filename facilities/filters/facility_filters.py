@@ -431,7 +431,10 @@ class FacilityFilter(CommonFieldsFilterset):
             return qs.exclude(id__in=incomplete_facilities)
 
     def facilities_pending_approval(self, qs, name, value):
-        
+
+        # incomplete = qs.filter(code=not None)
+        # incomplete_facility_ids = [facility.id for facility in incomplete]
+
         incomplete_facilities = [facility.id for facility in qs.filter(code=None) if not facility.is_complete]
         if value in TRUTH_NESS:
             return qs.filter(
@@ -512,8 +515,8 @@ class FacilityFilter(CommonFieldsFilterset):
         coerce=strtobool)
     is_approved = django_filters.CharFilter(
         method='filter_approved_facilities')
-    service = django_filters.CharFilter(
-        method='service_filter')
+    service = django_filters.CharFilter(method=service_filter)
+
     infrastructure = django_filters.CharFilter(
         method='infrastructure_filter')
     speciality = django_filters.CharFilter(
