@@ -315,11 +315,11 @@ class DhisAuth(ApiAuthentication):
             json=facility_updates_payload
         )
 
-            # raise ValidationError(
-            #     {
-            #         "Error!": ["Unable to push facility updates to DHIS2"]
-            #     }
-            # )
+            raise ValidationError(
+                {
+                    "Error!": ["Unable to push facility updates to KHIS. Created a new facility {}".format(r.text())]
+                }
+            )
 
 
     def format_coordinates(self, str_coordinates):
