@@ -202,7 +202,17 @@ class DhisAuth(ApiAuthentication):
                 },
                 json=new_facility_payload
             )
-            LOGGER.info("Create Facility Response: %s" % r.text)
+            
+            if r.json()["status"] != "OK":
+                
+                raise ValidationError(
+                    {
+                        "Error!": [
+                            "An error occured while creating the facility in KHIS Aggregate. This is may be caused by the "
+                                "existance of an organisation unit with as similar name as to the one you are creating. KHIS Error: {}".format(r.text)
+                               ]
+                    }
+                )
         else:
             facility = requests.get(
                 settings.DHIS_ENDPOINT + "api/organisationUnits/" + new_facility_payload.pop('id'),
@@ -223,16 +233,16 @@ class DhisAuth(ApiAuthentication):
                     },
                     json=new_facility_payload
                 )
-                LOGGER.info("Update Facility Response: %s" % r.text)
-        if r.json()["status"] != "OK":
-            LOGGER.error('Facility feedback: %s' % r.text)
-            raise ValidationError(
-                {
-                    "Error!": ["An error occured while pushing facility to DHIS2. This is may be caused by the "
-                               "existance of an organisation unit with as similar name as to the one you are creating. "
-                               "Or some specific information like codes are not unique"]
-                }
-            )
+                
+
+                if r.json()["status"] != "OK":
+                    
+                    raise ValidationError(
+                        {
+                            "Error!": ["An error occured while updating this facility in KHIS Aggregate. KHIS Error {}".format(r.text)]
+                        }
+                    )
+        
 
     def push_facility_metadata(self, metadata_payload, facility_uid):
         # Keph Level
@@ -1285,6 +1295,7 @@ class Facility(SequenceMixin, AbstractBase):
     dhis2_api_auth = DhisAuth()
 
     def push_new_facility(self, code=None):
+        # If is approved national level and operational status is opertaional and is reporting to dhis and SETTINGS.PUSH_TO_DHIS is True; then push faciliti DHIS
         if self.approved_national_level and str(self.operation_status.id) == 'ae75777e-5ce3-4ac9-a17e-63823c34b55e' \
                 and self.reporting_in_dhis is True and settings.PUSH_TO_DHIS:
             from mfl_gis.models import FacilityCoordinates
@@ -1878,9 +1889,9 @@ class Facility(SequenceMixin, AbstractBase):
         approved.
         """
         from facilities.serializers import FacilityDetailSerializer
-        if not self.code and self.is_complete and self.approved_national_level:
-            self.code = self.generate_next_code_sequence()
-            self.push_new_facility()
+        # if not self.code and self.is_complete and self.approved_national_level is None:
+        self.code = self.generate_next_code_sequence()
+        self.push_new_facility()
 
         if not self.official_name:
             self.official_name = self.name
