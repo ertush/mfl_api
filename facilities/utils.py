@@ -281,20 +281,22 @@ class CreateFacilityOfficerMixin(object):
         contacts = data.get('contacts', [])
         created_contacts = []
 
-        for contact in contacts:
-            contact_type = ContactType.objects.get(id=contact.get('contact_type'))
-            contact_dict = {
-                "contact_type": contact_type,
-                "contact": contact.get('contact')
-            }
-            try:
-                created_contacts.append(Contact.objects.get(**contact_dict))
-            except Contact.DoesNotExist:
-                contact_dict = self._inject_creating_user(contact_dict)
-                contact_dict = self._inject_creating_user(contact_dict)
-                created_contacts.append(Contact.objects.create(**contact_dict))
-        
-        return created_contacts
+        if len(contacts) >= 1:
+            for contact in contacts:
+                if 'contact_type' in contact:
+                    contact_type = ContactType.objects.get(id=contact.get('contact_type'))
+                    contact_dict = {
+                        "contact_type": contact_type,
+                        "contact": contact.get('contact')
+                    }
+                    try:
+                        created_contacts.append(Contact.objects.get(**contact_dict))
+                    except Contact.DoesNotExist:
+                        contact_dict = self._inject_creating_user(contact_dict)
+                        contact_dict = self._inject_creating_user(contact_dict)
+                        created_contacts.append(Contact.objects.create(**contact_dict))
+            
+            return created_contacts
 
     def _create_facility_officer(self, data):
         facility = Facility.objects.get(id=data['facility_id'])

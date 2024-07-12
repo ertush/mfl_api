@@ -526,7 +526,7 @@ class DashBoard(QuerysetFilterMixin, APIView):
     def _get_user_top_level(self):
         userid = self.request.user.groups.all()[0].id
         resultobject = {'userlevel': ''}
-        if userid == 5 or userid == 6 or userid == 7:
+        if userid == 5 or userid == 6 or userid == 7 or userid == 11:
             resultobject['userlevel'] = 'national'
         elif userid == 1 or userid == 12:
             resultobject['userlevel'] = 'county'
