@@ -306,20 +306,22 @@ class DhisAuth(ApiAuthentication):
 
 
         if r.json()["status"] != "OK":
-            r = requests.post(
-            settings.DHIS_ENDPOINT + "api/organisationUnits/",
-            auth=(settings.DHIS_USERNAME, settings.DHIS_PASSWORD),
-            headers={
-                "Accept": "application/json"
-            },
-            json=facility_updates_payload
-        )
+        #     r = requests.post(
+        #     settings.DHIS_ENDPOINT + "api/organisationUnits/",
+        #     auth=(settings.DHIS_USERNAME, settings.DHIS_PASSWORD),
+        #     headers={
+        #         "Accept": "application/json"
+        #     },
+        #     json=facility_updates_payload
+        # )
 
-            # raise ValidationError(
-            #     {
-            #         "Error!": ["Unable to push facility updates to DHIS2"]
-            #     }
-            # )
+            raise ValidationError(
+                {
+                    "Error!": ["Unable to push facility updates to KHIS. Created a new facility {}".format(r.text())]
+                }
+            )
+        else:
+            return r.json()
 
 
     def format_coordinates(self, str_coordinates):
@@ -2291,6 +2293,7 @@ class FacilityUpdates(AbstractBase):
             
             LOGGER.error('[>>>>>Info] coordinates: {}, FacilityCoordinatesObj: {}'.format(coordinates, FacilityCoordinates.objects.values('coordinates')
                                                 .get(facility_id=self.facility.id)['coordinates']))
+            
             new_facility_updates_payload = {
                 "code": str(self.facility.code),
                 "name": str(self.facility.name),
