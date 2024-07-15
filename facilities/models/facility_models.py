@@ -1891,9 +1891,9 @@ class Facility(SequenceMixin, AbstractBase):
         approved.
         """
         from facilities.serializers import FacilityDetailSerializer
-        # if not self.code and self.is_complete and self.approved_national_level is None:
-        self.code = self.generate_next_code_sequence()
-        self.push_new_facility()
+        if not self.code and self.is_complete and self.approved_national_level:
+            self.code = self.generate_next_code_sequence()
+            self.push_new_facility()
 
         if not self.official_name:
             self.official_name = self.name
@@ -2147,10 +2147,9 @@ class FacilityUpdates(AbstractBase):
                 setattr(self.facility, field_name, value)
             self.facility.save(allow_save=True)
 
-            #if self.facility.code and self.facility.is_complete and self.facility.approved_national_level:
-            #    self.facility.push_new_facility(self.facility.code)
-
-            self.push_facility_updates()
+            if self.facility.code and self.facility.is_complete and self.facility.approved_national_level:
+               #self.facility.push_new_facility(self.facility.code)
+               self.push_facility_updates()
 
 
     def update_facility_services(self):
