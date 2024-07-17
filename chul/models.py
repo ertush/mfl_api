@@ -235,7 +235,7 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
                 health_unit=self
             )
 
-            chu = chu_update_buffer[0] if len(chu_update_buffer) > 0 else ChuUpdateBuffer.objects.get(
+            chu = chu_update_buffer[-1] if len(chu_update_buffer) > 0 else ChuUpdateBuffer.objects.get(
                 is_approved=False,
                 is_rejected=False,
                 health_unit=self
