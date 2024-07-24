@@ -288,10 +288,10 @@ class DhisAuth(ApiAuthentication):
         #         }
         #     )
 
-    def push_facility_updates_to_dhis2(self, parent_id, facility_updates_payload):
+    def push_facility_updates_to_dhis2(self, org_unit_id, facility_updates_payload):
         r = requests.put(
 
-            settings.DHIS_ENDPOINT + "api/organisationUnits/" + parent_id,
+            settings.DHIS_ENDPOINT + "api/organisationUnits/" + org_unit_id,
 
             auth=(settings.DHIS_USERNAME, settings.DHIS_PASSWORD),
             headers={
@@ -302,7 +302,7 @@ class DhisAuth(ApiAuthentication):
 
 
         print("Update Facility Response", r.url, r.status_code, r.json())
-        LOGGER.info('[DEBUG]: parent_id: {} \n [DEBUG]: payload: {} \n [DEBUG]: response: {}'.format(parent_id, facility_updates_payload, r.json()))
+        LOGGER.info('[DEBUG]: parent_id: {} \n [DEBUG]: payload: {} \n [DEBUG]: response: {}'.format(org_unit_id, facility_updates_payload, r.json()))
 
 
         if r.json()["status"] != "OK":
@@ -2284,7 +2284,7 @@ class FacilityUpdates(AbstractBase):
             self.dhis2_api_auth.get_oauth2_token()
 
             dhis2_parent_id = self.dhis2_api_auth.get_parent_id(self.facility.ward.code)
-            # dhis2_org_unit_id = self.dhis2_api_auth.get_org_unit_id(self.facility.code)
+            dhis2_org_unit_id = self.dhis2_api_auth.get_org_unit_id(self.facility.code)
 
             coordinates = self.dhis2_api_auth.format_coordinates(
                     re.search(r'\((.*?)\)', str(FacilityCoordinates.objects.values('coordinates')
@@ -2308,8 +2308,9 @@ class FacilityUpdates(AbstractBase):
             # print("Names;", "Official Name:", self.facility.official_name, "Name:", self.facility.name)
             #
             print("New Facility Push Payload => ", new_facility_updates_payload)
+            new_facility = False if dhis2_org_unit_id[1] == 'retrived' else True
 
-            self.dhis2_api_auth.push_facility_updates_to_dhis2(dhis2_parent_id, new_facility_updates_payload)
+            self.dhis2_api_auth.push_facility_to_dhis2(new_facility_updates_payload, new_facility)
 
     def clean(self, *args, **kwargs):
         self.validate_only_one_update_at_a_time()
