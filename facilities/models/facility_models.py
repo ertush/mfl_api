@@ -288,10 +288,10 @@ class DhisAuth(ApiAuthentication):
         #         }
         #     )
 
-    def push_facility_updates_to_dhis2(self, org_unit_id, facility_updates_payload):
+    def push_facility_updates_to_dhis2(self, parent_id, facility_updates_payload):
         r = requests.put(
 
-            settings.DHIS_ENDPOINT + "api/organisationUnits/"+org_unit_id[0],
+            settings.DHIS_ENDPOINT + "api/organisationUnits/" + parent_id,
 
             auth=(settings.DHIS_USERNAME, settings.DHIS_PASSWORD),
             headers={
@@ -302,7 +302,7 @@ class DhisAuth(ApiAuthentication):
 
 
         print("Update Facility Response", r.url, r.status_code, r.json())
-        LOGGER.info('[>>>>>>>>>>>>>] Org_unit_id: {} \n payload: {} \n response: {}'.format(org_unit_id, facility_updates_payload, r.json()))
+        LOGGER.info('[DEBUG]: parent_id: {} \n [DEBUG]: payload: {} \n [DEBUG]: response: {}'.format(parent_id, facility_updates_payload, r.json()))
 
 
         if r.json()["status"] != "OK":
@@ -317,7 +317,7 @@ class DhisAuth(ApiAuthentication):
 
             raise ValidationError(
                 {
-                    "Error!": ["Unable to push facility updates to KHIS. Created a new facility {}".format(r.text())]
+                    "Error!": ["Unable to push facility updates to KHIS. Created a new facility {}".format(r)]
                 }
             )
         else:
@@ -719,7 +719,7 @@ class RegulatoryBodyUser(AbstractBase):
         else:
             msg = "The user {0} was successfully linked to the regulator {1}"\
                 "".format(self.user.id, self.regulatory_body.id)
-            LOGGER.info(msg)
+            LOGGER.info("[DEBUG]: {}".format(msg))
 
     def make_user_national_user(self):
         self.user.is_national = True
@@ -1861,7 +1861,7 @@ class Facility(SequenceMixin, AbstractBase):
             return json.dumps(data)
         else:
             message = "The facility was not scheduled for update"
-            LOGGER.info(message)
+            LOGGER.info("[DEBUG]: {}".format(message))
 
     def index_facility_material_view(self):
         """
@@ -2284,7 +2284,7 @@ class FacilityUpdates(AbstractBase):
             self.dhis2_api_auth.get_oauth2_token()
 
             dhis2_parent_id = self.dhis2_api_auth.get_parent_id(self.facility.ward.code)
-            dhis2_org_unit_id = self.dhis2_api_auth.get_org_unit_id(self.facility.code)
+            # dhis2_org_unit_id = self.dhis2_api_auth.get_org_unit_id(self.facility.code)
 
             coordinates = self.dhis2_api_auth.format_coordinates(
                     re.search(r'\((.*?)\)', str(FacilityCoordinates.objects.values('coordinates')
@@ -2309,7 +2309,7 @@ class FacilityUpdates(AbstractBase):
             #
             print("New Facility Push Payload => ", new_facility_updates_payload)
 
-            self.dhis2_api_auth.push_facility_updates_to_dhis2(dhis2_org_unit_id, new_facility_updates_payload)
+            self.dhis2_api_auth.push_facility_updates_to_dhis2(dhis2_parent_id, new_facility_updates_payload)
 
     def clean(self, *args, **kwargs):
         self.validate_only_one_update_at_a_time()
