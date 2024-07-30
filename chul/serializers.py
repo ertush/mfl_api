@@ -123,7 +123,7 @@ class CommunityHealthUnitSerializer(
                 health_unit=chu_instance,
                 is_approved=False, is_rejected=False)
             
-            update = chu_updates[-1] if chu_updates._len__() > 0 else None
+            update = chu_updates[-1] if chu_updates.__len__() > 0 else None
 
             if update is None:
                 raise ChuUpdateBuffer.DoesNotExist
