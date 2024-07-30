@@ -119,7 +119,7 @@ class CommunityHealthUnitSerializer(
             services=None):
 
         try:
-            update = ChuUpdateBuffer.objects.get(
+            update = ChuUpdateBuffer.objects.latest(
                 health_unit=chu_instance,
                 is_approved=False, is_rejected=False)
         except ChuUpdateBuffer.DoesNotExist:
