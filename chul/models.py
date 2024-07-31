@@ -406,8 +406,9 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
         from facilities.models import Facility
         import requests
 
-        print(f"facility [DEBUG]: {self.facility}")
-        LOGGER.info(f" facility [DEBUG]: {self.facility}")
+        print("facility [DEBUG]: {}".format(self.facility))
+        LOGGER.info(" facility [DEBUG]: {}".format(self.facility))
+        
         facility = Facility.objects.get(id=self.facility)
 
 
