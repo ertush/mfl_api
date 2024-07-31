@@ -311,6 +311,7 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
         dhisauth.get_oauth2_token()
          
         LOGGER.info("[DEBUG] facility: {}".format(self.facility))
+
         facility_dhis_id = self.get_facility_dhis2_parent_id() # if self.facility else None
 
         unit_uuid_status = dhisauth.get_org_unit_id(self.code)
@@ -405,7 +406,10 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
         from facilities.models import Facility
         import requests
 
+        print(f"facility [DEBUG]: {self.facility}")
+        LOGGER.info(f" facility [DEBUG]: {self.facility}")
         facility = Facility.objects.get(id=self.facility)
+
 
         r = requests.get(
             settings.DHIS_ENDPOINT + "api/organisationUnits.json",
@@ -414,7 +418,7 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
                 "Accept": "application/json"
             },
             params={
-                "query": facility.code,
+                "query": facility.code if facility.code else facility.name.replace(' ','+'),
                 "fields": "id,name",
                 "filter": "level:in:[5]",
                 "paging": "false"
