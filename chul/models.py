@@ -403,13 +403,13 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
 
     def get_facility_dhis2_parent_id(self):
         # from facilities.models.facility_models import DhisAuth
-        from facilities.models import Facility
+        # from facilities.models import Facility
         import requests
 
-        print("facility [DEBUG]: {}".format(self.facility))
-        LOGGER.info(" facility [DEBUG]: {}".format(self.facility))
-        
-        facility = Facility.objects.get(id=self.facility)
+        # print("facility [DEBUG]: {}".format(self.facility))
+        # LOGGER.info(" facility [DEBUG]: {}".format(self.facility))
+
+        # facility = Facility.objects.get(id=self.facility)
 
 
         r = requests.get(
@@ -419,7 +419,7 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
                 "Accept": "application/json"
             },
             params={
-                "query": facility.code if facility.code else facility.name.replace(' ','+'),
+                "query": self.facility.code if self.facility.code else self.facility.name.replace(' ','+'),
                 "fields": "id,name",
                 "filter": "level:in:[5]",
                 "paging": "false"
