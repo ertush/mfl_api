@@ -309,9 +309,10 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
         import requests
         dhisauth = DhisAuth()
         dhisauth.get_oauth2_token()
-        facility_dhis_id = self.get_facility_dhis2_parent_id() if self.facility.reporting_in_dhis else None
+        facility_dhis_id = self.get_facility_dhis2_parent_id() if self.facility.code is not None else None
         unit_uuid_status = dhisauth.get_org_unit_id(self.code)
         unit_uuid = unit_uuid_status[0]
+
         new_chu_payload = {
             "id": unit_uuid,
             "code": str(self.code),
@@ -330,7 +331,7 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
 
         if facility_dhis_id is not None:
             if unit_uuid_status[1] == 'retrieved':
-                LOGGER.info("[>>>>>] Retrieved CHU")
+                LOGGER.info("[DEBUG:] Retrieved CHU")
 
                 r = requests.put(
                     settings.DHIS_ENDPOINT + "api/organisationUnits/" + new_chu_payload.pop('id'),
@@ -340,10 +341,21 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
                     },
                     json=new_chu_payload
                 )
-                print("Update CHU Response", r.url, r.status_code, r.json())
-                LOGGER.info("Update CHU Response: %s" % r.text)
+
+                LOGGER.info("Update CHU Response  [DEBUG]: {}\n {}\n {}".format(r.url, r.status_code, r.json()))
+                LOGGER.info("Update CHU Response [DEBUG]: %s" % r.text)
+
+                if r.json()["status"] != "OK":
+                    LOGGER.error("Failed PUSH [DEBUG]: {}".format(r.text))
+                    raise ValidationError(
+                        {
+                            "Error!": ["An error occured while updating a Community Unit in DHIS2. This is may be caused by the "
+                                    "existance of an organisation unit with as similar name as to the one you are creating. "
+                                    "Or some specific information like codes are not unique"]
+                        }
+                    )
             else:
-                LOGGER.info("[>>>>>] Payload for new CHU: {}".format(new_chu_payload));
+                LOGGER.info("Payload for new CHU:[DEBUG]: {}".format(new_chu_payload));
                 r = requests.post(
                     settings.DHIS_ENDPOINT + "api/organisationUnits",
                     auth=(settings.DHIS_USERNAME, settings.DHIS_PASSWORD),
@@ -353,23 +365,22 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
                     json=new_chu_payload
                 )
 
-                print("Create CHU Response", r.url, r.status_code, r.json())
-                LOGGER.info("Create CHU Response: %s" % r.text)
+                LOGGER.info("Update CHU Response  [DEBUG]: {}\n {}\n {}".format(r.url, r.status_code, r.json()))
+                LOGGER.info("Create CHU Response [DEBUG]: %s" % r.text)
 
-            if r.json()["status"] != "OK":
-                LOGGER.error("Failed PUSH: error -> {}".format(r.text))
-                raise ValidationError(
-                    {
-                        "Error!": ["An error occured while pushing Community Unit to DHIS2. This is may be caused by the "
-                                "existance of an organisation unit with as similar name as to the one you are creating. "
-                                "Or some specific information like codes are not unique"]
-                    }
-                )
+                if r.json()["status"] != "OK":
+                    raise ValidationError(
+                        {
+                            "Error!": ["An error occured while creating a Community Unit in DHIS2. This is may be caused by the "
+                                    "existance of an organisation unit with as similar name as to the one you are creating. "
+                                    "Or some specific information like codes are not unique"]
+                        }
+                    )
             self.push_chu_metadata(metadata_payload, unit_uuid)
         else:
             raise ValidationError(
                     {
-                        "Error!": ["Could not find Facility DHIS ID, when pushing CU to DHIS"]
+                        "Error!": ["The Linked Facility for this CU does not have a code / not approved nationally"]
                     }
                 )
 
@@ -387,7 +398,7 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
         LOGGER.info('Metadata CUs pushed successfullly')
 
     def get_facility_dhis2_parent_id(self):
-        from facilities.models.facility_models import DhisAuth
+        # from facilities.models.facility_models import DhisAuth
         import requests
         r = requests.get(
             settings.DHIS_ENDPOINT + "api/organisationUnits.json",
