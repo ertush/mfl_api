@@ -309,7 +309,8 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
         import requests
         dhisauth = DhisAuth()
         dhisauth.get_oauth2_token()
-
+         
+        LOGGER.info("[DEBUG] facility: {}".format(self.facility))
         facility_dhis_id = self.get_facility_dhis2_parent_id() # if self.facility else None
 
         unit_uuid_status = dhisauth.get_org_unit_id(self.code)
