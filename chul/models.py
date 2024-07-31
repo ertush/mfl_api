@@ -310,7 +310,11 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
         dhisauth = DhisAuth()
         dhisauth.get_oauth2_token()
 
-        facility_dhis_id = self.get_facility_dhis2_parent_id() if self.facility and self.facility.code is not None else None
+        facility_dhis_id = None  # Default value if no facility or facility code
+        if self.facility:
+            if self.facility.code is not None:
+                facility_dhis_id = self.get_facility_dhis2_parent_id()
+        
         unit_uuid_status = dhisauth.get_org_unit_id(self.code)
         unit_uuid = unit_uuid_status[0]
 
