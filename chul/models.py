@@ -648,7 +648,7 @@ class ChuUpdateBuffer(AbstractBase):
         updates = {}
         if self.basic and self.basic is not None:
             json_basic = json.loads(self.basic) # {'basic': {'facility' : uuid}}
-            updates['basic'] = json_basic['basic'] if hasattr(json_basic, 'basic') else json_basic 
+            updates['basic'] = json_basic # if hasattr(json_basic, 'basic') else json_basic 
         if self.contacts:
             updates['contacts'] = json.loads(self.contacts)
         if self.workers:
