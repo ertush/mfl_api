@@ -90,6 +90,7 @@ class DhisAuth(ApiAuthentication):
         )
 
         response = str(r.json())
+
         # print("Response @ refresh_oauth2 ", response)
         self.session_store[self.oauth2_token_variable_name] = response
         self.session_store.save()
