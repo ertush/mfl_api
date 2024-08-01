@@ -590,7 +590,7 @@ class ChuUpdateBuffer(AbstractBase):
                     chew_obj = CommunityHealthWorker.objects.get(id=chew['id'])
                     chew_obj.first_name = chew['first_name']
                     chew_obj.last_name = chew['last_name']
-                    
+
                     if hasattr(chew, 'is_incharge'):
                         chew_obj.is_incharge = chew['is_incharge']
                     chew_obj.save()
@@ -647,8 +647,8 @@ class ChuUpdateBuffer(AbstractBase):
     def updates(self):
         updates = {}
         if self.basic and self.basic is not None:
-            json_basic = json.loads(self.basic)
-            updates['basic'] = json_basic['basic'] if 'basic' in json_basic else json_basic 
+            json_basic = json.loads(self.basic) # {'basic': {'facility' : uuid}}
+            updates['basic'] = json_basic['basic'] if hasattr(json_basic, 'basic') else json_basic 
         if self.contacts:
             updates['contacts'] = json.loads(self.contacts)
         if self.workers:
