@@ -71,6 +71,11 @@ class DhisAuth(ApiAuthentication):
 
     @set_interval(30.0, -1)
     def refresh_oauth2_token(self):
+
+        print("DEBUG:{}".format(json.loads(self.session_store[self.oauth2_token_variable_name].replace("u", ""))))
+        LOGGER.info("DEBUG:{}".format(json.loads(self.session_store[self.oauth2_token_variable_name].replace("u", ""))))
+
+
         r = requests.post(
             settings.DHIS_ENDPOINT+"uaa/oauth/token",
             headers={

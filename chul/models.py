@@ -427,7 +427,7 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
         )
 
         if len(r.json()["organisationUnits"]) is 1 and "id" in r.json()["organisationUnits"][0]:
-            if r.json()["organisationUnits"][0]["id"]:
+            if r.json()["organisationUnits"][0  ]["id"]:
                 return r.json()["organisationUnits"][0]["id"]
         else:
             raise ValidationError(
@@ -583,14 +583,17 @@ class ChuUpdateBuffer(AbstractBase):
             chew['updated_by_id'] = self.updated_by_id
             chew.pop('created_by', None)
             chew.pop('updated_by', None)
-            if 'id' in chew:
-                chew_obj = CommunityHealthWorker.objects.get(
-                    id=chew['id'])
-                chew_obj.first_name = chew['first_name']
-                chew_obj.last_name = chew['last_name']
-                if 'is_incharge' in chew:
-                    chew_obj.is_incharge = chew['is_incharge']
-                chew_obj.save()
+            if hasattr(chew, 'id'):
+                
+                chew_obj = None
+                if CommunityHealthUnit.objects.filter(id=chew['id']).exists():
+                    chew_obj = CommunityHealthWorker.objects.get(id=chew['id'])
+                    chew_obj.first_name = chew['first_name']
+                    chew_obj.last_name = chew['last_name']
+                    
+                    if hasattr(chew, 'is_incharge'):
+                        chew_obj.is_incharge = chew['is_incharge']
+                    chew_obj.save()
             else:
                 CommunityHealthWorker.objects.create(**chew)
 
