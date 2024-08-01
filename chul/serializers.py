@@ -121,7 +121,11 @@ class CommunityHealthUnitSerializer(
         try:
             update = ChuUpdateBuffer.objects.get(
                 health_unit=chu_instance,
-                is_approved=False, is_rejected=False)
+                is_approved=False, is_rejected=False) if ChuUpdateBuffer.objects.filter(
+                health_unit=chu_instance,
+                is_approved=False, is_rejected=False).__len__() == 1 else ChuUpdateBuffer.objects.filter(
+                health_unit=chu_instance,
+                is_approved=False, is_rejected=False)[0]
         except ChuUpdateBuffer.DoesNotExist:
             update = ChuUpdateBuffer.objects.create(
                 health_unit=chu_instance,
