@@ -559,6 +559,9 @@ class ChuUpdateBuffer(AbstractBase):
     def update_basic_details(self):
         # Because the basic property of ChuUpdateBuffer receives {"basic": {"facilities": <facility_id>}"}
         basic_details = json.loads(self.basic)
+        LOGGER.error("[DEBUG] basic_details: {}".format(basic_details))
+        LOGGER.info("[DEBUG] basic_details: {}".format(basic_details))
+
         if 'status' in basic_details:
             basic_details['status_id'] = basic_details.get(
                 'status').get('status_id')
