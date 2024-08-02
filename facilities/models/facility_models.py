@@ -187,6 +187,7 @@ class DhisAuth(ApiAuthentication):
             return dhis2_facility[0]["id"]
 
     def push_facility_to_dhis2(self, new_facility_payload, new_facility):
+        
         if new_facility:
             r = requests.post(
                 settings.DHIS_ENDPOINT+"api/organisationUnits",
@@ -1402,7 +1403,6 @@ class Facility(SequenceMixin, AbstractBase):
             
             LOGGER.error("[DEBUG] dhis2_org_unit_id[1]{}:".format(dhis2_org_unit_id[1]))
     
-
             raise ValueError("[DEBUG] dhis2_org_unit_id[1]{}:".format(dhis2_org_unit_id[1]))
         
 
