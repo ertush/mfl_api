@@ -190,7 +190,7 @@ class DhisAuth(ApiAuthentication):
         else:
             return dhis2_facility[0]["id"]
 
-    def push_facility_to_dhis2(self, new_facility_payload, new_facility):
+    def push_facility_to_dhis2(self, new_facility_payload, new_facility, isRetrived):
         if new_facility:
             r = requests.post(
                 settings.DHIS_ENDPOINT+"api/organisationUnits",
@@ -208,9 +208,9 @@ class DhisAuth(ApiAuthentication):
                 raise ValidationError(
                     {
                         "Error!": [
-                            "[DEBUG] new_facility: {}\n [DEBUG] new_facility_payload: {}".format(new_facility, new_facility_payload),
+                            "[DEBUG] new_facility: {}; [DEBUG] new_facility_payload: {}; [DEBUG] isRetrived: {}".format(new_facility, new_facility_payload, isRetrived),
                             "An error occured while creating the facility in KHIS Aggregate. This is may be caused by the "
-                                "existance of an organisation unit with as similar name as to the one you are creating. \n KHIS Error: {}".format(r.text)
+                                "existance of an organisation unit with as similar name as to the one you are creating.  KHIS Error: {}".format(r.text)
                                ]
                     }
                 )
@@ -1407,7 +1407,7 @@ class Facility(SequenceMixin, AbstractBase):
 
             if dhis2_org_unit_id[1] == 'retrieved':
                 new_facility = False
-            self.dhis2_api_auth.push_facility_to_dhis2(new_facility_payload, new_facility)
+            self.dhis2_api_auth.push_facility_to_dhis2(new_facility_payload, new_facility, dhis2_org_unit_id)
             # facility_uid = self.dhis2_api_auth.get_org_unit_id(self.code)
             facility_uid = dhis2_org_unit_id[0]
             self.dhis2_api_auth.push_facility_metadata(metadata_payload, facility_uid)
