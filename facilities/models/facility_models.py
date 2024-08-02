@@ -135,13 +135,8 @@ class DhisAuth(ApiAuthentication):
                 "paging": "false"
             }
         )
-        print("Get Org Unit ID Response", r.text, str(code))
+    
         if len(r.json()["organisationUnits"]) is 1 and "id" in r.json()["organisationUnits"][0]:
-            # raise ValidationError(
-            #     {
-            #         "Error!": ["This facility is already available in DHIS2. Please ensure details are correct"]
-            #     }
-            # )
             return [r.json()["organisationUnits"][0]["id"], 'retrieved']
         else:
             r_generate_orgunit_uid = requests.get(
@@ -151,6 +146,7 @@ class DhisAuth(ApiAuthentication):
                     "Accept": "application/json"
                 },
             )
+
             # print("New OrgUnit UID Generated-", r_generate_orgunit_uid.json()['codes'][0])
             return [r_generate_orgunit_uid.json()['codes'][0], 'generated']
             # raise ValidationError(
@@ -190,7 +186,8 @@ class DhisAuth(ApiAuthentication):
         else:
             return dhis2_facility[0]["id"]
 
-    def push_facility_to_dhis2(self, new_facility_payload, new_facility=True):
+    def push_facility_to_dhis2(self, new_facility_payload, new_facility):
+
         if new_facility:
             r = requests.post(
                 settings.DHIS_ENDPOINT+"api/organisationUnits",
@@ -209,13 +206,16 @@ class DhisAuth(ApiAuthentication):
                     {
                         "Error!": [
                             "An error occured while creating the facility in KHIS Aggregate. This is may be caused by the "
-                                "existance of an organisation unit with as similar name as to the one you are creating. KHIS Error: {}".format(r.text)
+                                "existance of an organisation unit with as similar name as to the one you are creating.  KHIS Error: {}".format(r.text)
                                ]
                     }
                 )
         else:
+            # LOGGER.error("new_facility_payload:{}".format(new_facility_payload['id']))
+            # raise ValueError("new_facility_payload:{}".format(new_facility_payload))
+        
             facility = requests.get(
-                settings.DHIS_ENDPOINT + "api/organisationUnits/" + new_facility_payload.pop('id'),
+                settings.DHIS_ENDPOINT + "api/organisationUnits/" + new_facility_payload['id'],
                 auth=(settings.DHIS_USERNAME, settings.DHIS_PASSWORD),
                 headers={
                     "Accept": "application/json"
@@ -224,9 +224,9 @@ class DhisAuth(ApiAuthentication):
 
             )
 
-            if facility.json()['id'] == new_facility_payload.pop('id'):
+            if facility.json()['id'] == new_facility_payload['id']:
                 r = requests.put(
-                    settings.DHIS_ENDPOINT + "api/organisationUnits/" + new_facility_payload.pop('id'),
+                    settings.DHIS_ENDPOINT + "api/organisationUnits/" + new_facility_payload['id'],
                     auth=(settings.DHIS_USERNAME, settings.DHIS_PASSWORD),
                     headers={
                         "Accept": "application/json"
@@ -301,8 +301,8 @@ class DhisAuth(ApiAuthentication):
         )
 
 
-        print("Update Facility Response", r.url, r.status_code, r.json())
-        LOGGER.info('[DEBUG]: parent_id: {} \n [DEBUG]: payload: {} \n [DEBUG]: response: {}'.format(org_unit_id, facility_updates_payload, r.json()))
+        # print("Update Facility Response", r.url, r.status_code, r.json())
+        # LOGGER.info('[DEBUG]: parent_id: {} \n [DEBUG]: payload: {} \n [DEBUG]: response: {}'.format(org_unit_id, facility_updates_payload, r.json()))
 
 
         if r.json()["status"] != "OK":
@@ -1380,6 +1380,7 @@ class Facility(SequenceMixin, AbstractBase):
                 facility_code = str(code)
             else:
                 facility_code = str(self.code)
+
             new_facility_payload = {
                 "id": dhis2_org_unit_id[0],
                 "code": facility_code,
@@ -1394,12 +1395,21 @@ class Facility(SequenceMixin, AbstractBase):
                     re.search(r'\((.*?)\)', str(FacilityCoordinates.objects.values('coordinates')
                                                 .get(facility_id=self.id)['coordinates'])).group(1))
             }
+
             metadata_payload = {
                 "facility_type": kmhfl_dhis2_facility_type_mapping[str(self.facility_type_id)],
                 "keph": kmhfl_dhis2_keph_mapping[str(self.keph_level_id)],
                 "ownership": kmhfl_dhis2_ownership_mapping[str(self.owner_id)]
             }
+
             new_facility = True
+
+            
+            # LOGGER.error("[DEBUG] dhis2_org_unit_id[1]{}:".format(dhis2_org_unit_id[1]))
+    
+            # raise ValueError("[DEBUG] dhis2_org_unit_id[1]{}:".format(dhis2_org_unit_id[1]))
+        
+
             if dhis2_org_unit_id[1] == 'retrieved':
                 new_facility = False
             self.dhis2_api_auth.push_facility_to_dhis2(new_facility_payload, new_facility)
@@ -2285,15 +2295,18 @@ class FacilityUpdates(AbstractBase):
 
             dhis2_parent_id = self.dhis2_api_auth.get_parent_id(self.facility.ward.code)
             dhis2_org_unit_id = self.dhis2_api_auth.get_org_unit_id(self.facility.code)
-
+            
+            
+        
             coordinates = self.dhis2_api_auth.format_coordinates(
                     re.search(r'\((.*?)\)', str(FacilityCoordinates.objects.values('coordinates')
                                                 .get(facility_id=self.facility.id)['coordinates'])).group(1))
             
-            LOGGER.error('[>>>>>Info] coordinates: {}, FacilityCoordinatesObj: {}'.format(coordinates, FacilityCoordinates.objects.values('coordinates')
-                                                .get(facility_id=self.facility.id)['coordinates']))
+            # LOGGER.error('[>>>>>Info] coordinates: {}, FacilityCoordinatesObj: {}'.format(coordinates, FacilityCoordinates.objects.values('coordinates')
+            #                                     .get(facility_id=self.facility.id)['coordinates']))
             
             new_facility_updates_payload = {
+                "id": dhis2_org_unit_id[0],
                 "code": str(self.facility.code),
                 "name": str(self.facility.name),
                 "shortName": str(self.facility.name),
@@ -2307,8 +2320,18 @@ class FacilityUpdates(AbstractBase):
 
             # print("Names;", "Official Name:", self.facility.official_name, "Name:", self.facility.name)
             #
+
+            # LOGGER.error("[DEBUG] dhis2_org_unit_id[1]{}:".format(dhis2_org_unit_id[1]))
+    
+            # raise ValueError("[DEBUG] dhis2_org_unit_id[1]{}:".format(dhis2_org_unit_id[1]))
+
             print("New Facility Push Payload => ", new_facility_updates_payload)
-            new_facility = False if dhis2_org_unit_id[1] == 'retrived' else True
+
+            # LOGGER.error("[DEBUG] dhis2_org_unit_id[1]{}:".format(dhis2_org_unit_id[1]))
+    
+            # raise ValueError("[DEBUG] dhis2_org_unit_id[1]{}:".format(dhis2_org_unit_id[1]))
+
+            new_facility = False if dhis2_org_unit_id[1] == 'retrieved' else True
 
             self.dhis2_api_auth.push_facility_to_dhis2(new_facility_updates_payload, new_facility)
 
