@@ -147,6 +147,8 @@ class DhisAuth(ApiAuthentication):
                     "Accept": "application/json"
                 },
             )
+            raise ValidationError("[DEBUG] Repsonse_Generated {}".format(r_generate_orgunit_uid.json()['codes'][0]))
+
             # print("New OrgUnit UID Generated-", r_generate_orgunit_uid.json()['codes'][0])
             return [r_generate_orgunit_uid.json()['codes'][0], 'generated']
             # raise ValidationError(
