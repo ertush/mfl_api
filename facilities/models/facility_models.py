@@ -187,7 +187,7 @@ class DhisAuth(ApiAuthentication):
             return dhis2_facility[0]["id"]
 
     def push_facility_to_dhis2(self, new_facility_payload, new_facility):
-        
+
         if new_facility:
             r = requests.post(
                 settings.DHIS_ENDPOINT+"api/organisationUnits",
@@ -1378,6 +1378,7 @@ class Facility(SequenceMixin, AbstractBase):
                 facility_code = str(code)
             else:
                 facility_code = str(self.code)
+                
             new_facility_payload = {
                 "id": dhis2_org_unit_id[0],
                 "code": facility_code,
@@ -1392,6 +1393,7 @@ class Facility(SequenceMixin, AbstractBase):
                     re.search(r'\((.*?)\)', str(FacilityCoordinates.objects.values('coordinates')
                                                 .get(facility_id=self.id)['coordinates'])).group(1))
             }
+
             metadata_payload = {
                 "facility_type": kmhfl_dhis2_facility_type_mapping[str(self.facility_type_id)],
                 "keph": kmhfl_dhis2_keph_mapping[str(self.keph_level_id)],
