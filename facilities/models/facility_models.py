@@ -135,10 +135,9 @@ class DhisAuth(ApiAuthentication):
                 "paging": "false"
             }
         )
-        print("Get Org Unit ID Response", r.text, str(code))
-        raise ValidationError("[DEBUG] Repsonse {}".format(r.text))
     
         if len(r.json()["organisationUnits"]) is 1 and "id" in r.json()["organisationUnits"][0]:
+            raise ValidationError("[DEBUG] Repsonse {}".format(r.text))
             return [r.json()["organisationUnits"][0]["id"], 'retrieved']
         else:
             r_generate_orgunit_uid = requests.get(
@@ -205,7 +204,7 @@ class DhisAuth(ApiAuthentication):
                 raise ValidationError(
                     {
                         "Error!": [
-                            "[DEBUG] new_facility: {}; [DEBUG] new_facility_payload: {}; [DEBUG] isRetrived: {}".format(new_facility, new_facility_payload, isRetrived),
+                            "[DEBUG] new_facility: {}; [DEBUG] new_facility_payload: {}; [DEBUG] isRetrived: {}".format(new_facility, new_facility_payload),
                             "An error occured while creating the facility in KHIS Aggregate. This is may be caused by the "
                                 "existance of an organisation unit with as similar name as to the one you are creating.  KHIS Error: {}".format(r.text)
                                ]
@@ -1380,7 +1379,6 @@ class Facility(SequenceMixin, AbstractBase):
                 facility_code = str(self.code)
             new_facility_payload = {
                 "id": dhis2_org_unit_id[0],
-                "access": dhis2_org_unit_id[1],
                 "code": facility_code,
                 "name": str(self.name),
                 "shortName": str(self.name[:49]),
