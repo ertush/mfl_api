@@ -137,8 +137,6 @@ class DhisAuth(ApiAuthentication):
         )
     
         if len(r.json()["organisationUnits"]) is 1 and "id" in r.json()["organisationUnits"][0]:
-            
-            raise ValidationError("[DEBUG] Repsonse {}; Return {}".format(r.text, r.json()["organisationUnits"][0]["id"]))
             return [r.json()["organisationUnits"][0]["id"], 'retrieved']
         else:
             r_generate_orgunit_uid = requests.get(
@@ -148,7 +146,6 @@ class DhisAuth(ApiAuthentication):
                     "Accept": "application/json"
                 },
             )
-            raise ValidationError("[DEBUG] Repsonse_Generated {}".format(r_generate_orgunit_uid.json()['codes'][0]))
 
             # print("New OrgUnit UID Generated-", r_generate_orgunit_uid.json()['codes'][0])
             return [r_generate_orgunit_uid.json()['codes'][0], 'generated']
@@ -2289,7 +2286,9 @@ class FacilityUpdates(AbstractBase):
 
             dhis2_parent_id = self.dhis2_api_auth.get_parent_id(self.facility.ward.code)
             dhis2_org_unit_id = self.dhis2_api_auth.get_org_unit_id(self.facility.code)
-
+            
+            raise ValueError("[DEBUG] dhis2_org_unit_id: {}".format(dhis2_org_unit_id))
+        
             coordinates = self.dhis2_api_auth.format_coordinates(
                     re.search(r'\((.*?)\)', str(FacilityCoordinates.objects.values('coordinates')
                                                 .get(facility_id=self.facility.id)['coordinates'])).group(1))
