@@ -204,7 +204,7 @@ class DhisAuth(ApiAuthentication):
                 raise ValidationError(
                     {
                         "Error!": [
-                            "[DEBUG] new_facility: {}; [DEBUG] new_facility_payload: {}; [DEBUG] isRetrived: {}".format(new_facility, new_facility_payload),
+                            "[DEBUG] new_facility: {}; [DEBUG] new_facility_payload: {}".format(new_facility, new_facility_payload),
                             "An error occured while creating the facility in KHIS Aggregate. This is may be caused by the "
                                 "existance of an organisation unit with as similar name as to the one you are creating.  KHIS Error: {}".format(r.text)
                                ]
