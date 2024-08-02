@@ -1403,6 +1403,7 @@ class Facility(SequenceMixin, AbstractBase):
             # LOGGER.info("[DEBUG] new_facility: {}".format(new_facility))
 
             raise ValueError("[DEBUG] dhis2_org_unit_id[1]{}:".format(dhis2_org_unit_id[1]))
+        
 
             if dhis2_org_unit_id[1] == 'retrieved':
                 new_facility = False
