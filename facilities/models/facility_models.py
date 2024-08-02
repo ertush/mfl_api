@@ -212,8 +212,8 @@ class DhisAuth(ApiAuthentication):
                     }
                 )
         else:
-            LOGGER.error("new_facility_payload:{}".format(new_facility_payload))
-            raise ValueError("new_facility_payload:{}".format(new_facility_payload))
+            LOGGER.error("new_facility_payload:{}".format(new_facility_payload['id']))
+            # raise ValueError("new_facility_payload:{}".format(new_facility_payload))
         
             facility = requests.get(
                 settings.DHIS_ENDPOINT + "api/organisationUnits/" + new_facility_payload['id'],
@@ -2307,6 +2307,7 @@ class FacilityUpdates(AbstractBase):
             #                                     .get(facility_id=self.facility.id)['coordinates']))
             
             new_facility_updates_payload = {
+                "id": dhis2_org_unit_id[0],
                 "code": str(self.facility.code),
                 "name": str(self.facility.name),
                 "shortName": str(self.facility.name),
