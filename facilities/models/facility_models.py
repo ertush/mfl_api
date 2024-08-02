@@ -71,11 +71,6 @@ class DhisAuth(ApiAuthentication):
 
     @set_interval(30.0, -1)
     def refresh_oauth2_token(self):
-
-        # print("DEBUG:{}".format(json.loads(self.session_store[self.oauth2_token_variable_name].replace("u", ""))))
-        # LOGGER.info("DEBUG:{}".format(json.loads(self.session_store[self.oauth2_token_variable_name].replace("u", ""))))
-
-
         r = requests.post(
             settings.DHIS_ENDPOINT+"uaa/oauth/token",
             headers={
@@ -90,7 +85,6 @@ class DhisAuth(ApiAuthentication):
         )
 
         response = str(r.json())
-
         # print("Response @ refresh_oauth2 ", response)
         self.session_store[self.oauth2_token_variable_name] = response
         self.session_store.save()
@@ -297,7 +291,7 @@ class DhisAuth(ApiAuthentication):
     def push_facility_updates_to_dhis2(self, org_unit_id, facility_updates_payload):
         r = requests.put(
 
-            settings.DHIS_ENDPOINT + "api/organisationUnits/"+org_unit_id[0],
+            settings.DHIS_ENDPOINT + "api/organisationUnits/" + org_unit_id,
 
             auth=(settings.DHIS_USERNAME, settings.DHIS_PASSWORD),
             headers={
@@ -308,7 +302,7 @@ class DhisAuth(ApiAuthentication):
 
 
         print("Update Facility Response", r.url, r.status_code, r.json())
-        LOGGER.info('[>>>>>>>>>>>>>] Org_unit_id: {} \n payload: {} \n response: {}'.format(org_unit_id, facility_updates_payload, r.json()))
+        LOGGER.info('[DEBUG]: parent_id: {} \n [DEBUG]: payload: {} \n [DEBUG]: response: {}'.format(org_unit_id, facility_updates_payload, r.json()))
 
 
         if r.json()["status"] != "OK":
@@ -323,7 +317,7 @@ class DhisAuth(ApiAuthentication):
 
             raise ValidationError(
                 {
-                    "Error!": ["Unable to push facility updates to KHIS. Created a new facility {}".format(r.text())]
+                    "Error!": ["Unable to push facility updates to KHIS. Created a new facility {}".format(r)]
                 }
             )
         else:
@@ -725,7 +719,7 @@ class RegulatoryBodyUser(AbstractBase):
         else:
             msg = "The user {0} was successfully linked to the regulator {1}"\
                 "".format(self.user.id, self.regulatory_body.id)
-            LOGGER.info(msg)
+            LOGGER.info("[DEBUG]: {}".format(msg))
 
     def make_user_national_user(self):
         self.user.is_national = True
@@ -1867,7 +1861,7 @@ class Facility(SequenceMixin, AbstractBase):
             return json.dumps(data)
         else:
             message = "The facility was not scheduled for update"
-            LOGGER.info(message)
+            LOGGER.info("[DEBUG]: {}".format(message))
 
     def index_facility_material_view(self):
         """
@@ -2314,8 +2308,9 @@ class FacilityUpdates(AbstractBase):
             # print("Names;", "Official Name:", self.facility.official_name, "Name:", self.facility.name)
             #
             print("New Facility Push Payload => ", new_facility_updates_payload)
+            new_facility = False if dhis2_org_unit_id[1] == 'retrived' else True
 
-            self.dhis2_api_auth.push_facility_updates_to_dhis2(dhis2_org_unit_id, new_facility_updates_payload)
+            self.dhis2_api_auth.push_facility_to_dhis2(new_facility_updates_payload, new_facility)
 
     def clean(self, *args, **kwargs):
         self.validate_only_one_update_at_a_time()
