@@ -1378,7 +1378,7 @@ class Facility(SequenceMixin, AbstractBase):
                 facility_code = str(code)
             else:
                 facility_code = str(self.code)
-                
+
             new_facility_payload = {
                 "id": dhis2_org_unit_id[0],
                 "code": facility_code,
@@ -1403,9 +1403,9 @@ class Facility(SequenceMixin, AbstractBase):
             new_facility = True
 
             
-            LOGGER.error("[DEBUG] dhis2_org_unit_id[1]{}:".format(dhis2_org_unit_id[1]))
+            # LOGGER.error("[DEBUG] dhis2_org_unit_id[1]{}:".format(dhis2_org_unit_id[1]))
     
-            raise ValueError("[DEBUG] dhis2_org_unit_id[1]{}:".format(dhis2_org_unit_id[1]))
+            # raise ValueError("[DEBUG] dhis2_org_unit_id[1]{}:".format(dhis2_org_unit_id[1]))
         
 
             if dhis2_org_unit_id[1] == 'retrieved':
@@ -2317,8 +2317,18 @@ class FacilityUpdates(AbstractBase):
 
             # print("Names;", "Official Name:", self.facility.official_name, "Name:", self.facility.name)
             #
+
+            # LOGGER.error("[DEBUG] dhis2_org_unit_id[1]{}:".format(dhis2_org_unit_id[1]))
+    
+            # raise ValueError("[DEBUG] dhis2_org_unit_id[1]{}:".format(dhis2_org_unit_id[1]))
+
             print("New Facility Push Payload => ", new_facility_updates_payload)
-            new_facility = False if dhis2_org_unit_id[1] == 'retrived' else True
+
+            # LOGGER.error("[DEBUG] dhis2_org_unit_id[1]{}:".format(dhis2_org_unit_id[1]))
+    
+            # raise ValueError("[DEBUG] dhis2_org_unit_id[1]{}:".format(dhis2_org_unit_id[1]))
+
+            new_facility = False if dhis2_org_unit_id[1] == 'retrieved' else True
 
             self.dhis2_api_auth.push_facility_to_dhis2(new_facility_updates_payload, new_facility)
 
