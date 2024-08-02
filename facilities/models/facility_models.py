@@ -212,6 +212,9 @@ class DhisAuth(ApiAuthentication):
                     }
                 )
         else:
+            LOGGER.error("new_facility_payload:{}".format(new_facility_payload))
+            raise ValueError("new_facility_payload:{}".format(new_facility_payload))
+        
             facility = requests.get(
                 settings.DHIS_ENDPOINT + "api/organisationUnits/" + new_facility_payload['id'],
                 auth=(settings.DHIS_USERNAME, settings.DHIS_PASSWORD),
