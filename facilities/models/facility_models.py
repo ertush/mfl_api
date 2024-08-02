@@ -1400,6 +1400,10 @@ class Facility(SequenceMixin, AbstractBase):
                 "ownership": kmhfl_dhis2_ownership_mapping[str(self.owner_id)]
             }
             new_facility = True
+            
+            print("[DEBUG] new_facility: {}".format(new_facility))
+            LOGGER.info("[DEBUG] new_facility: {}".format(new_facility))
+
             if dhis2_org_unit_id[1] == 'retrieved':
                 new_facility = False
             self.dhis2_api_auth.push_facility_to_dhis2(new_facility_payload, new_facility)
