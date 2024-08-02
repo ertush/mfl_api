@@ -1400,7 +1400,8 @@ class Facility(SequenceMixin, AbstractBase):
             new_facility = True
 
             
-            # LOGGER.info("[DEBUG] new_facility: {}".format(new_facility))
+            LOGGER.error("[DEBUG] dhis2_org_unit_id[1]{}:".format(dhis2_org_unit_id[1]))
+    
 
             raise ValueError("[DEBUG] dhis2_org_unit_id[1]{}:".format(dhis2_org_unit_id[1]))
         
@@ -2297,8 +2298,8 @@ class FacilityUpdates(AbstractBase):
                     re.search(r'\((.*?)\)', str(FacilityCoordinates.objects.values('coordinates')
                                                 .get(facility_id=self.facility.id)['coordinates'])).group(1))
             
-            LOGGER.error('[>>>>>Info] coordinates: {}, FacilityCoordinatesObj: {}'.format(coordinates, FacilityCoordinates.objects.values('coordinates')
-                                                .get(facility_id=self.facility.id)['coordinates']))
+            # LOGGER.error('[>>>>>Info] coordinates: {}, FacilityCoordinatesObj: {}'.format(coordinates, FacilityCoordinates.objects.values('coordinates')
+            #                                     .get(facility_id=self.facility.id)['coordinates']))
             
             new_facility_updates_payload = {
                 "code": str(self.facility.code),
