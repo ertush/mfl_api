@@ -213,7 +213,7 @@ class DhisAuth(ApiAuthentication):
                 )
         else:
             facility = requests.get(
-                settings.DHIS_ENDPOINT + "api/organisationUnits/" + new_facility_payload.pop('id'),
+                settings.DHIS_ENDPOINT + "api/organisationUnits/" + new_facility_payload['id'],
                 auth=(settings.DHIS_USERNAME, settings.DHIS_PASSWORD),
                 headers={
                     "Accept": "application/json"
@@ -222,9 +222,9 @@ class DhisAuth(ApiAuthentication):
 
             )
 
-            if facility.json()['id'] == new_facility_payload.pop('id'):
+            if facility.json()['id'] == new_facility_payload['id']:
                 r = requests.put(
-                    settings.DHIS_ENDPOINT + "api/organisationUnits/" + new_facility_payload.pop('id'),
+                    settings.DHIS_ENDPOINT + "api/organisationUnits/" + new_facility_payload['id'],
                     auth=(settings.DHIS_USERNAME, settings.DHIS_PASSWORD),
                     headers={
                         "Accept": "application/json"
