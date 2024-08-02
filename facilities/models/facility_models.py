@@ -137,7 +137,7 @@ class DhisAuth(ApiAuthentication):
         )
     
         if len(r.json()["organisationUnits"]) is 1 and "id" in r.json()["organisationUnits"][0]:
-            raise ValidationError("[DEBUG] Repsonse {}".format(r.text))
+            raise ValidationError("[DEBUG] Repsonse {}; Return {}".format(r.text, r.json()["organisationUnits"][0]["id"]))
             return [r.json()["organisationUnits"][0]["id"], 'retrieved']
         else:
             r_generate_orgunit_uid = requests.get(
