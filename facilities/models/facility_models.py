@@ -190,7 +190,7 @@ class DhisAuth(ApiAuthentication):
         else:
             return dhis2_facility[0]["id"]
 
-    def push_facility_to_dhis2(self, new_facility_payload, new_facility=True):
+    def push_facility_to_dhis2(self, new_facility_payload, new_facility):
         if new_facility:
             r = requests.post(
                 settings.DHIS_ENDPOINT+"api/organisationUnits",
@@ -208,8 +208,9 @@ class DhisAuth(ApiAuthentication):
                 raise ValidationError(
                     {
                         "Error!": [
+                            "[DEBUG] new_facility: {}\n [DEBUG] new_facility_payload: {}".format(new_facility, new_facility_payload),
                             "An error occured while creating the facility in KHIS Aggregate. This is may be caused by the "
-                                "existance of an organisation unit with as similar name as to the one you are creating. KHIS Error: {}".format(r.text)
+                                "existance of an organisation unit with as similar name as to the one you are creating. \n KHIS Error: {}".format(r.text)
                                ]
                     }
                 )
@@ -1400,9 +1401,9 @@ class Facility(SequenceMixin, AbstractBase):
                 "ownership": kmhfl_dhis2_ownership_mapping[str(self.owner_id)]
             }
             new_facility = True
+
             
-            print("[DEBUG] new_facility: {}".format(new_facility))
-            LOGGER.info("[DEBUG] new_facility: {}".format(new_facility))
+            # LOGGER.info("[DEBUG] new_facility: {}".format(new_facility))
 
             if dhis2_org_unit_id[1] == 'retrieved':
                 new_facility = False
