@@ -1396,10 +1396,13 @@ class Facility(SequenceMixin, AbstractBase):
                 "keph": kmhfl_dhis2_keph_mapping[str(self.keph_level_id)],
                 "ownership": kmhfl_dhis2_ownership_mapping[str(self.owner_id)]
             }
+
             new_facility = True
 
             
             # LOGGER.info("[DEBUG] new_facility: {}".format(new_facility))
+
+            raise ValueError("[DEBUG] dhis2_org_unit_id[1]{}:".format(dhis2_org_unit_id[1]))
 
             if dhis2_org_unit_id[1] == 'retrieved':
                 new_facility = False
@@ -2287,7 +2290,7 @@ class FacilityUpdates(AbstractBase):
             dhis2_parent_id = self.dhis2_api_auth.get_parent_id(self.facility.ward.code)
             dhis2_org_unit_id = self.dhis2_api_auth.get_org_unit_id(self.facility.code)
             
-            raise ValueError("[DEBUG] dhis2_org_unit_id: {}".format(dhis2_org_unit_id))
+            
         
             coordinates = self.dhis2_api_auth.format_coordinates(
                     re.search(r'\((.*?)\)', str(FacilityCoordinates.objects.values('coordinates')
