@@ -136,12 +136,9 @@ class DhisAuth(ApiAuthentication):
             }
         )
         print("Get Org Unit ID Response", r.text, str(code))
+        raise ValidationError("[DEBUG] Repsonse {}".format(r.text))
+    
         if len(r.json()["organisationUnits"]) is 1 and "id" in r.json()["organisationUnits"][0]:
-            # raise ValidationError(
-            #     {
-            #         "Error!": ["This facility is already available in DHIS2. Please ensure details are correct"]
-            #     }
-            # )
             return [r.json()["organisationUnits"][0]["id"], 'retrieved']
         else:
             r_generate_orgunit_uid = requests.get(
@@ -190,7 +187,7 @@ class DhisAuth(ApiAuthentication):
         else:
             return dhis2_facility[0]["id"]
 
-    def push_facility_to_dhis2(self, new_facility_payload, new_facility, isRetrived):
+    def push_facility_to_dhis2(self, new_facility_payload, new_facility):
         if new_facility:
             r = requests.post(
                 settings.DHIS_ENDPOINT+"api/organisationUnits",
@@ -1383,6 +1380,7 @@ class Facility(SequenceMixin, AbstractBase):
                 facility_code = str(self.code)
             new_facility_payload = {
                 "id": dhis2_org_unit_id[0],
+                "access": dhis2_org_unit_id[1],
                 "code": facility_code,
                 "name": str(self.name),
                 "shortName": str(self.name[:49]),
@@ -1407,7 +1405,7 @@ class Facility(SequenceMixin, AbstractBase):
 
             if dhis2_org_unit_id[1] == 'retrieved':
                 new_facility = False
-            self.dhis2_api_auth.push_facility_to_dhis2(new_facility_payload, new_facility, dhis2_org_unit_id)
+            self.dhis2_api_auth.push_facility_to_dhis2(new_facility_payload, new_facility)
             # facility_uid = self.dhis2_api_auth.get_org_unit_id(self.code)
             facility_uid = dhis2_org_unit_id[0]
             self.dhis2_api_auth.push_facility_metadata(metadata_payload, facility_uid)
