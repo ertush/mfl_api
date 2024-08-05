@@ -308,7 +308,7 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
         from facilities.models.facility_models import DhisAuth
         import requests
 
-        LOGGER.error("[DEBUG] self.facility: {}\n self.facility.reporting_in_dhis: {}".format(self.facility, self.facility.reporting_in_dhis))
+        LOGGER.error("[DEBUG] self.facility: {}\n".format(self))
 
         dhisauth = DhisAuth()
         dhisauth.get_oauth2_token()
