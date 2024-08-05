@@ -304,19 +304,15 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
     def rating_count(self):
         return self.chu_ratings.count()
 
+    
     def push_chu_to_dhis2(self):
         from facilities.models.facility_models import DhisAuth
         import requests
         dhisauth = DhisAuth()
         dhisauth.get_oauth2_token()
-         
-        LOGGER.info("[DEBUG] facility: {}".format(self.facility))
-
-        facility_dhis_id = self.get_facility_dhis2_parent_id() # if self.facility else None
-
+        facility_dhis_id = self.get_facility_dhis2_parent_id()
         unit_uuid_status = dhisauth.get_org_unit_id(self.code)
         unit_uuid = unit_uuid_status[0]
-
         new_chu_payload = {
             "id": unit_uuid,
             "code": str(self.code),
@@ -328,65 +324,45 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
             },
             "openingDate": self.date_operational.strftime("%Y-%m-%d"),
         }
-
+        
         metadata_payload = {
             "keph": 'axUnguN4QDh'
         }
 
-        if facility_dhis_id is not None:
-            if unit_uuid_status[1] == 'retrieved':
-                LOGGER.info("[DEBUG:] Retrieved CHU")
-
-                r = requests.put(
-                    settings.DHIS_ENDPOINT + "api/organisationUnits/" + new_chu_payload.pop('id'),
-                    auth=(settings.DHIS_USERNAME, settings.DHIS_PASSWORD),
-                    headers={
-                        "Accept": "application/json"
-                    },
-                    json=new_chu_payload
-                )
-
-                LOGGER.info("Update CHU Response  [DEBUG]: {}\n {}\n {}".format(r.url, r.status_code, r.json()))
-                LOGGER.info("Update CHU Response [DEBUG]: %s" % r.text)
-
-                if r.json()["status"] != "OK":
-                    LOGGER.error("Failed PUSH [DEBUG]: {}".format(r.text))
-                    raise ValidationError(
-                        {
-                            "Error!": ["An error occured while updating a Community Unit in DHIS2. This is may be caused by the "
-                                    "existance of an organisation unit with as similar name as to the one you are creating. "
-                                    "Or some specific information like codes are not unique"]
-                        }
-                    )
-            else:
-                LOGGER.info("Payload for new CHU:[DEBUG]: {}".format(new_chu_payload));
-                r = requests.post(
-                    settings.DHIS_ENDPOINT + "api/organisationUnits",
-                    auth=(settings.DHIS_USERNAME, settings.DHIS_PASSWORD),
-                    headers={
-                        "Accept": "application/json"
-                    },
-                    json=new_chu_payload
-                )
-
-                LOGGER.info("Update CHU Response  [DEBUG]: {}\n {}\n {}".format(r.url, r.status_code, r.json()))
-                LOGGER.info("Create CHU Response [DEBUG]: %s" % r.text)
-
-                if r.json()["status"] != "OK":
-                    raise ValidationError(
-                        {
-                            "Error!": ["An error occured while creating a Community Unit in DHIS2. This is may be caused by the "
-                                    "existance of an organisation unit with as similar name as to the one you are creating. "
-                                    "Or some specific information like codes are not unique"]
-                        }
-                    )
-            self.push_chu_metadata(metadata_payload, unit_uuid)
+        if unit_uuid_status[1] == 'retrieved':
+            r = requests.put(
+                settings.DHIS_ENDPOINT + "api/organisationUnits/" + new_chu_payload.pop('id'),
+                auth=(settings.DHIS_USERNAME, settings.DHIS_PASSWORD),
+                headers={
+                    "Accept": "application/json"
+                },
+                json=new_chu_payload
+            )
+            print("Update CHU Response", r.url, r.status_code, r.json())
+            LOGGER.info("Update CHU Response: %s" % r.text)
         else:
-            raise ValueError(
-                    {
-                        "Error!": ["The Linked Facility for this CU does not have a code / not approved nationally"]
-                    }
-                )
+            r = requests.post(
+                settings.DHIS_ENDPOINT + "api/organisationUnits",
+                auth=(settings.DHIS_USERNAME, settings.DHIS_PASSWORD),
+                headers={
+                    "Accept": "application/json"
+                },
+                json=new_chu_payload
+            )
+
+            print("Create CHU Response", r.url, r.status_code, r.json())
+            LOGGER.info("Create CHU Response: %s" % r.text)
+
+        if r.json()["status"] != "OK":
+            LOGGER.error("Failed PUSH: error -> {}".format(r.text))
+            raise ValidationError(
+                {
+                    "Error!": ["An error occured while pushing Community Unit to DHIS2. This is may be caused by the "
+                               "existance of an organisation unit with as similar name as to the one you are creating. "
+                               "Or some specific information like codes are not unique"]
+                }
+            )
+        self.push_chu_metadata(metadata_payload, unit_uuid)
 
     def push_chu_metadata(self, metadata_payload, chu_uid):
         # Keph Level
@@ -401,17 +377,10 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
         )
         LOGGER.info('Metadata CUs pushed successfullly')
 
+
     def get_facility_dhis2_parent_id(self):
-        # from facilities.models.facility_models import DhisAuth
-        # from facilities.models import Facility
-        import requests
-
-        # print("facility [DEBUG]: {}".format(self.facility))
-        # LOGGER.info(" facility [DEBUG]: {}".format(self.facility))
-
-        # facility = Facility.objects.get(id=self.facility)
-
-
+        from facilities.models.facility_models import DhisAuth
+        LOGGER.info('[ERROR] Facility Code : {}'.format(self.facility.code))
         r = requests.get(
             settings.DHIS_ENDPOINT + "api/organisationUnits.json",
             auth=(settings.DHIS_USERNAME, settings.DHIS_PASSWORD),
@@ -419,15 +388,15 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
                 "Accept": "application/json"
             },
             params={
-                "query": self.facility.code if self.facility.code else self.facility.name.replace(' ','+'),
-                "fields": "id,name",
+                "query": self.facility.code,
+                "fields": "[id,name]",
                 "filter": "level:in:[5]",
                 "paging": "false"
             }
         )
 
-        if len(r.json()["organisationUnits"]) is 1 and "id" in r.json()["organisationUnits"][0]:
-            if r.json()["organisationUnits"][0  ]["id"]:
+        if len(r.json()["organisationUnits"]) is 1:
+            if r.json()["organisationUnits"][0]["id"]:
                 return r.json()["organisationUnits"][0]["id"]
         else:
             raise ValidationError(
@@ -436,9 +405,9 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
                 }
             )
 
-    class Meta(AbstractBase.Meta):
 
-        unique_together = ('name', 'facility',)
+    class Meta(AbstractBase.Meta):
+        unique_together = ('name', 'facility', )
         permissions = (
             (
                 "view_rejected_chus",
@@ -450,6 +419,7 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
             ),
 
         )
+
 
 
 @reversion.register(follow=['health_worker', 'contact'])
@@ -558,25 +528,26 @@ class ChuUpdateBuffer(AbstractBase):
 
     def update_basic_details(self):
         # Because the basic property of ChuUpdateBuffer receives {"basic": {"facilities": <facility_id>}"}
-        basic_details = json.loads(self.basic)
-        LOGGER.error("[DEBUG] basic_details: {}".format(basic_details))
-        LOGGER.info("[DEBUG] basic_details: {}".format(basic_details))
+        if self.basic:
+            basic_details = json.loads(self.basic)
+            LOGGER.error("[DEBUG] basic_details: {}".format(basic_details))
+            LOGGER.info("[DEBUG] basic_details: {}".format(basic_details))
 
-        if 'status' in basic_details:
-            basic_details['status_id'] = basic_details.get(
-                'status').get('status_id')
-            basic_details.pop('status')
-        if 'facility' in basic_details:
-            basic_details['facility_id'] = basic_details.get(
-                'facility').get('facility_id')
-            basic_details.pop('facility')
-        
-        
-        for key, value in basic_details.iteritems():
-            setattr(self.health_unit, key, value)
-        if 'basic' in basic_details:
-            setattr(self.health_unit, 'facility_id', basic_details.get('basic').get('facility'))
-        self.health_unit.save()
+            if 'status' in basic_details:
+                basic_details['status_id'] = basic_details.get(
+                    'status').get('status_id')
+                basic_details.pop('status')
+            if 'facility' in basic_details:
+                basic_details['facility_id'] = basic_details.get(
+                    'facility').get('facility_id')
+                basic_details.pop('facility')
+            
+            
+            for key, value in basic_details.iteritems():
+                setattr(self.health_unit, key, value)
+            if 'basic' in basic_details:
+                setattr(self.health_unit, 'facility_id', basic_details.get('basic').get('facility'))
+            self.health_unit.save()
 
     def update_workers(self):
         chews = json.loads(self.workers)
