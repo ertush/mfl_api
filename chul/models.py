@@ -307,6 +307,9 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
     def push_chu_to_dhis2(self):
         from facilities.models.facility_models import DhisAuth
         import requests
+
+        LOGGER.error("[DEBUG] self.facility: {}\n self.facility.reporting_in_dhis: {}".format(self.facility, self.facility.reporting_in_dhis))
+
         dhisauth = DhisAuth()
         dhisauth.get_oauth2_token()
         facility_dhis_id = self.get_facility_dhis2_parent_id() if self.facility.reporting_in_dhis else None
@@ -330,7 +333,7 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
 
         if facility_dhis_id is not None:
             if unit_uuid_status[1] == 'retrieved':
-                LOGGER.info("[>>>>>] Retrieved CHU")
+                # LOGGER.info("[>>>>>] Retrieved CHU")
 
                 r = requests.put(
                     settings.DHIS_ENDPOINT + "api/organisationUnits/" + new_chu_payload.pop('id'),
@@ -386,9 +389,11 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
         )
         LOGGER.info('Metadata CUs pushed successfullly')
 
+
     def get_facility_dhis2_parent_id(self):
-        from facilities.models.facility_models import DhisAuth
+        # from facilities.models.facility_models import DhisAuth
         import requests
+
         r = requests.get(
             settings.DHIS_ENDPOINT + "api/organisationUnits.json",
             auth=(settings.DHIS_USERNAME, settings.DHIS_PASSWORD),
@@ -412,6 +417,7 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
                     "Error!": ["Unable to resolve exact Facility linked to the CHU in DHIS2"]
                 }
             )
+
 
     class Meta(AbstractBase.Meta):
 
