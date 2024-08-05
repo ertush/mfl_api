@@ -308,11 +308,11 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
         from facilities.models.facility_models import DhisAuth
         import requests
 
-        LOGGER.error("[DEBUG] self.facility: {}\n".format(self))
+        LOGGER.error("[DEBUG] self: {}\n".format(self))
 
         dhisauth = DhisAuth()
         dhisauth.get_oauth2_token()
-        facility_dhis_id = self.get_facility_dhis2_parent_id() if self.facility.reporting_in_dhis else None
+        facility_dhis_id = self.get_facility_dhis2_parent_id() # if self.facility.reporting_in_dhis else None
         unit_uuid_status = dhisauth.get_org_unit_id(self.code)
         unit_uuid = unit_uuid_status[0]
         new_chu_payload = {
