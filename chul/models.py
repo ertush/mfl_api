@@ -304,14 +304,14 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
     def rating_count(self):
         return self.chu_ratings.count()
 
+
     def push_chu_to_dhis2(self):
         from facilities.models.facility_models import DhisAuth
         import requests
 
-        LOGGER.error("[DEBUG] self: {}\n".format(self))
-
         dhisauth = DhisAuth()
         dhisauth.get_oauth2_token()
+
         facility_dhis_id = self.get_facility_dhis2_parent_id() # if self.facility.reporting_in_dhis else None
         unit_uuid_status = dhisauth.get_org_unit_id(self.code)
         unit_uuid = unit_uuid_status[0]
@@ -394,11 +394,14 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
         )
         LOGGER.info('Metadata CUs pushed successfullly')
 
+
+
+
     def get_facility_dhis2_parent_id(self):
         # from facilities.models.facility_models import DhisAuth
         import requests
 
-        if self.facility.code:
+        if hasattr(self, "facility") and hasattr(self.facility, "code"):
             r = requests.get(
                 settings.DHIS_ENDPOINT + "api/organisationUnits.json",
                 auth=(settings.DHIS_USERNAME, settings.DHIS_PASSWORD),
@@ -414,16 +417,19 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
             )
 
             if len(r.json()["organisationUnits"]) is 1 and "id" in r.json()["organisationUnits"][0]:
-                if r.json()["organisationUnits"][0]["id"]:
-                    return r.json()["organisationUnits"][0]["id"]
+                    if r.json()["organisationUnits"][0]["id"]:
+                        return r.json()["organisationUnits"][0]["id"]
             else:
                 raise ValidationError(
                     {
-                        "Error!": ["Unable to find facility with code {} in KHIS. KHIS Response {}".format(self.facility.code, r.text)]
+                        "Error!": ["Unable to find facility with code {} in KHIS.".format(self.facility.code)]
                     }
                 )
         else:
-            raise ValidationError("The linked facility for this CU does not have an MFL code. Therefore it is not in KHIS ")
+            raise ValidationError({
+                 "Error": ["The linked facility for this CU does not have an MFL code. Therefore it is not in KHIS"]
+                })
+
 
     class Meta(AbstractBase.Meta):
 
@@ -556,34 +562,44 @@ class ChuUpdateBuffer(AbstractBase):
             basic_details['facility_id'] = basic_details.get(
                 'facility').get('facility_id')
             basic_details.pop('facility')
-        
+
         
         for key, value in basic_details.iteritems():
-            setattr(self.health_unit, key, value)
+            if key is not "basic":
+                setattr(self.health_unit, key, value)
         if 'basic' in basic_details:
-            setattr(self.health_unit, 'facility_id', basic_details.get('basic').get('facility'))
+            if 'basic' in basic_details.get('basic'):
+                if 'facility' in basic_details.get('basic').get('basic'):
+                    setattr(self.health_unit, 'facility_id', basic_details.get('basic').get('basic').get('facility'))
+            else:
+                if 'facility' in basic_details.get('basic'):
+                    setattr(self.health_unit, 'facility_id', basic_details.get('basic').get('facility'))
         self.health_unit.save()
 
     def update_workers(self):
+
         chews = json.loads(self.workers)
+
         for chew in chews:
             chew['health_unit'] = self.health_unit
             chew['created_by_id'] = self.created_by_id
             chew['updated_by_id'] = self.updated_by_id
             chew.pop('created_by', None)
             chew.pop('updated_by', None)
-            if 'id' in chew:
+
+            if hasattr(chew, 'id'):
                 chew_obj = CommunityHealthWorker.objects.get(
                     id=chew['id'])
                 chew_obj.first_name = chew['first_name']
                 chew_obj.last_name = chew['last_name']
-                if 'is_incharge' in chew:
+                if hasattr(chew, 'is_incharge'):
                     chew_obj.is_incharge = chew['is_incharge']
                 chew_obj.save()
             else:
                 CommunityHealthWorker.objects.create(**chew)
 
     def update_services(self):
+
         services = json.loads(self.services)
         CHUServiceLink.objects.filter(health_unit=self.health_unit).delete()
         for service in services:
@@ -632,9 +648,11 @@ class ChuUpdateBuffer(AbstractBase):
     @property
     def updates(self):
         updates = {}
+
         if self.basic and self.basic is not None:
             json_basic = json.loads(self.basic)
-            updates['basic'] = json_basic['basic'] if 'basic' in json_basic else json_basic 
+            updates['basic'] = json_basic['basic'] if hasattr(json_basic, 'basic') else json_basic
+
         if self.contacts:
             updates['contacts'] = json.loads(self.contacts)
         if self.workers:
@@ -643,6 +661,7 @@ class ChuUpdateBuffer(AbstractBase):
             updates['services'] = json.loads(self.services)
         updates['updated_by'] = self.updated_by.get_full_name
         return updates
+    
 
     def clean(self, *args, **kwargs):
         if not self.is_approved and not self.is_rejected:
