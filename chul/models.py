@@ -428,8 +428,9 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
             }
         )
 
-        if hasattr(r.json(), "organisationUnits") and len(r.json()["organisationUnits"]) == 1 and "id" in r.json()["organisationUnits"][0]:
-                return r.json()["organisationUnits"][0]["id"]
+        if len(r.json()["organisationUnits"]) is 1 and "id" in r.json()["organisationUnits"][0]:
+                if r.json()["organisationUnits"][0]["id"]:
+                    return r.json()["organisationUnits"][0]["id"]
         else:
             raise ValidationError(
                 {
