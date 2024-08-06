@@ -313,7 +313,7 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
 
         dhisauth = DhisAuth()
         dhisauth.get_oauth2_token()
-        facility_dhis_id = self.get_facility_dhis2_parent_id() # if self.facility.reporting_in_dhis else None
+        facility_dhis_id = self.get_facility_dhis2_parent_id(self) # if self.facility.reporting_in_dhis else None
         unit_uuid_status = dhisauth.get_org_unit_id(self.code)
         unit_uuid = unit_uuid_status[0]
         new_chu_payload = {
@@ -404,7 +404,7 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
 
         # pdb.set_trace()
 
-        raise ValueError("[DEBUG] Link  Facility Code : {};".format(self.facility.code))
+        # raise ValueError("[DEBUG] Link  Facility Code : {};".format(self.facility.code))
 
         if self.facility.code:
             r = requests.get(
