@@ -414,7 +414,7 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
         else:
             raise ValidationError(
                 {
-                    "Error!": ["Unable to resolve exact Facility linked to the CHU in DHIS2. Code: {}; Response: {}".format(self.facility.code, r.text())]
+                    "Error!": ["Unable to resolve exact Facility linked to the CHU in DHIS2. [DEBUG] Response: {}".format( r.text())]
                 }
             )
 
