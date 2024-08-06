@@ -580,13 +580,19 @@ class ChuUpdateBuffer(AbstractBase):
         # import pdb
         # pdb.set_trace()
 
-        raise ValueError("[DEBUG] basic_details: {}".format(basic_details))
+        # raise ValueError("[DEBUG] basic_details: {}".format(basic_details))
 
         
         for key, value in basic_details.iteritems():
-            setattr(self.health_unit, key, value)
+            if key is not "basic":
+                setattr(self.health_unit, key, value)
         if 'basic' in basic_details:
-            setattr(self.health_unit, 'facility_id', basic_details.get('basic').get('facility'))
+            if 'basic' in basic_details.get('basic'):
+                if 'facility' in basic_details.get('basic').get('basic'):
+                    setattr(self.health_unit, 'facility_id', basic_details.get('basic').get('basic').get('facility'))
+            else:
+                if 'facility' in basic_details.get('basic'):
+                    setattr(self.health_unit, 'facility_id', basic_details.get('basic').get('facility'))
         self.health_unit.save()
 
     def update_workers(self):
