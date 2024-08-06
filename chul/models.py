@@ -577,6 +577,9 @@ class ChuUpdateBuffer(AbstractBase):
             basic_details['facility_id'] = basic_details.get(
                 'facility').get('facility_id')
             basic_details.pop('facility')
+
+        import pdb
+        pdb.set_trace()
         
         for key, value in basic_details.iteritems():
             setattr(self.health_unit, key, value)
