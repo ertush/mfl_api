@@ -422,7 +422,7 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
             else:
                 raise ValidationError(
                     {
-                        "Error!": ["Unable to find facility with code {} in KHIS. KHIS Response {}".format(self.facility.code, r.text)]
+                        "Error!": ["Unable to find facility with code {} in KHIS.".format(self.facility.code)]
                     }
                 )
         else:
