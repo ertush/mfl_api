@@ -403,44 +403,38 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
 
 
 
-    def get_facility_dhis2_parent_id(self, code):
+    def get_facility_dhis2_parent_id(self):
         # from facilities.models.facility_models import DhisAuth
         import requests
 
-        # import pdb
-
-        # pdb.set_trace()
-
-        # raise ValueError("[DEBUG] Link  Facility Code : {};".format(self.facility.code))
-
-        # if hasattr(self, "facility") and hasattr(self.facility, "code"):
-        r = requests.get(
-            settings.DHIS_ENDPOINT + "api/organisationUnits.json",
-            auth=(settings.DHIS_USERNAME, settings.DHIS_PASSWORD),
-            headers={
-                "Accept": "application/json"
-            },
-            params={
-                "query": code,
-                "fields": "id,name",
-                "filter": "level:in:[5]",
-                "paging": "false"
-            }
-        )
-
-        if len(r.json()["organisationUnits"]) is 1 and "id" in r.json()["organisationUnits"][0]:
-                if r.json()["organisationUnits"][0]["id"]:
-                    return r.json()["organisationUnits"][0]["id"]
-        else:
-            raise ValidationError(
-                {
-                    "Error!": ["Unable to find facility with code {} in KHIS. KHIS Response {}".format(self.facility.code, r.text)]
+        if hasattr(self, "facility") and hasattr(self.facility, "code"):
+            r = requests.get(
+                settings.DHIS_ENDPOINT + "api/organisationUnits.json",
+                auth=(settings.DHIS_USERNAME, settings.DHIS_PASSWORD),
+                headers={
+                    "Accept": "application/json"
+                },
+                params={
+                    "query": self.facility.code,
+                    "fields": "id,name",
+                    "filter": "level:in:[5]",
+                    "paging": "false"
                 }
             )
-        # else:
-        #     raise ValidationError({
-        #          "Error": ["The linked facility for this CU does not have an MFL code. Therefore it is not in KHIS"]
-        #         })
+
+            if len(r.json()["organisationUnits"]) is 1 and "id" in r.json()["organisationUnits"][0]:
+                    if r.json()["organisationUnits"][0]["id"]:
+                        return r.json()["organisationUnits"][0]["id"]
+            else:
+                raise ValidationError(
+                    {
+                        "Error!": ["Unable to find facility with code {} in KHIS. KHIS Response {}".format(self.facility.code, r.text)]
+                    }
+                )
+        else:
+            raise ValidationError({
+                 "Error": ["The linked facility for this CU does not have an MFL code. Therefore it is not in KHIS"]
+                })
 
 
     class Meta(AbstractBase.Meta):
@@ -574,11 +568,6 @@ class ChuUpdateBuffer(AbstractBase):
             basic_details['facility_id'] = basic_details.get(
                 'facility').get('facility_id')
             basic_details.pop('facility')
-
-        # import pdb
-        # pdb.set_trace()
-
-        # raise ValueError("[DEBUG] basic_details: {}".format(basic_details))
 
         
         for key, value in basic_details.iteritems():
