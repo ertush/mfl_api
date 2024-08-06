@@ -396,7 +396,7 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
         LOGGER.info('Metadata CUs pushed successfullly')
 
     
-    def get_linked_facility(self) -> Facility:
+    def get_linked_facility(self):
         return self.facility
 
 
