@@ -406,7 +406,7 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
 
         # raise ValueError("[DEBUG] Link  Facility Code : {};".format(self.facility.code))
 
-        if self.facility.code:
+        if hasattr(self, "facility") and hasattr(self.facility, "code"):
             r = requests.get(
                 settings.DHIS_ENDPOINT + "api/organisationUnits.json",
                 auth=(settings.DHIS_USERNAME, settings.DHIS_PASSWORD),
