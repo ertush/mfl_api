@@ -579,6 +579,9 @@ class ChuUpdateBuffer(AbstractBase):
 
         # import pdb
         # pdb.set_trace()
+
+        raise ValueError("[DEBUG] basic_details: {}".format(basic_details))
+
         
         for key, value in basic_details.iteritems():
             setattr(self.health_unit, key, value)
