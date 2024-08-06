@@ -394,29 +394,32 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
         # from facilities.models.facility_models import DhisAuth
         import requests
 
-        r = requests.get(
-            settings.DHIS_ENDPOINT + "api/organisationUnits.json",
-            auth=(settings.DHIS_USERNAME, settings.DHIS_PASSWORD),
-            headers={
-                "Accept": "application/json"
-            },
-            params={
-                "query": self.facility.code,
-                "fields": "id,name",
-                "filter": "level:in:[5]",
-                "paging": "false"
-            }
-        )
-
-        if len(r.json()["organisationUnits"]) is 1 and "id" in r.json()["organisationUnits"][0]:
-            if r.json()["organisationUnits"][0]["id"]:
-                return r.json()["organisationUnits"][0]["id"]
-        else:
-            raise ValidationError(
-                {
-                    "Error!": ["Unable to resolve exact Facility linked to the CHU in DHIS2. [DEBUG] Code: {}; [DEBUG] Response: {}".format(self.facility.code, r.text)]
+        if self.facility.code:
+            r = requests.get(
+                settings.DHIS_ENDPOINT + "api/organisationUnits.json",
+                auth=(settings.DHIS_USERNAME, settings.DHIS_PASSWORD),
+                headers={
+                    "Accept": "application/json"
+                },
+                params={
+                    "query": self.facility.code,
+                    "fields": "id,name",
+                    "filter": "level:in:[5]",
+                    "paging": "false"
                 }
             )
+
+            if len(r.json()["organisationUnits"]) is 1 and "id" in r.json()["organisationUnits"][0]:
+                if r.json()["organisationUnits"][0]["id"]:
+                    return r.json()["organisationUnits"][0]["id"]
+            else:
+                raise ValidationError(
+                    {
+                        "Error!": ["Unable to find facility with code {} in KHIS. KHIS Response {}".format(self.facility.code, r.text)]
+                    }
+                )
+        else:
+            raise ValidationError("The linked facility for this CU does not have an MFL code. Therefore it is not in KHIS ")
 
 
     class Meta(AbstractBase.Meta):
