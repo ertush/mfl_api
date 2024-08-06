@@ -400,6 +400,12 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
         # from facilities.models.facility_models import DhisAuth
         import requests
 
+        # import pdb
+
+        # pdb.set_trace()
+
+        raise ValueError("[DEBUG] self: {}; self.facility: {}".format(self, self.facility))
+
         if self.facility.code:
             r = requests.get(
                 settings.DHIS_ENDPOINT + "api/organisationUnits.json",
