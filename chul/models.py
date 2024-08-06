@@ -313,7 +313,13 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
 
         dhisauth = DhisAuth()
         dhisauth.get_oauth2_token()
-        facility_dhis_id = self.get_facility_dhis2_parent_id() # if self.facility.reporting_in_dhis else None
+        code = self.facility.code
+
+        import pdb
+
+        pdb.set_trace()
+
+        facility_dhis_id = self.get_facility_dhis2_parent_id(code) # if self.facility.reporting_in_dhis else None
         unit_uuid_status = dhisauth.get_org_unit_id(self.code)
         unit_uuid = unit_uuid_status[0]
         new_chu_payload = {
@@ -395,12 +401,10 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
         )
         LOGGER.info('Metadata CUs pushed successfullly')
 
-    
-    def get_linked_facility(self):
-        return self.facility
 
 
-    def get_facility_dhis2_parent_id(self):
+
+    def get_facility_dhis2_parent_id(self, code):
         # from facilities.models.facility_models import DhisAuth
         import requests
 
@@ -410,36 +414,34 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
 
         # raise ValueError("[DEBUG] Link  Facility Code : {};".format(self.facility.code))
 
-        LOGGER.error("[DEBUG] facility_code: {}".format(self.get_linked_facility().code))
+        # if hasattr(self, "facility") and hasattr(self.facility, "code"):
+        r = requests.get(
+            settings.DHIS_ENDPOINT + "api/organisationUnits.json",
+            auth=(settings.DHIS_USERNAME, settings.DHIS_PASSWORD),
+            headers={
+                "Accept": "application/json"
+            },
+            params={
+                "query": code,
+                "fields": "id,name",
+                "filter": "level:in:[5]",
+                "paging": "false"
+            }
+        )
 
-        if hasattr(self.get_linked_facility, 'code'):# hasattr(self, "facility") and hasattr(self.facility, "code"):
-            r = requests.get(
-                settings.DHIS_ENDPOINT + "api/organisationUnits.json",
-                auth=(settings.DHIS_USERNAME, settings.DHIS_PASSWORD),
-                headers={
-                    "Accept": "application/json"
-                },
-                params={
-                    "query": self.get_linked_facility().code,
-                    "fields": "id,name",
-                    "filter": "level:in:[5]",
-                    "paging": "false"
+        if len(r.json()["organisationUnits"]) is 1 and "id" in r.json()["organisationUnits"][0]:
+            if r.json()["organisationUnits"][0]["id"]:
+                return r.json()["organisationUnits"][0]["id"]
+        else:
+            raise ValidationError(
+                {
+                    "Error!": ["Unable to find facility with code {} in KHIS. KHIS Response {}".format(self.facility.code, r.text)]
                 }
             )
-
-            if len(r.json()["organisationUnits"]) is 1 and "id" in r.json()["organisationUnits"][0]:
-                if r.json()["organisationUnits"][0]["id"]:
-                    return r.json()["organisationUnits"][0]["id"]
-            else:
-                raise ValidationError(
-                    {
-                        "Error!": ["Unable to find facility with code {} in KHIS. KHIS Response {}".format(self.facility.code, r.text)]
-                    }
-                )
-        else:
-            raise ValidationError({
-                 "Error": ["The linked facility for this CU does not have an MFL code. Therefore it is not in KHIS; [DEBUG] facility_code: {}".format(self.get_linked_facility().code)]
-                })
+        # else:
+        #     raise ValidationError({
+        #          "Error": ["The linked facility for this CU does not have an MFL code. Therefore it is not in KHIS"]
+        #         })
 
 
     class Meta(AbstractBase.Meta):
