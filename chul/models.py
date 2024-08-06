@@ -414,7 +414,7 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
         else:
             raise ValidationError(
                 {
-                    "Error!": ["Unable to resolve exact Facility linked to the CHU in DHIS2"]
+                    "Error!": ["Unable to resolve exact Facility linked to the CHU in DHIS2. Code: {}; Response: {}".format(self.facility.code, r.text())]
                 }
             )
 
@@ -551,7 +551,6 @@ class ChuUpdateBuffer(AbstractBase):
                 'facility').get('facility_id')
             basic_details.pop('facility')
         
-        
         for key, value in basic_details.iteritems():
             setattr(self.health_unit, key, value)
         if 'basic' in basic_details:
@@ -559,25 +558,29 @@ class ChuUpdateBuffer(AbstractBase):
         self.health_unit.save()
 
     def update_workers(self):
+
         chews = json.loads(self.workers)
+
         for chew in chews:
             chew['health_unit'] = self.health_unit
             chew['created_by_id'] = self.created_by_id
             chew['updated_by_id'] = self.updated_by_id
             chew.pop('created_by', None)
             chew.pop('updated_by', None)
-            if 'id' in chew:
+
+            if hasattr(chew, 'id'):
                 chew_obj = CommunityHealthWorker.objects.get(
                     id=chew['id'])
                 chew_obj.first_name = chew['first_name']
                 chew_obj.last_name = chew['last_name']
-                if 'is_incharge' in chew:
+                if hasattr(chew, 'is_incharge'):
                     chew_obj.is_incharge = chew['is_incharge']
                 chew_obj.save()
             else:
                 CommunityHealthWorker.objects.create(**chew)
 
     def update_services(self):
+
         services = json.loads(self.services)
         CHUServiceLink.objects.filter(health_unit=self.health_unit).delete()
         for service in services:
@@ -626,9 +629,11 @@ class ChuUpdateBuffer(AbstractBase):
     @property
     def updates(self):
         updates = {}
+
         if self.basic and self.basic is not None:
             json_basic = json.loads(self.basic)
-            updates['basic'] = json_basic['basic'] if 'basic' in json_basic else json_basic 
+            updates['basic'] = json_basic['basic'] if hasattr(json_basic, 'basic') else json_basic
+
         if self.contacts:
             updates['contacts'] = json.loads(self.contacts)
         if self.workers:
@@ -637,6 +642,7 @@ class ChuUpdateBuffer(AbstractBase):
             updates['services'] = json.loads(self.services)
         updates['updated_by'] = self.updated_by.get_full_name
         return updates
+    
 
     def clean(self, *args, **kwargs):
         if not self.is_approved and not self.is_rejected:
