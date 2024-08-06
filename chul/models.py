@@ -404,7 +404,7 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
 
         # pdb.set_trace()
 
-        raise ValueError("[DEBUG] self: {};".format(self))
+        raise ValueError("[DEBUG] Facility : {};".format(self.facility))
 
         if self.facility.code:
             r = requests.get(
