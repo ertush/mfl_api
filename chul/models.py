@@ -309,7 +309,7 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
         from facilities.models.facility_models import DhisAuth
         import requests
 
-        LOGGER.error("[DEBUG] self: {}\n".format(self))
+        # LOGGER.error("[DEBUG] self: {}\n".format(self))
 
         dhisauth = DhisAuth()
         dhisauth.get_oauth2_token()
@@ -395,6 +395,10 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
         )
         LOGGER.info('Metadata CUs pushed successfullly')
 
+    
+    def get_linked_facility(self) -> Facility:
+        return self.facility
+
 
     def get_facility_dhis2_parent_id(self):
         # from facilities.models.facility_models import DhisAuth
@@ -406,7 +410,9 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
 
         # raise ValueError("[DEBUG] Link  Facility Code : {};".format(self.facility.code))
 
-        if hasattr(self, "facility") and hasattr(self.facility, "code"):
+        LOGGER.error("[DEBUG] facility_code: {}".format(self.get_linked_facility().code))
+
+        if hasattr(self.get_linked_facility, 'code'):# hasattr(self, "facility") and hasattr(self.facility, "code"):
             r = requests.get(
                 settings.DHIS_ENDPOINT + "api/organisationUnits.json",
                 auth=(settings.DHIS_USERNAME, settings.DHIS_PASSWORD),
@@ -414,7 +420,7 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
                     "Accept": "application/json"
                 },
                 params={
-                    "query": self.facility.code,
+                    "query": self.get_linked_facility().code,
                     "fields": "id,name",
                     "filter": "level:in:[5]",
                     "paging": "false"
@@ -431,7 +437,9 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
                     }
                 )
         else:
-            raise ValidationError("The linked facility for this CU does not have an MFL code. Therefore it is not in KHIS ")
+            raise ValidationError({
+                 "Error": ["The linked facility for this CU does not have an MFL code. Therefore it is not in KHIS; [DEBUG] facility_code: {}".format(self.get_linked_facility().code)]
+                })
 
 
     class Meta(AbstractBase.Meta):
