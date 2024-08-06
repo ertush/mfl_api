@@ -387,7 +387,7 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
         LOGGER.info('Metadata CUs pushed successfullly')
 
     def get_facility_dhis2_parent_id(self):
-        from facilities.models.facility_models import DhisAuth
+        # from facilities.models.facility_models import DhisAuth
         import requests
 
         if self.facility.code:
