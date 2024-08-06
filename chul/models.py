@@ -315,9 +315,8 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
         dhisauth.get_oauth2_token()
         code = self.facility.code
 
-        import pdb
-
-        pdb.set_trace()
+        # import pdb
+        # pdb.set_trace()
 
         facility_dhis_id = self.get_facility_dhis2_parent_id(code) # if self.facility.reporting_in_dhis else None
         unit_uuid_status = dhisauth.get_org_unit_id(self.code)
@@ -578,8 +577,8 @@ class ChuUpdateBuffer(AbstractBase):
                 'facility').get('facility_id')
             basic_details.pop('facility')
 
-        import pdb
-        pdb.set_trace()
+        # import pdb
+        # pdb.set_trace()
         
         for key, value in basic_details.iteritems():
             setattr(self.health_unit, key, value)
