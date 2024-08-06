@@ -304,7 +304,7 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
     def rating_count(self):
         return self.chu_ratings.count()
 
-     def push_chu_to_dhis2(self):
+    def push_chu_to_dhis2(self):
         from facilities.models.facility_models import DhisAuth
         import requests
 
@@ -374,7 +374,7 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
                 self.push_chu_metadata(metadata_payload, unit_uuid)
         else:
             LOGGER.error("[DEBUG] facility_dhis_id: {}".format(facility_dhis_id))
-            
+
             raise ValidationError(
                     {
                         "Error!": ["Could not find Facility DHIS ID, when pushing CU to DHIS"]
