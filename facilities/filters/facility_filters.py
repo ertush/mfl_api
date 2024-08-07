@@ -414,7 +414,8 @@ class FacilityFilter(CommonFieldsFilterset):
                 approved=True, 
                 has_edits=False, 
                 closed=False, 
-                rejected=False
+                rejected=False,
+                code=None
             )
 
             incomplete_pending_approval_ids = [facility.id for facility in pending_approval_qs if not facility.is_complete]
@@ -423,7 +424,7 @@ class FacilityFilter(CommonFieldsFilterset):
 
         else:
             approved_qs =  qs.filter(
-                approved_national_level=True, approved=True, has_edits=False, closed=False, rejected=False,
+                approved_national_level=True, approved=True, has_edits=False, closed=False, rejected=False
             )
 
             incomplete_approved_qs = [facility.id for facility in approved_qs if not facility.is_complete]
@@ -448,7 +449,8 @@ class FacilityFilter(CommonFieldsFilterset):
                     has_edits=False,
                     approved=None,
                     rejected=False,
-                    approved_national_level=None
+                    approved_national_level=None,
+                    code=None
                 )
            
            incomplete_pending_validation_ids = [facility.id for facility in pending_validation_qs if not facility.is_complete]
