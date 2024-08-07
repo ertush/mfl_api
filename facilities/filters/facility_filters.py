@@ -410,7 +410,11 @@ class FacilityFilter(CommonFieldsFilterset):
         
         if value in TRUTH_NESS:
             pending_approval_qs = qs.filter(
-            Q(Q(approved_national_level=None) | Q(approved_national_level=False)), approved=True, has_edits=False, closed=False, rejected=False
+                Q(Q(approved_national_level=None) | Q(approved_national_level=False)), 
+                approved=True, 
+                has_edits=False, 
+                closed=False, 
+                rejected=False
             )
 
             incomplete_pending_approval_ids = [facility.id for facility in pending_approval_qs if not facility.is_complete]
@@ -440,10 +444,6 @@ class FacilityFilter(CommonFieldsFilterset):
 
     def facilities_pending_approval(self, qs, name, value):
 
-        # incomplete = qs.filter(code=not None)
-        # incomplete_facility_ids = [facility.id for facility in incomplete]
-
-        incomplete_facilities = [facility.id for facility in qs.filter(code=None) if not facility.is_complete]
         if value in TRUTH_NESS:
            pending_validation_qs = qs.filter(
                     has_edits=False,
