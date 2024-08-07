@@ -1047,7 +1047,7 @@ class FacilityExportExcelMaterialView(models.Model):
     is_published = models.BooleanField(default=False)
     long = models.CharField(max_length=30, null=True, blank=True)
     lat = models.CharField(max_length=30, null=True, blank=True)
-    approved_national_level = models.BooleanField(default=False)
+    approved_national_level = models.BooleanField(default=False, null=True)
     # number_of_minor_theatres = models.PositiveIntegerField(
     #     default=0)
     # number_of_eye_theatres = models.PositiveIntegerField(
