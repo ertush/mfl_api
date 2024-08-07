@@ -445,20 +445,28 @@ class FacilityFilter(CommonFieldsFilterset):
 
         incomplete_facilities = [facility.id for facility in qs.filter(code=None) if not facility.is_complete]
         if value in TRUTH_NESS:
-            return qs.filter(
-                Q(
+           pending_validation_qs = qs.filter(
                     has_edits=False,
                     approved=None,
                     rejected=False,
                     approved_national_level=None
-                 )).exclude(id__in=incomplete_facilities)
+                )
+           
+           incomplete_pending_validation_ids = [facility.id for facility in pending_validation_qs if not facility.is_complete]
+
+           return pending_validation_qs.exclude(id__in=incomplete_pending_validation_ids)
         else:
-            return qs.filter(
+          validated_qs = qs.filter(
                 rejected=False,
                 has_edits=False,
                 approved=True,
                 approved_national_level=None
-            ).exclude(id__in=incomplete_facilities)
+            )
+          
+          incomplete_validated_ids = [facility.id for facility in pending_validation_qs if not facility.is_complete]
+
+          return validated_qs.exclude(id__in=incomplete_validated_ids)
+        
 
     def filter_national_rejected(self, qs, name, value):
         rejected_national = qs.filter(rejected=False,code=None,
