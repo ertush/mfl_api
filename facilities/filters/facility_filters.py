@@ -407,21 +407,25 @@ class FacilityFilter(CommonFieldsFilterset):
         This is in order to allow the facilities to be seen
         so that they can be approved at the national level and assigned an MFL code.
         """
-       
-        incomplete_facilities = [facility.id for facility in qs.filter(code=None) if not facility.is_complete]
-        incomplete_facilities_arr = [[facility.id, facility.is_complete, facility.in_complete_details] for facility in qs.filter(code=None) if not facility.is_complete]
-
-        import pdb
-        pdb.set_trace()
         
         if value in TRUTH_NESS:
-            return qs.filter(
-                approved_national_level=None, approved=True, has_edits=False, closed=False, rejected=False,
-            ).exclude(id__in=incomplete_facilities)
+            pending_approval_qs = qs.filter(
+            Q(Q(approved_national_level=None) | Q(approved_national_level=False)), approved=True, has_edits=False, closed=False, rejected=False
+            )
+
+            incomplete_pending_approval_ids = [facility.id for facility in pending_approval_qs if not facility.is_complete]
+
+            return pending_approval_qs.exclude(id__in=incomplete_pending_approval_ids)
+
         else:
-             return qs.filter(
+            approved_qs =  qs.filter(
                 approved_national_level=True, approved=True, has_edits=False, closed=False, rejected=False,
-            ).exclude(id__in=incomplete_facilities)
+            )
+
+            incomplete_approved_qs = [facility.id for facility in approved_qs if not facility.is_complete]
+
+            return approved_qs.exclude(id__in=incomplete_approved_qs)
+
 
     def filter_incomplete_facilities(self, qs, name, value):
         """
