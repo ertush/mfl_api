@@ -402,7 +402,7 @@ class FacilityFilter(CommonFieldsFilterset):
         else:
             return qs.filter(Q(approved=None) | Q(rejected=True))
 
-    def filter_unpublished_facilities_national_level(self, qs, name, value):
+    def filter_unpublished_facilities_national_level(self, qs, value):
         """
         This is in order to allow the facilities to be seen
         so that they can be approved at the national level and assigned an MFL code.
@@ -412,8 +412,8 @@ class FacilityFilter(CommonFieldsFilterset):
         
         if value in TRUTH_NESS:
             return qs.filter(
-                approved_national_level=None, approved=True, has_edits=False, closed=False, rejected=False,
-            ).exclude(id__in=incomplete_facilities)
+                approved_national_level=None, approved=True, has_edits=False, closed=False, is_complete=True, rejected=False,
+            )
         else:
              return qs.filter(
                 approved_national_level=True, approved=True, has_edits=False, closed=False, rejected=False,
