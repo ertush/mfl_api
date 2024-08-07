@@ -407,17 +407,28 @@ class FacilityFilter(CommonFieldsFilterset):
         This is in order to allow the facilities to be seen
         so that they can be approved at the national level and assigned an MFL code.
         """
-       
-        incomplete_facilities = [facility.id for facility in qs.filter(code=None) if not facility.is_complete]
         
         if value in TRUTH_NESS:
-            return qs.filter(
-                approved_national_level=None, approved=True, has_edits=False, closed=False, rejected=False,
-            ).exclude(id__in=incomplete_facilities)
+            pending_approval_qs = qs.filter(
+                Q(Q(approved_national_level=None) | Q(approved_national_level=False)), 
+                approved=True, 
+                has_edits=False, 
+                closed=False, 
+                rejected=False
+            )
+
+            incomplete_pending_approval_ids = [facility.id for facility in pending_approval_qs if not facility.is_complete]
+
+            return pending_approval_qs.exclude(id__in=incomplete_pending_approval_ids)
+
         else:
-             return qs.filter(
+            approved_qs =  qs.filter(
                 approved_national_level=True, approved=True, has_edits=False, closed=False, rejected=False,
-            ).exclude(id__in=incomplete_facilities)
+            )
+
+            incomplete_approved_qs = [facility.id for facility in approved_qs if not facility.is_complete]
+
+            return approved_qs.exclude(id__in=incomplete_approved_qs)
 
     def filter_incomplete_facilities(self, qs, name, value):
         """
@@ -431,24 +442,29 @@ class FacilityFilter(CommonFieldsFilterset):
             return qs.exclude(id__in=incomplete_facilities)
 
     def facilities_pending_approval(self, qs, name, value):
-        # incomplete = qs.filter(code=not None)
-        # incomplete_facility_ids = [facility.id for facility in incomplete]
-        incomplete_facilities = [facility.id for facility in qs.filter(code=None) if not facility.is_complete]
+
         if value in TRUTH_NESS:
-            return qs.filter(
-                Q(
+           pending_validation_qs = qs.filter(
                     has_edits=False,
                     approved=None,
                     rejected=False,
                     approved_national_level=None
-                 )).exclude(id__in=incomplete_facilities)
+                )
+           
+           incomplete_pending_validation_ids = [facility.id for facility in pending_validation_qs if not facility.is_complete]
+
+           return pending_validation_qs.exclude(id__in=incomplete_pending_validation_ids)
         else:
-            return qs.filter(
+          validated_qs = qs.filter(
                 rejected=False,
                 has_edits=False,
                 approved=True,
                 approved_national_level=None
-            ).exclude(id__in=incomplete_facilities)
+            )
+          
+          incomplete_validated_ids = [facility.id for facility in pending_validation_qs if not facility.is_complete]
+
+          return validated_qs.exclude(id__in=incomplete_validated_ids)
         
        
     def filter_national_rejected(self, qs, name, value):
