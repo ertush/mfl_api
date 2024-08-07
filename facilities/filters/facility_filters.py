@@ -409,11 +409,15 @@ class FacilityFilter(CommonFieldsFilterset):
         """
        
         incomplete_facilities = [facility.id for facility in qs.filter(code=None) if not facility.is_complete]
+        incomplete_facilities_arr = [[facility.id, facility.is_complete, facility.in_complete_details] for facility in qs.filter(code=None) if not facility.is_complete]
+
+        import pdb
+        pdb.set_trace()
         
         if value in TRUTH_NESS:
             return qs.filter(
-                approved_national_level=None, approved=True, has_edits=False, closed=False, in_complete_details="", rejected=False,
-            )
+                approved_national_level=None, approved=True, has_edits=False, closed=False, rejected=False,
+            ).exclude(id__in=incomplete_facilities)
         else:
              return qs.filter(
                 approved_national_level=True, approved=True, has_edits=False, closed=False, rejected=False,
