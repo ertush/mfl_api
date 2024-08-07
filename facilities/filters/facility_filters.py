@@ -414,7 +414,8 @@ class FacilityFilter(CommonFieldsFilterset):
                 approved=True, 
                 has_edits=False, 
                 closed=False, 
-                rejected=False
+                rejected=False,
+                code=None
             )
 
             incomplete_pending_approval_ids = [facility.id for facility in pending_approval_qs if not facility.is_complete]
