@@ -412,7 +412,7 @@ class FacilityFilter(CommonFieldsFilterset):
         
         if value in TRUTH_NESS:
             return qs.filter(
-                approved_national_level=None, approved=True, has_edits=False, closed=False, is_complete=True, rejected=False,
+                approved_national_level=None, approved=True, has_edits=False, closed=False, in_complete_details="", rejected=False,
             )
         else:
              return qs.filter(
