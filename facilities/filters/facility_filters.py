@@ -401,6 +401,16 @@ class FacilityFilter(CommonFieldsFilterset):
             return qs.filter(Q(approved=True))   
         else:
             return qs.filter(Q(approved=None) | Q(rejected=True))
+        
+    def filter_facilities_with_pending_updates(self, qs, name, value):
+
+        if value in TRUTH_NESS:
+            facilities_pending_updates = qs.filter(has_edits=True)
+
+            facilities_latest_updates_ids = [f.id for f in facilities_pending_updates if f.latest_update is None]
+            
+            return facilities_pending_updates.exclude(id__in=facilities_latest_updates_ids)
+
 
     def filter_unpublished_facilities_national_level(self, qs, name, value):
         """
@@ -561,6 +571,8 @@ class FacilityFilter(CommonFieldsFilterset):
         method='filter_incomplete_facilities')
     to_publish = django_filters.CharFilter(
         method='filter_unpublished_facilities_national_level')
+    have_updates = django_filters.CharFilter(
+        method='filter_facilities_with_pending_updates')
     approved_national_level = django_filters.TypedChoiceFilter(
         choices=BOOLEAN_CHOICES,
         coerce=strtobool)
