@@ -462,7 +462,8 @@ class FacilityFilter(CommonFieldsFilterset):
                     has_edits=False,
                     approved=None,
                     rejected=False,
-                    approved_national_level=None
+                    approved_national_level=None,
+                    code=None
                 )
            
            incomplete_pending_validation_ids = [facility.id for facility in pending_validation_qs if not facility.is_complete]
