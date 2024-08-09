@@ -407,9 +407,11 @@ class FacilityFilter(CommonFieldsFilterset):
         if value in TRUTH_NESS:
             facilities_pending_updates = qs.filter(has_edits=True)
 
-            facilities_latest_updates_ids = [f.id for f in facilities_pending_updates if f.latest_update is None]
+            # facilities_latest_updates_ids = [f.id for f in facilities_pending_updates if f.latest_update is None]
             
-            return facilities_pending_updates.exclude(id__in=facilities_latest_updates_ids)
+            # return facilities_pending_updates.exclude(id__in=facilities_latest_updates_ids)
+
+            return facilities_pending_updates
 
     def filter_unpublished_facilities_national_level(self, qs, name, value):
         """
@@ -444,12 +446,13 @@ class FacilityFilter(CommonFieldsFilterset):
         """
         Filter the incomplete/complete facilities
         """
-        incomplete_facilities = [facility for facility in qs.filter() if not facility.is_complete]
 
         if value in TRUTH_NESS:
-            return incomplete_facilities
+            complete_facilities_ids = [facility.id for facility in qs.all() if facility.is_complete]
+            return qs.all().exclude(id__in=complete_facilities_ids)
         else:
-            return qs.exclude(id__in=incomplete_facilities)
+            incomplete_facilities_ids = [facility.id for facility in qs.all() if not facility.is_complete]
+            return qs.all().exclude(id__in=incomplete_facilities_ids)
 
     def facilities_pending_approval(self, qs, name, value):
 
