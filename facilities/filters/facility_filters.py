@@ -446,12 +446,14 @@ class FacilityFilter(CommonFieldsFilterset):
         """
         Filter the incomplete/complete facilities
         """
-        incomplete_facilities = [facility for facility in qs.filter() if not facility.is_complete]
 
+        all_facilities = qs.all()
         if value in TRUTH_NESS:
-            return incomplete_facilities
+            complete_facilities_ids = [facility.id for facility in all_facilities if facility.is_complete]
+            return all_facilities.exclude(id__in=complete_facilities_ids)
         else:
-            return qs.exclude(id__in=incomplete_facilities)
+            incomplete_facilities_ids = [facility.id for facility in all_facilities if not facility.is_complete]
+            return all_facilities.exclude(id__in=incomplete_facilities_ids)
 
     def facilities_pending_approval(self, qs, name, value):
 
