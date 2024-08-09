@@ -119,14 +119,18 @@ class CommunityHealthUnitSerializer(
             services=None):
 
         try:
-            chu_updates = ChuUpdateBuffer.objects.filter(
+            update = ChuUpdateBuffer.objects.get(
                 health_unit=chu_instance,
-                is_approved=False, is_rejected=False)
+                is_approved=False, is_rejected=False) if len(ChuUpdateBuffer.objects.filter(
+                health_unit=chu_instance,
+                is_approved=False, is_rejected=False)) == 1 else ChuUpdateBuffer.objects.filter(
+                health_unit=chu_instance,
+                is_approved=False, is_rejected=False)[0] if len(ChuUpdateBuffer.objects.filter(
+                health_unit=chu_instance,
+                is_approved=False, is_rejected=False)) > 1 else None 
             
-            update = chu_updates[0] if chu_updates.__len__() > 0 else None
-
             if update is None:
-                raise ChuUpdateBuffer.DoesNotExist
+                 raise ChuUpdateBuffer.DoesNotExist
             
         except ChuUpdateBuffer.DoesNotExist:
             update = ChuUpdateBuffer.objects.create(
@@ -171,6 +175,65 @@ class CommunityHealthUnitSerializer(
 
             update.contacts = contacts
         update.save()
+
+    # Previous lateest commit: mfr-api-prod
+    # def buffer_updates(
+    #         self, validated_data, chu_instance, chews=None, contacts=None,
+    #         services=None):
+
+    #     try:
+    #         chu_updates = ChuUpdateBuffer.objects.filter(
+    #             health_unit=chu_instance,
+    #             is_approved=False, is_rejected=False)
+            
+    #         update = chu_updates[0] if chu_updates.__len__() > 0 else None
+
+    #         if update is None:
+    #             raise ChuUpdateBuffer.DoesNotExist
+            
+    #     except ChuUpdateBuffer.DoesNotExist:
+    #         update = ChuUpdateBuffer.objects.create(
+    #             health_unit=chu_instance,
+    #             created_by_id=self.context['request'].user.id,
+    #             updated_by_id=self.context['request'].user.id,
+    #             is_new=True)
+    #     basic_updates = self.get_basic_updates(chu_instance, validated_data)
+
+    #     update.basic = basic_updates if basic_updates \
+    #         and not update.basic else update.basic
+
+    #     if chews:
+    #         for chew in chews:
+    #             chew.pop('created', None)
+    #             chew.pop('updated', None)
+    #             chew.pop('updated_by', None)
+    #             chew.pop('created_by', None)
+
+    #         chews = json.dumps(chews)
+    #         update.workers = chews
+
+    #     if services:
+    #         for service in services:
+    #             sev_rec = CHUService.objects.get(id=service['service'])
+    #             service.pop('created', None)
+    #             service.pop('updated', None)
+    #             service.pop('updated_by', None)
+    #             service.pop('created_by', None)
+    #             service['name'] = sev_rec.name
+
+    #         services = json.dumps(services)
+    #         update.services = services
+
+    #     if contacts:
+    #         for contact in contacts:
+    #             contact_type = ContactType.objects.get(
+    #                 id=contact['contact_type'])
+    #             contact['contact_type_name'] = contact_type.name
+
+    #         contacts = json.dumps(contacts)
+
+    #         update.contacts = contacts
+    #     update.save()
 
     def _ensure_all_chew_required_provided(self, chew):
         if 'first_name' and 'last_name' not in chew:
