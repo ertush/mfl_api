@@ -1,4 +1,5 @@
 import json
+import logging
 
 from django.utils import timezone
 from rest_framework import generics, status
@@ -7,6 +8,7 @@ from rest_framework.parsers import MultiPartParser
 
 from common.views import AuditableDetailViewMixin
 from common.utilities import CustomRetrieveUpdateDestroyView
+
 
 from common.models import (
     ContactType, UserConstituency, UserCounty, UserSubCounty
@@ -93,6 +95,8 @@ from ..utils import (
     _officer_data_is_valid
 )
 
+
+LOGGER = logging.getLogger(__name__)
 
 class QuerysetFilterMixin(object):
     """
@@ -653,8 +657,9 @@ class FacilityDetailView(
         Resolves the contact_type_name for the officer_in_charge contacts
         """
         for contact in officer_in_charge['contacts']:
+            LOGGER.info('contact: {}'.format(contact))
             contact['contact_type_name'] = ContactType.objects.get(
-                id=contact.get('type')).name
+                id=contact.get('contact_type')).name
         return officer_in_charge
 
     def populate_officer_incharge_job_title(self, officer_in_charge):
