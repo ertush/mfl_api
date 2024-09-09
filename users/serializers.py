@@ -322,7 +322,7 @@ class MflUserSerializer(PartialResponseMixin, serializers.ModelSerializer):
             county_obj = {}
             county_obj['updated_by'] = user
             county_obj['created_by'] = user
-            county_obj['county_id'] = county.pop('id', None) # county.pop('id') if 'id' in county else None
+            county_obj['county_id'] = county.pop('id', []) # county.pop('id') if 'id' in county else None
             county_obj['user'] = instance
             county_obj['active'] = county.get('active', True)
             UserCounty.objects.create(**county_obj)
