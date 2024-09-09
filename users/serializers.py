@@ -322,8 +322,7 @@ class MflUserSerializer(PartialResponseMixin, serializers.ModelSerializer):
             county_obj = {}
             county_obj['updated_by'] = user
             county_obj['created_by'] = user
-            if county.pop('id', None) != None:
-                county_obj['county_id'] = county.pop('id') 
+            county_obj['county_id'] = county.pop('id') 
             county_obj['user'] = instance
             county_obj['active'] = county.get('active', True)
             UserCounty.objects.create(**county_obj)
@@ -491,11 +490,13 @@ class MflUserSerializer(PartialResponseMixin, serializers.ModelSerializer):
                 instance.is_national = True
         instance.save()
 
-        self._create_user_constituency(instance, constituencies)
-        self._create_user_county(instance, counties)
+        if instance.is_national is not True:
+            self._create_user_county(instance, counties)
         self._update_or_create_contacts(instance, contacts)
         self._create_regulator(instance, regulators)
-        self._create_user_sub_counties(instance, sub_counties)
+        if instance.is_national is not True:
+            self._create_user_constituency(instance, constituencies)
+            self._create_user_sub_counties(instance, sub_counties)
 
         return instance
 
