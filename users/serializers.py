@@ -309,7 +309,7 @@ class MflUserSerializer(PartialResponseMixin, serializers.ModelSerializer):
                     "id": <UserCounty instance> // optional and provided
                         only when updating a uuid string
                     "county": "The county id of
-                    the county to be linked",// uuid string
+                    the county to be linked",// uuid
 
                 }
             ]
@@ -322,7 +322,8 @@ class MflUserSerializer(PartialResponseMixin, serializers.ModelSerializer):
             county_obj = {}
             county_obj['updated_by'] = user
             county_obj['created_by'] = user
-            county_obj['county_id'] = county.pop('id', []) # county.pop('id') if 'id' in county else None
+            if county.pop('id', None) != None:
+                county_obj['county_id'] = county.pop('id') 
             county_obj['user'] = instance
             county_obj['active'] = county.get('active', True)
             UserCounty.objects.create(**county_obj)
