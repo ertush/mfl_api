@@ -463,12 +463,11 @@ class FacilityFilter(CommonFieldsFilterset):
                     approved=None,
                     rejected=False,
                     approved_national_level=None,
-                    code=None
                 )
            
-           # incomplete_pending_validation_ids = [facility.id for facility in pending_validation_qs if not facility.is_complete]
+           incomplete_pending_validation_ids = [facility.id for facility in pending_validation_qs if not facility.is_complete]
 
-           return pending_validation_qs # pending_validation_qs.exclude(id__in=incomplete_pending_validation_ids)
+           return pending_validation_qs.exclude(id__in=incomplete_pending_validation_ids)
         else:
           validated_qs = qs.filter(
                 rejected=False,
