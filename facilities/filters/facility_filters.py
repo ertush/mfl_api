@@ -457,26 +457,45 @@ class FacilityFilter(CommonFieldsFilterset):
 
     def facilities_pending_approval(self, qs, name, value):
 
+        fac_pend_appr = qs.filter(code=not None)
+        fac_pend_appr_facility_ids = [facility.id for facility in fac_pend_appr]
         if value in TRUTH_NESS:
-           pending_validation_qs = qs.filter(
-                    has_edits=False,
-                    approved=None,
-                )
-           
-           incomplete_pending_validation_ids = [facility.id for facility in pending_validation_qs if not facility.is_complete]
-
-           return pending_validation_qs.exclude(id__in=incomplete_pending_validation_ids)
+            return qs.filter(
+                Q(
+                    Q(rejected=False),
+                    Q(has_edits=True) |
+                    Q(approved=None,rejected=False)
+                ) |
+                Q(
+                    Q(rejected=False),
+                    Q(has_edits=True) | Q(approved=None,rejected=False))
+            ).exclude(id__in=fac_pend_appr_facility_ids)
         else:
-          validated_qs = qs.filter(
-                rejected=False,
-                has_edits=False,
-                approved=True,
-                approved_national_level=None
-            )
-          
-          incomplete_validated_ids = [facility.id for facility in validated_qs if not facility.is_complete]
+            return qs.filter(
+                Q(rejected=True) |
+                Q(has_edits=False) & Q(approved=None)
+            ).exclude(id__in=fac_pend_appr_facility_ids)
+        
+        # if value in TRUTH_NESS:
+        #    pending_validation_qs = qs.filter(
+        #             has_edits=False,
+        #             approved=None,
+        #         )
+           
+        #    incomplete_pending_validation_ids = [facility.id for facility in pending_validation_qs if not facility.is_complete]
 
-          return validated_qs.exclude(id__in=incomplete_validated_ids)
+        #    return pending_validation_qs.exclude(id__in=incomplete_pending_validation_ids)
+        # else:
+        #   validated_qs = qs.filter(
+        #         rejected=False,
+        #         has_edits=False,
+        #         approved=True,
+        #         approved_national_level=None
+        #     )
+          
+        #   incomplete_validated_ids = [facility.id for facility in validated_qs if not facility.is_complete]
+
+        #   return validated_qs.exclude(id__in=incomplete_validated_ids)
         
 
     def filter_national_rejected(self, qs, name, value):
