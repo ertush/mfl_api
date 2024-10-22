@@ -38,14 +38,14 @@ class CoordinatesValidatorMixin(object):
         try:
             boundary = boundary_model.objects.get(area=area)
             if not boundary.mpoly.contains(self.coordinates):
-                # raise ValidationError({
-                #     "coordinates": [
-                #         '({0}, {1}) not contained in boundary of {2}'.format(
-                #             self.coordinates.x, self.coordinates.y, area
-                #         )
-                #     ]
-                # })
-                pass
+                raise ValidationError({
+                    "coordinates": [
+                        '({0}, {1}) not contained in boundary of {2}'.format(
+                            self.coordinates.x, self.coordinates.y, area
+                        )
+                    ]
+                })
+                # pass'
             else:
                 return True
         except boundary_model.DoesNotExist:
