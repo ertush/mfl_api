@@ -449,8 +449,9 @@ class FacilityFilter(CommonFieldsFilterset):
 
         all_facilities = qs.all()
         if value in TRUTH_NESS:
-            complete_facilities_ids = [facility.id for facility in all_facilities if facility.is_complete]
-            return all_facilities.exclude(id__in=complete_facilities_ids)
+            # complete_facilities_ids = [facility.id for facility in all_facilities if facility.is_complete]
+            # return all_facilities.exclude(id__in=complete_facilities_ids)
+            return qs.filter(is_complete=True)
         else:
             incomplete_facilities_ids = [facility.id for facility in all_facilities if not facility.is_complete]
             return all_facilities.exclude(id__in=incomplete_facilities_ids)
