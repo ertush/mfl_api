@@ -208,15 +208,15 @@ class FacilityCoordinates(CoordinatesValidatorMixin, GISAbstractBase):
             areas_passed += 1
 
 
-        if self.validate_long_and_lat_within_constituency(
-            self.facility.ward.constituency):
-            areas_passed += 1
+        # if self.validate_long_and_lat_within_constituency(
+        #     self.facility.ward.constituency):
+        #     areas_passed += 1
 
         if self.validate_long_and_lat_within_ward(
             self.facility.ward):
             areas_passed += 1
 
-        if areas_passed < 2:
+        if areas_passed < 1:
             raise ValidationError({
                     "coordinates": [
                         "The coordinates did not validate"
