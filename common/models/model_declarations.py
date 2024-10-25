@@ -215,12 +215,6 @@ class SubCounty(AdministrativeUnitBase):
     """
     county = models.ForeignKey(County, on_delete=models.PROTECT)
 
-    @property
-    def sub_county_bound(self):
-        from mfl_gis.models import SubCountyBoundary
-        unit = SubCountyBoundary.objects.filter(area=self)
-        return unit[0].bound if len(unit) else {}
-
     def __str__(self):
         return self.name
 

@@ -8,7 +8,7 @@ from django.contrib.gis.db.models import Union
 from django.contrib.gis.geos import MultiPolygon
 from django.utils import timezone, encoding
 from rest_framework.exceptions import ValidationError
-from common.models import AbstractBase, County, Constituency, SubCounty, Ward
+from common.models import AbstractBase, County, Constituency, Ward
 from facilities.models import Facility
 
 
@@ -57,11 +57,8 @@ class CoordinatesValidatorMixin(object):
                     ]
                 })
 
-    # def validate_long_and_lat_within_constituency(self, constituency):
-    #     return self._validate_within_boundaries(ConstituencyBoundary, constituency)
-    def validate_long_and_lat_within_sub_county(self, sub_county):
-        return self._validate_within_boundaries(SubCountyBoundary, sub_county)
-
+    def validate_long_and_lat_within_constituency(self, constituency):
+        return self._validate_within_boundaries(ConstituencyBoundary, constituency)
 
     def validate_long_and_lat_within_county(self, county):
         return self._validate_within_boundaries(CountyBoundary, county)
@@ -211,15 +208,15 @@ class FacilityCoordinates(CoordinatesValidatorMixin, GISAbstractBase):
             areas_passed += 1
 
 
-        if self.validate_long_and_lat_within_sub_county(
-            self.facility.ward.sub_county):
-            areas_passed += 1
+        # if self.validate_long_and_lat_within_constituency(
+        #     self.facility.ward.constituency):
+        #     areas_passed += 1
 
         if self.validate_long_and_lat_within_ward(
             self.facility.ward):
             areas_passed += 1
 
-        if areas_passed < 2:
+        if areas_passed < 1:
             raise ValidationError({
                     "coordinates": [
                         "The coordinates did not validate"
@@ -413,30 +410,6 @@ class ConstituencyBoundary(AdministrativeUnitBoundary):
 
     class Meta(GISAbstractBase.Meta):
         verbose_name_plural = 'constituency boundaries'
-
-
-@reversion.register(follow=['area'])
-@encoding.python_2_unicode_compatible
-class SubCountyBoundary(AdministrativeUnitBoundary):
-    area = gis_models.OneToOneField(SubCounty)
-
-    def __str__(self):
-        return self.name
-
-    @property
-    def ward_ids(self):
-        return Ward.objects.filter(
-            sub_county=self.area).values_list('id', flat=True)
-
-    @property
-    def ward_boundary_ids(self):
-        ward_boundary_ids = WardBoundary.objects.filter(
-            area__id__in=self.ward_ids
-        ).values_list('id', flat=True)
-        return ward_boundary_ids
-
-    class Meta(GISAbstractBase.Meta):
-        verbose_name_plural = 'sub_county boundaries'
 
 
 @reversion.register(follow=['area'])
