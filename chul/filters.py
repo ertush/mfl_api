@@ -59,7 +59,9 @@ class CommunityHealthUnitFilter(CommonFieldsFilterset):
             return qs.filter(
                 Q(is_approved=None, is_rejected=False, has_edits=False) |
                 Q(is_approved=None, is_rejected=False, has_edits=True) |
-                Q(is_approved=None, is_rejected=True, has_edits=True)
+                Q(is_approved=None, is_rejected=True, has_edits=True) |
+                Q(is_approved=False, is_rejected=True, has_edits=True) | # Added
+                Q(is_approved=False, is_rejected=True, has_edits=False) # Added
             )
         else:
             return qs.filter(
