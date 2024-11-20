@@ -40,7 +40,7 @@ def sendDataToOpenHIM(payload, u_id=''):
 
 
     post_url = f"{settings.OpenHIM_URL}/interop230/khmfr_dhis"
-    put_url = f"{settings.OpenHIM_URL}/interop230/khmfr_dhis/update/{u_id}"
+    put_url = f"{settings.OpenHIM_URL}/interop230/khmfr_dhis/{u_id}"
     
     headers = {
     'Content-Type': 'application/json',

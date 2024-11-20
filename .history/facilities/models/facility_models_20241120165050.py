@@ -40,7 +40,7 @@ def sendDataToOpenHIM(payload, u_id=''):
 
 
     post_url = f"{settings.OpenHIM_URL}/interop230/khmfr_dhis"
-    put_url = f"{settings.OpenHIM_URL}/interop230/khmfr_dhis/update/{u_id}"
+    put_url = f"{settings.OpenHIM_URL}/interop230/khmfr_dhis/{u_id}"
     
     headers = {
     'Content-Type': 'application/json',
@@ -275,7 +275,7 @@ class DhisAuth(ApiAuthentication):
                         }
                     )
                 elif r.json()["status"] == "OK":
-                   # update to [JPHES, PPMS, Tracker, Entomolgy, gbv, ] via openhim
+                   # post to [JPHES, PPMS, Tracker, Entomolgy, gbv, ]
                     new_facility_payload['id'] = r['response']['uid']
                     sendDataToOpenHIM(payload=new_facility_payload, u_id=facility.json()['id'])
 

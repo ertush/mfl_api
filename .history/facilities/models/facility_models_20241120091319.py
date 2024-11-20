@@ -31,34 +31,6 @@ import threading, requests, base64
 LOGGER = logging.getLogger(__name__)
 
 
-def sendDataToOpenHIM(payload, u_id=''):
-    """
-    This function send data to OpenHIM which send all the other data to the DHIS instabce configured there
-    """
-    credentials = f"{settings.OpenHIM_username}:{settings.OpenHIM_password}"
-    auth_coded = base64.b64encode(credentials.encode()).decode("utf-8")
-
-
-    post_url = f"{settings.OpenHIM_URL}/interop230/khmfr_dhis"
-    put_url = f"{settings.OpenHIM_URL}/interop230/khmfr_dhis/update/{u_id}"
-    
-    headers = {
-    'Content-Type': 'application/json',
-    'Authorization': f'Basic {auth_coded}',
-    'Cookie': 'JSESSIONID=54848433407CFD77F915C822F1A8B0BF; SameSite=Lax'
-    }
-    try:
-        if u_id == '':
-            response = requests.request("PUT", put_url, headers=headers, data=payload)
-            print(response.text)
-        else:
-            response = requests.request("POST", post_url, headers=headers, data=payload)
-            print(response.text)
-            pass
-    except Exception as e :
-        print(f"error Sedning data to OpenHIM : {e}")
-
-
 @encoding.python_2_unicode_compatible
 class DhisAuth(ApiAuthentication):
     '''
@@ -238,10 +210,6 @@ class DhisAuth(ApiAuthentication):
                                ]
                     }
                 )
-            elif r.json()["status"] == "OK":
-                # post to [JPHES, PPMS, Tracker, Entomolgy, gbv, ]
-                new_facility_payload['id'] = r['response']['uid']
-                sendDataToOpenHIM(payload=new_facility_payload)
         else:
             # LOGGER.error("new_facility_payload:{}".format(new_facility_payload['id']))
             # raise ValueError("new_facility_payload:{}".format(new_facility_payload))
@@ -274,10 +242,7 @@ class DhisAuth(ApiAuthentication):
                             "Error!": ["An error occured while updating this facility in KHIS Aggregate. KHIS Error {}".format(r.text)]
                         }
                     )
-                elif r.json()["status"] == "OK":
-                   # update to [JPHES, PPMS, Tracker, Entomolgy, gbv, ] via openhim
-                    new_facility_payload['id'] = r['response']['uid']
-                    sendDataToOpenHIM(payload=new_facility_payload, u_id=facility.json()['id'])
+        
 
     def push_facility_metadata(self, metadata_payload, facility_uid):
         # Keph Level

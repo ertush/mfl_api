@@ -40,7 +40,7 @@ def sendDataToOpenHIM(payload, u_id=''):
 
 
     post_url = f"{settings.OpenHIM_URL}/interop230/khmfr_dhis"
-    put_url = f"{settings.OpenHIM_URL}/interop230/khmfr_dhis/update/{u_id}"
+    put_url = f"{settings.OpenHIM_URL}/interop230/khmfr_dhis/{u_id}"
     
     headers = {
     'Content-Type': 'application/json',
@@ -50,10 +50,10 @@ def sendDataToOpenHIM(payload, u_id=''):
     try:
         if u_id == '':
             response = requests.request("PUT", put_url, headers=headers, data=payload)
+
             print(response.text)
         else:
             response = requests.request("POST", post_url, headers=headers, data=payload)
-            print(response.text)
             pass
     except Exception as e :
         print(f"error Sedning data to OpenHIM : {e}")
@@ -239,9 +239,8 @@ class DhisAuth(ApiAuthentication):
                     }
                 )
             elif r.json()["status"] == "OK":
-                # post to [JPHES, PPMS, Tracker, Entomolgy, gbv, ]
-                new_facility_payload['id'] = r['response']['uid']
-                sendDataToOpenHIM(payload=new_facility_payload)
+                pass
+            # post to [JPHES, PPMS, Tracker, Entomolgy, gbv, ]
         else:
             # LOGGER.error("new_facility_payload:{}".format(new_facility_payload['id']))
             # raise ValueError("new_facility_payload:{}".format(new_facility_payload))
@@ -275,9 +274,15 @@ class DhisAuth(ApiAuthentication):
                         }
                     )
                 elif r.json()["status"] == "OK":
-                   # update to [JPHES, PPMS, Tracker, Entomolgy, gbv, ] via openhim
-                    new_facility_payload['id'] = r['response']['uid']
-                    sendDataToOpenHIM(payload=new_facility_payload, u_id=facility.json()['id'])
+                    r = requests.put(
+                    settings.OPEMHIM_MEDIATOR + "api/organisationUnits/" + new_facility_payload['id'],
+                    auth=(settings.DHIS_USERNAME, settings.DHIS_PASSWORD),
+                    headers={
+                        "Accept": "application/json"
+                    },
+                    json=new_facility_payload
+                     )
+                    # post to [JPHES, PPMS, Tracker, Entomolgy, gbv, ]
 
     def push_facility_metadata(self, metadata_payload, facility_uid):
         # Keph Level

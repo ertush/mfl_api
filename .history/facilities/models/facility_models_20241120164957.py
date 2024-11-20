@@ -40,7 +40,7 @@ def sendDataToOpenHIM(payload, u_id=''):
 
 
     post_url = f"{settings.OpenHIM_URL}/interop230/khmfr_dhis"
-    put_url = f"{settings.OpenHIM_URL}/interop230/khmfr_dhis/update/{u_id}"
+    put_url = f"{settings.OpenHIM_URL}/interop230/khmfr_dhis/{u_id}"
     
     headers = {
     'Content-Type': 'application/json',
@@ -275,9 +275,15 @@ class DhisAuth(ApiAuthentication):
                         }
                     )
                 elif r.json()["status"] == "OK":
-                   # update to [JPHES, PPMS, Tracker, Entomolgy, gbv, ] via openhim
-                    new_facility_payload['id'] = r['response']['uid']
-                    sendDataToOpenHIM(payload=new_facility_payload, u_id=facility.json()['id'])
+                    r = requests.put(
+                    settings.OPEMHIM_MEDIATOR + "api/organisationUnits/" + new_facility_payload['id'],
+                    auth=(settings.DHIS_USERNAME, settings.DHIS_PASSWORD),
+                    headers={
+                        "Accept": "application/json"
+                    },
+                    json=new_facility_payload
+                     )
+                    # post to [JPHES, PPMS, Tracker, Entomolgy, gbv, ]
 
     def push_facility_metadata(self, metadata_payload, facility_uid):
         # Keph Level
