@@ -115,8 +115,8 @@ class DashBoard(QuerysetFilterMixin, APIView):
 
         top_10_subcounties_summary = []
         for item in top_ten_locations:
-            sub = SubCounty.objects.get(name=item.keys()[0])
-            chu_count = self.get_chu_count_in_constituency_summary(sub)
+            sub = SubCounty.objects.filter(name=item.keys()[0]) # SubCounty.objects.get(name=item.keys()[0])
+            chu_count = self.get_chu_count_in_constituency_summary(sub[0]) # self.get_chu_count_in_constituency_summary(sub)
             top_10_subcounties_summary.append(
                 {
                     "name": item.keys()[0],
