@@ -113,3 +113,7 @@ celerybeat.pid
 
 # my base.py file
 /config/settings/base.py
+
+
+.history
+.history/*
