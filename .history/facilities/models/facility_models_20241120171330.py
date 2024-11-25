@@ -33,7 +33,7 @@ LOGGER = logging.getLogger(__name__)
 
 def sendDataToOpenHIM(payload, u_id=''):
     """
-    This function send data to OpenHIM which sends to all the other DHIS instances configured there
+    This function send data to OpenHIM which send all the other data to the DHIS instabce configured there
     """
     credentials = f"{settings.OpenHIM_username}:{settings.OpenHIM_password}"
     auth_coded = base64.b64encode(credentials.encode()).decode("utf-8")
@@ -51,16 +51,10 @@ def sendDataToOpenHIM(payload, u_id=''):
         if u_id == '':
             response = requests.request("PUT", put_url, headers=headers, data=payload)
             print(response.text)
-            if response.json()["status"] != "OK":
-                print(f"Data Not sent successfully: {response.json()['httpStatusCode']}")
-            else:
-                print(f"Data sent successfully")
         else:
             response = requests.request("POST", post_url, headers=headers, data=payload)
-            if response.json()["status"] != "OK":
-                print(f"Data Not sent successfully: {response.json()['httpStatusCode']}")
-            else:
-                print(f"Data sent successfully")
+            print(response.text)
+            pass
     except Exception as e :
         print(f"error Sedning data to OpenHIM : {e}")
 
@@ -3201,3 +3195,9 @@ class FacilityInfrastructure(AbstractBase):
         self.validate_unique_infrastructure()
 ####### infra
 
+
+
+
+
+def pushFacilitiesToDHIS():
+    pass
