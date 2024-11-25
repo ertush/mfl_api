@@ -28,7 +28,12 @@ env = environ.Env(
     DHIS_PASSWORD=(str, ''),
     DHIS_CLIENT_ID=(str, 'KMHFL'),
     DHIS_CLIENT_SECRET=(str, '65df9a025-31df-079d-14d5-a01e08ea947')
+    OpenHIM_username=(str, 'sinjiri'),
+    OpenHIM_URL=(str, 'https://interoperabilitylab.uonbi.ac.ke')
+    OpenHIM_password=(str, 'Test@123')
+
 )
+
 env.read_env(os.path.join(BASE_DIR, '.env'))
 
 ADMINS = tuple(
@@ -532,3 +537,6 @@ DHIS_USERNAME = env('DHIS_USERNAME')
 DHIS_PASSWORD = env('DHIS_PASSWORD')
 DHIS_CLIENT_ID = env('DHIS_CLIENT_ID')
 DHIS_CLIENT_SECRET = env('DHIS_CLIENT_SECRET')
+OpenHIM_URL = env('OpenHIM_URL')
+OpenHIM_username = env('OpenHIM_username')
+OpenHIM_password= env('OpenHIM_password')
