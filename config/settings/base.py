@@ -27,9 +27,9 @@ env = environ.Env(
     DHIS_USERNAME=(str, 'kmhfl_integration'),
     DHIS_PASSWORD=(str, ''),
     DHIS_CLIENT_ID=(str, 'KMHFL'),
-    DHIS_CLIENT_SECRET=(str, '65df9a025-31df-079d-14d5-a01e08ea947')
+    DHIS_CLIENT_SECRET=(str, '65df9a025-31df-079d-14d5-a01e08ea947'),
     OpenHIM_username=(str, 'sinjiri'),
-    OpenHIM_URL=(str, 'https://interoperabilitylab.uonbi.ac.ke')
+    OpenHIM_URL=(str, 'https://interoperabilitylab.uonbi.ac.ke'),
     OpenHIM_password=(str, 'Test@123')
 
 )
