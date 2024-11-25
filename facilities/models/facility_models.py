@@ -35,12 +35,12 @@ def sendDataToOpenHIM(payload, u_id=''):
     """
     This function send data to OpenHIM which sends to all the other DHIS instances configured there
     """
-    credentials = f"{settings.OpenHIM_username}:{settings.OpenHIM_password}"
+    credentials = "{}:{}".format(settings.OpenHIM_username, settings.OpenHIM_password)
     auth_coded = base64.b64encode(credentials.encode()).decode("utf-8")
 
 
-    post_url = f"{settings.OpenHIM_URL}/interop230/khmfr_dhis"
-    put_url = f"{settings.OpenHIM_URL}/interop230/khmfr_dhis/update/{u_id}"
+    post_url = "{}/interop230/khmfr_dhis".format(settings.OpenHIM_URL)
+    put_url = "{}/interop230/khmfr_dhis/update/{u_id}".format(settings.OpenHIM_URL)
     
     headers = {
     'Content-Type': 'application/json',
