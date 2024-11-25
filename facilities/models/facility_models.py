@@ -44,7 +44,7 @@ def sendDataToOpenHIM(payload, u_id=''):
     
     headers = {
     'Content-Type': 'application/json',
-    'Authorization': f'Basic {auth_coded}',
+    'Authorization': 'Basic {}'.format(auth_coded),
     'Cookie': 'JSESSIONID=54848433407CFD77F915C822F1A8B0BF; SameSite=Lax'
     }
     try:
@@ -52,17 +52,17 @@ def sendDataToOpenHIM(payload, u_id=''):
             response = requests.request("PUT", put_url, headers=headers, data=payload)
             print(response.text)
             if response.json()["status"] != "OK":
-                print(f"Data Not sent successfully: {response.json()['httpStatusCode']}")
+                print("Data Not sent successfully: {}".format(response.json()['httpStatusCode']))
             else:
-                print(f"Data sent successfully")
+                print("Data sent successfully")
         else:
             response = requests.request("POST", post_url, headers=headers, data=payload)
             if response.json()["status"] != "OK":
-                print(f"Data Not sent successfully: {response.json()['httpStatusCode']}")
+                print("Data Not sent successfully: {}".format(response.json()['httpStatusCode']))
             else:
-                print(f"Data sent successfully")
+                print("Data sent successfully")
     except Exception as e :
-        print(f"error Sedning data to OpenHIM : {e}")
+        print("error Sedning data to OpenHIM : {}".format(e))
 
 
 @encoding.python_2_unicode_compatible
