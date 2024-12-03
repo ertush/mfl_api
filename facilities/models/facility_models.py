@@ -173,7 +173,10 @@ class DhisAuth(ApiAuthentication):
                 "paging": "false"
             }
         )
-        dhis2_facility = r.json()["organisationUnits"]
+
+        response = r.json()
+
+        dhis2_facility = response['organisationUnits']  if "organisationUnits" in response else [{'id': None}]
 
         dhis2_facility = dhis2_facility if "id" in dhis2_facility[0] else [{"id": None}]
 
