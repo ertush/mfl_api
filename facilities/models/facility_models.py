@@ -178,9 +178,10 @@ class DhisAuth(ApiAuthentication):
 
         dhis2_facility = response['organisationUnits']  if "organisationUnits" in response else [{'id': None}]
 
-        dhis2_facility = dhis2_facility if "id" in dhis2_facility[0] else [{"id": None}]
+        dhis2_facility = dhis2_facility if len(dhis2_facility) > 0 and "id" in dhis2_facility[0] else [{"id": None}]
 
-        if dhis2_facility[0]["id"] is None:
+
+        if len(dhis2_facility) > 0 and dhis2_facility[0]["id"] is None:
             raise ValidationError(
                 {
                     "Error!": ["Unable to resolve exact parent of the facility in DHIS2"]
