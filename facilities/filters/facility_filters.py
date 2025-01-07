@@ -516,6 +516,7 @@ class FacilityFilter(CommonFieldsFilterset):
     
     id = ListCharFilter(lookup_expr='icontains')
     name = django_filters.CharFilter(lookup_expr='icontains')
+    official_name = django_filters.CharFilter(lookup_expr='icontains')
     code = ListIntegerFilter(lookup_expr='exact')
     description = ListCharFilter(lookup_expr='icontains')
 
@@ -586,7 +587,7 @@ class FacilityFilter(CommonFieldsFilterset):
         method='facilities_pending_approval')
     rejected_national = django_filters.CharFilter(
         method='filter_national_rejected')
-    search = ClassicSearchFilter(name='name')
+    search = ClassicSearchFilter(name='official_name')
     incomplete = django_filters.CharFilter(
         method='filter_incomplete_facilities')
     to_publish = django_filters.CharFilter(
