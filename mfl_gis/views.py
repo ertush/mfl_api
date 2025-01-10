@@ -195,7 +195,7 @@ class FacilityCoordinatesCreationAndListing(
     # The list serializer omits many fields for size reasons
     # This data is controlled access
     # Do not change the permission_classes without good reason
-    permission_classes = (DjangoModelPermissions,)
+    # permission_classes = (DjangoModelPermissions,)
     queryset = FacilityCoordinates.objects.all()
     serializer_class = FacilityCoordinateSimpleSerializer
     filter_class = FacilityCoordinatesFilter
