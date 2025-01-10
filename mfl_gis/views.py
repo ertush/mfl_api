@@ -136,7 +136,7 @@ class FacilityCoordinatesListView(GISListCreateAPIView):
     # The list serializer omits many fields for size reasons
     # This data is controlled access
     # Do not change the permission_classes without good reason
-    permission_classes = (DjangoModelPermissions,)
+    # permission_classes = (DjangoModelPermissions,)
     queryset = FacilityCoordinates.objects.all()
     serializer_class = FacilityCoordinatesListSerializer
     filter_class = FacilityCoordinatesFilter
@@ -237,7 +237,7 @@ class FacilityCoordinatesCreationAndDetail(
     # The list serializer omits many fields for size reasons
     # This data is controlled access
     # Do not change the permission_classes without good reason
-    permission_classes = (DjangoModelPermissions,)
+    # permission_classes = (DjangoModelPermissions,)
     queryset = FacilityCoordinates.objects.all()
     serializer_class = FacilityCoordinateSimpleSerializer
 
