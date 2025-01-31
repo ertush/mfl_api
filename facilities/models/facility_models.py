@@ -1022,6 +1022,16 @@ class FacilityExportExcelMaterialView(models.Model):
         help_text='The name of the facility\'s regulator')
     beds = models.IntegerField(
         help_text='The number of beds in the facility')
+    number_of_emergency_casualty_beds = models.IntegerField(
+        help_text='The number of causualty emergency beds in the facility')
+    number_of_icu_beds = models.IntegerField(
+        help_text='The number of icu beds in the facility')
+    number_of_hdu_beds = models.IntegerField(
+        help_text='The number of hdu beds in the facility')
+    number_of_inpatient_beds = models.IntegerField(
+        help_text='The number of Inpatient beds in the facility')
+    number_of_isolation_beds = models.IntegerField(
+        help_text='The number of isolation beds in the facility')
     cots = models.IntegerField(
         help_text='The number of cots in the facility')
     search = models.CharField(
