@@ -110,6 +110,7 @@ INSTALLED_APPS = (
     'facilities',
     'data_bootstrap',
     'chul',
+    'analytics',
     'mfl_gis',
     'search',
     'reporting',

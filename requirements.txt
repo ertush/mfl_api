@@ -1,1 +1,23 @@
--e .
+django==4.2.7
+python-environ==0.4.54
+celery==5.3.6
+django-oauth-toolkit==2.3.0
+django-rest-auth==0.9.5
+django-allauth==0.58.2
+django-cors-headers==4.3.1
+django-rest-swagger==2.2.0
+django-reversion==5.0.8
+gunicorn==21.2.0
+django-debug-toolbar==4.2.0
+django-storages==1.14.2
+django-filter==23.4
+djangorestframework-xml==2.0.0
+XlsxWriter==3.1.9
+djangorestframework-csv==3.0.1
+WeasyPrint==60.1
+djangorestframework-gis==1.0
+dj-rest-auth==5.0.2 
+drf-yasg==1.21.7
+drf-extensions==0.7.1
+psycopg2==2.9.10
+shapely==2.0.7

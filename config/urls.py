@@ -60,6 +60,7 @@ apipatterns = (
     path('facilities/', include('facilities.urls', namespace='facilities')),
     path('chul/', include('chul.urls', namespace='chul')),
     path('gis/', include('mfl_gis.urls', namespace='mfl_gis')),
+    path('analytics/', include('analytics.urls', namespace='analytics')),
     path('reporting/', include('reporting.urls', namespace='reporting')),
     path('admin_offices/', include('admin_offices.urls', namespace='admin_offices')),
     path('rest-auth/', include((rest_auth_patterns, None))),
