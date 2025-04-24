@@ -1,0 +1,19 @@
+@host = http://localhost:8000
+
+
+### Create a new user (example)
+POST http://localhost:8000/api/analytics/matrix-report/?format=json
+Content-Type: application/json
+Authorization: Bearer v7LeFuTjWisker37Pi5SeGWl8PmpDa
+
+{
+    "col_dims": "keph_level__name",
+    "report_type": "matrix_report",
+    "metric": "number_of_facilities",
+    "row_comparison": "county",
+    "filters": {
+        "owners": ["ffad4810-0bfb-4434-84cb-d2ab9b911c41",
+            "ca268e6b-7e45-4264-97bf-43b6c68fb21e"
+        ]
+    }
+}
