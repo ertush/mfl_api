@@ -51,7 +51,7 @@ class FilterReportMixin(object):
     }
     allowed_col_dimensions = [
         'facility_type__name',
-        'owner__name',
+        'owner__owner_type__name',
         'keph_level__name',
         'regulatory_body__name',
         'infrastructure',
@@ -75,7 +75,7 @@ class FilterReportMixin(object):
         'sub_counties',
         'wards',
         'facility_types',
-        'owners',
+        'owner_types',
         'keph_levels',
         'regulatory_bodies',
         'infrastructure_categories',
@@ -138,10 +138,10 @@ class FilterReportMixin(object):
                     'sub_counties': 'ward__sub_county__id__in',
                     'wards': 'ward__id__in',
                     'facility_types': 'facility_type__id__in',
-                    'owners': 'owner__id__in',
+                    'owner_types': 'owner__owner_type__id__in',
                     'keph_levels': 'keph_level__id__in',
                     'regulatory_bodies': 'regulatory_body__id__in',
-                    'infrastructure_categories': 'facilityinfrastructure__infrastructure__category__id__in',
+                    'infrastructure_categories': 'facility_infrastructure__infrastructure__category__id__in',
                     'services_categories': 'facilityservice__service__category__id__in',
                     'bed_types': 'id__in',  # will require custom handling
                 }
@@ -420,7 +420,7 @@ class MatrixReportView(FilterReportMixin, APIView):
 
         COLUMN_LABELS = {
             'facility_type__name': 'Facility Type',
-            'owner__name': 'Owner',
+            'owner__owner_type__name': 'Owner',
             'keph_level__name': 'KEPH Level',
             'regulatory_body__name': 'Regulatory Body',
             'infrastructure': 'Infrastructure',
