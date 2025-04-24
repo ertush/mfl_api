@@ -1,4 +1,4 @@
-from django.conf.urls import url
+from django.urls import path
 
 from .facility_reports import (
     ReportView,
@@ -6,17 +6,18 @@ from .facility_reports import (
     CommunityHealthUnitReport
 )
 
+app_name = 'reporting'
 
 urlpatterns = (
-    url(r'^chul/$',
+    path('chul/',
         CommunityHealthUnitReport.as_view(),
         name='chul_reports'),
 
-    url(r'^upgrades_downgrades/$',
+    path('upgrades_downgrades/',
         FacilityUpgradeDowngrade.as_view(),
         name='upgrade_downgrade_report'),
 
-    url(r'^$', ReportView.as_view(),
+    path('', ReportView.as_view(),
         name='reports'),
 
 )

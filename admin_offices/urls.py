@@ -1,22 +1,23 @@
-from django.conf.urls import url
+from django.urls import path
 
 from . import views
 
+app_name = 'admin_offices'
 
 urlpatterns = (
 
-    url(r'^contacts/$',
+    path('contacts/',
         views.AdminOfficeContactListView.as_view(),
         name='admin_office_contacts_list'),
 
-    url(r'^contacts/(?P<pk>[^/]+)/$',
+    path('contacts/<str:pk>/',
         views.AdminOfficeContactDetailView.as_view(),
         name="admin_office_contact_detail"),
 
-    url(r'^(?P<pk>[^/]+)/$',
+    path('<str:pk>/',
         views.AdminOfficeDetailView.as_view(),
         name="admin_office_detail"),
-    url(r'^$',
+    path('',
         views.AdminOfficeListView.as_view(),
         name='admin_offices_list'),
 

@@ -73,7 +73,7 @@ class AuditableDetailViewMixin(RetrieveModelMixin):
                     "new": self._resolve_field(fld, new)
                 })
 
-        print output
+        print(output)
 
         return output
 

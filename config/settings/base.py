@@ -63,7 +63,8 @@ MIDDLEWARE = (
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'reversion.middleware.RevisionMiddleware',
-    'debug_toolbar.middleware.DebugToolbarMiddleware'
+    'debug_toolbar.middleware.DebugToolbarMiddleware',
+    'allauth.account.middleware.AccountMiddleware',
 )
 
 EMAIL_HOST = env('EMAIL_HOST')
@@ -166,7 +167,7 @@ REST_FRAMEWORK = {
         'users.permissions.MFLModelPermissions',
     ),
     'DEFAULT_FILTER_BACKENDS': (
-        'rest_framework.filters.DjangoFilterBackend',
+        'django_filters.rest_framework.DjangoFilterBackend',
         'rest_framework.filters.OrderingFilter',
     ),
     'DEFAULT_PARSER_CLASSES': (
@@ -184,7 +185,7 @@ REST_FRAMEWORK = {
     'EXCEPTION_HANDLER': 'exception_handler.handler.custom_exception_handler',
     'DEFAULT_PAGINATION_CLASS': 'common.paginator.MflPaginationSerializer',
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'oauth2_provider.ext.rest_framework.OAuth2Authentication',
+        'oauth2_provider.contrib.rest_framework.OAuth2Authentication',
         'rest_framework.authentication.SessionAuthentication',
     ),
     'PAGE_SIZE': 30,
@@ -322,6 +323,7 @@ AUTHENTICATION_BACKENDS = (
     'allauth.account.auth_backends.AuthenticationBackend',
     'django.contrib.auth.backends.ModelBackend',
 )
+
 LOGIN_REDIRECT_URL = '/api/'
 
 SEARCH = {
@@ -481,6 +483,7 @@ ACCOUNT_SESSION_REMEMBER = True
 
 # django_rest_auth settings
 OLD_PASSWORD_FIELD_ENABLED = True
+
 REST_AUTH_SERIALIZERS = {
     'USER_DETAILS_SERIALIZER': 'users.serializers.MflUserSerializer',
     'PASSWORD_CHANGE_SERIALIZER':
@@ -533,3 +536,5 @@ DHIS_PASSWORD = env('DHIS_PASSWORD')
 DHIS_CLIENT_ID = env('DHIS_CLIENT_ID')
 DHIS_CLIENT_SECRET = env('DHIS_CLIENT_SECRET')
 
+# Upgrade additions
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

@@ -6,7 +6,8 @@ from django.contrib.auth.models import Permission, Group
 
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
-from rest_auth.serializers import PasswordChangeSerializer
+# from rest_auth.serializers import PasswordChangeSerializer
+from dj_rest_auth.serializers import PasswordChangeSerializer
 
 from common.serializers import (
     UserCountySerializer,

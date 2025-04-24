@@ -67,7 +67,7 @@ class CoordinatesValidatorMixin(object):
         return self._validate_within_boundaries(WardBoundary, ward, False)
 
 
-class CustomGeoManager(gis_models.GeoManager):
+class CustomGeoManager(gis_models.Manager):
 
     """
     Ensure that deleted items are not returned in a gis queryset  by default
@@ -92,14 +92,14 @@ class GISAbstractBase(AbstractBase, gis_models.Model):
     we want to have the same kind of base behavior.
     """
     objects = CustomGeoManager()
-    everything = gis_models.GeoManager()
+    everything = gis_models.Manager()
 
     class Meta(AbstractBase.Meta):
         abstract = True
 
 
 @reversion.register
-@encoding.python_2_unicode_compatible
+# @encoding.python_2_unicode_compatible
 class GeoCodeSource(GISAbstractBase):
 
     """
@@ -127,7 +127,7 @@ class GeoCodeSource(GISAbstractBase):
 
 
 @reversion.register
-@encoding.python_2_unicode_compatible
+# @encoding.python_2_unicode_compatible
 class GeoCodeMethod(GISAbstractBase):
 
     """
@@ -153,7 +153,7 @@ class GeoCodeMethod(GISAbstractBase):
 
 
 @reversion.register(follow=['facility', 'source', 'method', ])
-@encoding.python_2_unicode_compatible
+# @encoding.python_2_unicode_compatible
 class FacilityCoordinates(CoordinatesValidatorMixin, GISAbstractBase):
 
     """
@@ -165,7 +165,8 @@ class FacilityCoordinates(CoordinatesValidatorMixin, GISAbstractBase):
     is the source and method of the reading.
     """
     facility = gis_models.OneToOneField(
-        Facility, related_name='facility_coordinates_through', unique=True)
+        Facility, related_name='facility_coordinates_through', unique=True,
+        on_delete=gis_models.PROTECT)
     coordinates = gis_models.PointField()
     source = gis_models.ForeignKey(
         GeoCodeSource, null=True, blank=True,
@@ -173,7 +174,7 @@ class FacilityCoordinates(CoordinatesValidatorMixin, GISAbstractBase):
     method = gis_models.ForeignKey(
         GeoCodeMethod, null=True, blank=True,
         help_text="Method used to obtain the geo codes. e.g"
-        " taken with GPS device")
+        " taken with GPS device", on_delete=gis_models.PROTECT)
     collection_date = gis_models.DateTimeField(default=timezone.now)
 
     @property
@@ -341,7 +342,7 @@ class AdministrativeUnitBoundary(GISAbstractBase):
 
 
 @reversion.register
-@encoding.python_2_unicode_compatible
+# @encoding.python_2_unicode_compatible
 class WorldBorder(AdministrativeUnitBoundary):
 
     """World boundaries
@@ -365,9 +366,9 @@ class WorldBorder(AdministrativeUnitBoundary):
 
 
 @reversion.register(follow=['area'])
-@encoding.python_2_unicode_compatible
+# @encoding.python_2_unicode_compatible
 class CountyBoundary(AdministrativeUnitBoundary):
-    area = gis_models.OneToOneField(County)
+    area = gis_models.OneToOneField(County, on_delete=gis_models.PROTECT)
 
     @property
     def constituency_ids(self):
@@ -389,9 +390,9 @@ class CountyBoundary(AdministrativeUnitBoundary):
 
 
 @reversion.register(follow=['area'])
-@encoding.python_2_unicode_compatible
+# @encoding.python_2_unicode_compatible
 class ConstituencyBoundary(AdministrativeUnitBoundary):
-    area = gis_models.OneToOneField(Constituency)
+    area = gis_models.OneToOneField(Constituency, on_delete=gis_models.PROTECT)
 
     def __str__(self):
         return self.name
@@ -413,9 +414,9 @@ class ConstituencyBoundary(AdministrativeUnitBoundary):
 
 
 @reversion.register(follow=['area'])
-@encoding.python_2_unicode_compatible
+# @encoding.python_2_unicode_compatible
 class WardBoundary(AdministrativeUnitBoundary):
-    area = gis_models.OneToOneField(Ward)
+    area = gis_models.OneToOneField(Ward, on_delete=gis_models.PROTECT)
 
     def __str__(self):
         return self.name

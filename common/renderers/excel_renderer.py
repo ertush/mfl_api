@@ -1,6 +1,7 @@
 import xlsxwriter
 import string
-import cStringIO
+# import cStringIO
+from io import StringIO as cStringIO
 import uuid
 
 from django.conf import settings

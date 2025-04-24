@@ -4,7 +4,8 @@ from rest_framework import renderers
 from .shared import DownloadMixin
 
 from weasyprint import HTML
-import cStringIO
+# import cStringIO
+from io import StringIO as cStringIO
 
 
 class PDFRenderer(DownloadMixin, renderers.BaseRenderer):

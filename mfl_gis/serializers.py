@@ -2,7 +2,8 @@ from __future__ import unicode_literals
 import json
 
 from django.db import transaction
-from django.utils import six
+# from django.utils import six
+import six
 from rest_framework import serializers
 from rest_framework_gis.serializers import GeoFeatureModelSerializer
 from common.serializers import AbstractFieldsMixin, PartialResponseMixin

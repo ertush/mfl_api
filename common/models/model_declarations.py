@@ -52,7 +52,7 @@ class UserAdminAreaLinkageMixin(object):
 
 
 @reversion.register
-@encoding.python_2_unicode_compatible
+# @encoding.python_2_unicode_compatible
 class ContactType(AbstractBase):
 
     """
@@ -73,7 +73,7 @@ class ContactType(AbstractBase):
 
 
 @reversion.register(follow=['contact_type'])
-@encoding.python_2_unicode_compatible
+# @encoding.python_2_unicode_compatible
 class Contact(AbstractBase):
 
     """
@@ -138,7 +138,7 @@ def _lookup_facility_coordinates(area_boundary):
 
 
 @reversion.register
-@encoding.python_2_unicode_compatible
+# @encoding.python_2_unicode_compatible
 class County(AdministrativeUnitBase):
 
     """
@@ -172,7 +172,7 @@ class County(AdministrativeUnitBase):
 
 
 @reversion.register(follow=['county'])
-@encoding.python_2_unicode_compatible
+# @encoding.python_2_unicode_compatible
 class Constituency(AdministrativeUnitBase):
 
     """
@@ -205,7 +205,7 @@ class Constituency(AdministrativeUnitBase):
 
 
 @reversion.register(follow=['county'])
-@encoding.python_2_unicode_compatible
+# @encoding.python_2_unicode_compatible
 class SubCounty(AdministrativeUnitBase):
 
     """
@@ -220,7 +220,7 @@ class SubCounty(AdministrativeUnitBase):
 
 
 @reversion.register(follow=['constituency'])
-@encoding.python_2_unicode_compatible
+# @encoding.python_2_unicode_compatible
 class Ward(AdministrativeUnitBase):
 
     """
@@ -276,7 +276,7 @@ class Ward(AdministrativeUnitBase):
 
 
 @reversion.register(follow=['user', 'county'])
-@encoding.python_2_unicode_compatible
+# @encoding.python_2_unicode_compatible
 class UserCounty(UserAdminAreaLinkageMixin, AbstractBase):
 
     """
@@ -305,7 +305,7 @@ class UserCounty(UserAdminAreaLinkageMixin, AbstractBase):
 
 
 @reversion.register(follow=['user', 'contact'])
-@encoding.python_2_unicode_compatible
+# @encoding.python_2_unicode_compatible
 class UserContact(AbstractBase):
 
     """
@@ -340,7 +340,7 @@ class UserContact(AbstractBase):
 
 
 @reversion.register(follow=['user', 'constituency'])
-@encoding.python_2_unicode_compatible
+# @encoding.python_2_unicode_compatible
 class UserConstituency(UserAdminAreaLinkageMixin, AbstractBase):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, related_name='user_constituencies',
@@ -378,7 +378,7 @@ class UserConstituency(UserAdminAreaLinkageMixin, AbstractBase):
 
 
 @reversion.register
-@encoding.python_2_unicode_compatible
+# @encoding.python_2_unicode_compatible
 class Town(AbstractBase):
     name = models.CharField(
         max_length=255, unique=True, null=True, blank=True,
@@ -389,7 +389,7 @@ class Town(AbstractBase):
 
 
 @reversion.register(follow=['town', ])
-@encoding.python_2_unicode_compatible
+# @encoding.python_2_unicode_compatible
 class PhysicalAddress(AbstractBase):
 
     """
@@ -400,7 +400,7 @@ class PhysicalAddress(AbstractBase):
     GPS codes is useful in locating the facility.
     """
     town = models.ForeignKey(
-        Town, null=True, blank=True,
+        Town, on_delete=models.CASCADE, null=True, blank=True,
         help_text="The town where the entity is located e.g Nakuru")
     nearest_landmark = models.TextField(
         null=True, blank=True,
@@ -423,7 +423,7 @@ class PhysicalAddress(AbstractBase):
 
 
 @reversion.register
-@encoding.python_2_unicode_compatible
+# @encoding.python_2_unicode_compatible
 class DocumentUpload(AbstractBase):
     name = models.CharField(max_length=255, unique=True)
     description = models.TextField(null=True, blank=True)
@@ -436,7 +436,7 @@ class DocumentUpload(AbstractBase):
 
 
 @reversion.register
-@encoding.python_2_unicode_compatible
+# @encoding.python_2_unicode_compatible
 class ErrorQueue(models.Model):
     """
     A model to store errors that occur when processing data
@@ -501,8 +501,8 @@ class NoficiationGroup(AbstractBase):
     A notification can be sent to more than one group
     """
 
-    group = models.ForeignKey(Group)
-    notification = models.ForeignKey(Notification, related_name='notification_groups')
+    group = models.ForeignKey(Group, on_delete=models.CASCADE)
+    notification = models.ForeignKey(Notification, on_delete=models.CASCADE, related_name='notification_groups')
 
     def __str__(self):
         return self.group.name
