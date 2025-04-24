@@ -1,5 +1,5 @@
 {% extends "rest_framework/login_base.html" %}
-{% load staticfiles %}
+{% load static %}
 
 {% block style %}
     {% block bootstrap_theme %}
@@ -15,7 +15,7 @@
 {% block body %}
 <body class="container">
     <div class="row">
-        <h3>MFL v2 API Login</h3>
+        <h3>MFL v3 API Login</h3>
         <form action="{% url 'rest_framework:login' %}" role="form" method="post">
             {% csrf_token %}
 

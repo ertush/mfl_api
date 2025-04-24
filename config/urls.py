@@ -7,7 +7,26 @@ from dj_rest_auth.views import (
     LoginView, LogoutView, UserDetailsView, PasswordChangeView,
     PasswordResetView, PasswordResetConfirmView
 )
+
 from rest_framework.authtoken.views import ObtainAuthToken
+from django.contrib import admin
+
+from rest_framework import permissions
+from drf_yasg.views import get_schema_view
+from drf_yasg import openapi
+
+schema_view = get_schema_view(
+   openapi.Info(
+      title="Kenya Master Health Facility Registry (KMHFR) API",
+      default_version='v3',
+      description="Kenya Master Health Facility Registry (KMHFR) API version 3",
+      terms_of_service="https://api.kmhfltest.health.go.ke/terms/",
+      contact=openapi.Contact(email="support@healthit.uonbi.ac.ke"),
+      license=openapi.License(name="BSD License"),
+   ),
+   public=True,
+   permission_classes=(permissions.AllowAny,),
+)
 
 rest_auth_patterns = (
     # re-written from rest_auth.urls because of cache validation
@@ -29,7 +48,8 @@ rest_auth_patterns = (
         cache_page(0)(PasswordChangeView.as_view()), name='rest_password_change'),
 )
 
-# import dj_rest_auth.registration.urls as dj_rest_auth_reg_urls
+app_name = 'api'
+
 apipatterns = (
     path('', login_required(
         cache_page(60*60)(APIRoot.as_view())), name='root_listing'),
@@ -43,12 +63,16 @@ apipatterns = (
     path('reporting/', include('reporting.urls', namespace='reporting')),
     path('admin_offices/', include('admin_offices.urls', namespace='admin_offices')),
     path('rest-auth/', include((rest_auth_patterns, None))),
-    path('rest-auth/registration/', include('dj_rest_auth.registration.urls'))
+    path('rest-auth/registration/', include('dj_rest_auth.registration.urls')),
+    path('explore<format>/', schema_view.without_ui(cache_timeout=0), name='schema-json'),
+    path('explore/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
+    path('docs/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
 )
 
 urlpatterns = (
     path('', root_redirect_view, name='root_redirect'),
-    path('api/', include((apipatterns, None))),
+    path('admin/', admin.site.urls),
+    path('api/', include((apipatterns, 'api'), namespace='api')),
     path('accounts/',
         include('rest_framework.urls', namespace='rest_framework')),
     re_path(r'^api/token/', ObtainAuthToken.as_view()),

@@ -117,11 +117,13 @@ class FacilityCoordinatesListSerializer(
     class Meta(AbstractFieldsMixin.Meta):
         model = FacilityCoordinates
         geo_field = "geometry"
+        '''
         exclude = (
             'created', 'created_by', 'updated', 'updated_by', 'deleted',
             'search', 'collection_date', 'active',
             'facility', 'coordinates', 'id',
         )
+        '''
 
 
 class FacilityCoordinatesDetailSerializer(

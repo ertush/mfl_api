@@ -601,7 +601,8 @@ class FacilityUpdatesSerializer(
 
     class Meta(object):
         model = FacilityUpdates
-        exclude = ('facility_updates', )
+        fields = '__all__'
+        # exclude = ('facility_updates', )
 
 
 class OptionGroupSerializer(AbstractFieldsMixin, serializers.ModelSerializer):

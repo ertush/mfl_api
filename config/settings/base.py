@@ -23,11 +23,11 @@ env = environ.Env(
     ADMINS=(str, "admin:admin@example.com,"),
     SERVER_EMAIL=(str, "root@localhost"),
     ALLOWED_HOSTS=(str, "localhost"),
-    DHIS_ENDPOINT=(str, "http://testhis.uonbi.ac.ke/"),
+    DHIS_ENDPOINT=(str, "https://hiskenya.org/"),
     DHIS_USERNAME=(str, 'kmhfl_integration'),
     DHIS_PASSWORD=(str, ''),
-    DHIS_CLIENT_ID=(str, '102'),
-    DHIS_CLIENT_SECRET=(str, '')
+    DHIS_CLIENT_ID=(str, 'KMHFL'),
+    DHIS_CLIENT_SECRET=(str, '65df9a025-31df-079d-14d5-a01e08ea947')
 )
 env.read_env(os.path.join(BASE_DIR, '.env'))
 
@@ -58,7 +58,8 @@ MIDDLEWARE = (
     'django.middleware.csrf.CsrfViewMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
+    'oauth2_provider.middleware.OAuth2TokenMiddleware',
+    # 'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.security.SecurityMiddleware',
@@ -74,7 +75,7 @@ EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_SUBJECT_PREFIX = '[Master Facility List] '
 
-ALLOWED_HOSTS = env('ALLOWED_HOSTS').split(',') + ['localhost', '127.0.0.1', '0.0.0.0']
+ALLOWED_HOSTS = env('ALLOWED_HOSTS').split(',') + ['localhost', '127.0.0.1', '0.0.0.0', '41.89.92.168', 'api.kmhfltest.health.go.ke']
 # ALLOWED_HOSTS = ['.locahost', ' .health.go.ke', '198.199.125.166', 'api.kmhfltest.health.go.ke']
 
 INSTALLED_APPS = (
@@ -92,12 +93,14 @@ INSTALLED_APPS = (
     'oauth2_provider',
     'rest_framework',
     'rest_framework.authtoken',
-    'rest_auth',
+    # 'rest_auth',
+    'dj_rest_auth',
     'allauth',
     'allauth.account',
     'rest_auth.registration',
     'corsheaders',
-    'rest_framework_swagger',
+    #'rest_framework_swagger',
+    'drf_yasg',
     'django.contrib.gis',
     'reversion',
     'gunicorn',
@@ -129,7 +132,7 @@ LOCAL_APPS = [
     'search',
     'admin_offices',
 ]
-CORS_ALLOW_CREDENTIALS = False
+# CORS_ALLOW_CREDENTIALS = False
 CORS_ORIGIN_ALLOW_ALL = True
 CORS_ALLOW_HEADERS = (
     'x-requested-with',
@@ -146,7 +149,8 @@ AUTH_USER_MODEL = 'users.MflUser'
 ROOT_URLCONF = 'config.urls'
 WSGI_APPLICATION = 'config.wsgi.application'
 LANGUAGE_CODE = 'en-us'
-TIME_ZONE = 'UTC'  # This is INTENTIONAL
+# TIME_ZONE = 'UTC'  # This is INTENTIONAL
+TIME_ZONE = 'Africa/Nairobi'
 USE_TZ = True
 
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
@@ -163,10 +167,11 @@ REST_FRAMEWORK = {
         'rating': '1/day'
     },
     'DEFAULT_PERMISSION_CLASSES': (
-        'rest_framework.permissions.IsAuthenticatedOrReadOnly', # 'rest_framework.permissions.IsAuthenticated'
+        'rest_framework.permissions.IsAuthenticated',
         'users.permissions.MFLModelPermissions',
     ),
     'DEFAULT_FILTER_BACKENDS': (
+        # 'rest_framework.filters.DjangoFilterBackend',
         'django_filters.rest_framework.DjangoFilterBackend',
         'rest_framework.filters.OrderingFilter',
     ),
@@ -185,6 +190,7 @@ REST_FRAMEWORK = {
     'EXCEPTION_HANDLER': 'exception_handler.handler.custom_exception_handler',
     'DEFAULT_PAGINATION_CLASS': 'common.paginator.MflPaginationSerializer',
     'DEFAULT_AUTHENTICATION_CLASSES': (
+        # 'oauth2_provider.ext.rest_framework.OAuth2Authentication',
         'oauth2_provider.contrib.rest_framework.OAuth2Authentication',
         'rest_framework.authentication.SessionAuthentication',
     ),
@@ -202,7 +208,7 @@ REST_FRAMEWORK = {
 }
 SWAGGER_SETTINGS = {
     'exclude_namespaces': [],
-    'api_version': '2.0',
+    'api_version': '3.0',
     'api_path': '/',
     'enabled_methods': [
         'get',
@@ -216,10 +222,10 @@ SWAGGER_SETTINGS = {
     'is_superuser': False,
     'info': {
         'contact': 'developers@savannahinformatics.com',
-        'description': 'Explore the MFL v2 API',
+        'description': 'Explore the MFL v3 API',
         'license': 'MIT License',
         'licenseUrl': 'http://choosealicense.com/licenses/mit/',
-        'title': 'MFL v2 API',
+        'title': 'MFL v3 API',
     },
     'doc_expansion': 'full',
 }
@@ -286,7 +292,8 @@ LOGGING = {
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': os.path.join(BASE_DIR, '/common/templates/'),
+        # 'DIRS': os.path.join(BASE_DIR, '/common/templates/'),
+        'DIRS': [(os.path.join(BASE_DIR, 'common/templates')), ],
         'APP_DIRS': True,
          'OPTIONS': {
             'context_processors': [
@@ -299,6 +306,7 @@ TEMPLATES = [
                 'django.template.context_processors.static',
                 'django.template.context_processors.tz',
                 'django.contrib.messages.context_processors.messages',
+                'django.template.context_processors.request',
             ],
         }
     },
@@ -318,10 +326,12 @@ GIS_BORDERS_CACHE_SECONDS = (60 * 60 * 24 * 366)
 # django-allauth related settings
 # some of these settings take into account that the target audience
 # of this system is not super-savvy
+
 AUTHENTICATION_BACKENDS = (
     'oauth2_provider.backends.OAuth2Backend',
-    'allauth.account.auth_backends.AuthenticationBackend',
     'django.contrib.auth.backends.ModelBackend',
+    # 'users.backends.MflUserAuthBackend',
+    'allauth.account.auth_backends.AuthenticationBackend',
 )
 
 LOGIN_REDIRECT_URL = '/api/'
@@ -483,13 +493,14 @@ ACCOUNT_SESSION_REMEMBER = True
 
 # django_rest_auth settings
 OLD_PASSWORD_FIELD_ENABLED = True
-
 REST_AUTH_SERIALIZERS = {
     'USER_DETAILS_SERIALIZER': 'users.serializers.MflUserSerializer',
     'PASSWORD_CHANGE_SERIALIZER':
         'users.serializers.MflPasswordChangeSerializer'
 }
-
+REST_AUTH = {
+    'USER_DETAILS_SERIALIZER': 'users.serializers.MflUserSerializer',
+}
 # django-allauth forces this atrocity on us ( true at the time of writing )
 SITE_ID = 1
 
@@ -506,7 +517,9 @@ if env('HTTPS_ENABLED'):
     CSRF_COOKIE_SECURE = True
     SESSION_COOKIE_SECURE = True
 
-
+CSRF_TRUSTED_ORIGINS = [
+    'https://3553-102-208-44-38.ngrok-free.app',
+]
 CSRF_COOKIE_AGE = None
 CSRF_COOKIE_HTTPONLY = True
 SESSION_COOKIE_HTTPONLY = True
@@ -529,7 +542,7 @@ CELERY_TIMEZONE = TIME_ZONE
 EXCEL_EXCEPT_FIELDS_FOR_PUBLIC_USERS = EXCEL_EXCEPT_FIELDS + ['lat', 'long']
 
 # KMHFL - DHIS2 Configurations
-PUSH_TO_DHIS = DEBUG
+PUSH_TO_DHIS = not DEBUG
 DHIS_ENDPOINT = env('DHIS_ENDPOINT')
 DHIS_USERNAME = env('DHIS_USERNAME')
 DHIS_PASSWORD = env('DHIS_PASSWORD')
