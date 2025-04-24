@@ -1,19 +1,37 @@
 @host = http://localhost:8000
 
-
 ### Create a new user (example)
-POST http://localhost:8000/api/analytics/matrix-report/?format=json
+
+POST http://localhost:8000/api/analytics/matrix-report/?format=json 
 Content-Type: application/json
 Authorization: Bearer v7LeFuTjWisker37Pi5SeGWl8PmpDa
 
 {
-    "col_dims": "keph_level__name",
+    "col_dims": "bed_types",
     "report_type": "matrix_report",
     "metric": "number_of_facilities",
     "row_comparison": "county",
     "filters": {
-        "owners": ["ffad4810-0bfb-4434-84cb-d2ab9b911c41",
-            "ca268e6b-7e45-4264-97bf-43b6c68fb21e"
+        "counties": [
+            "95b08378-362e-4bf9-ad63-d685e1287db2",
+            "bbc8803a-7d6f-411a-96f3-5f8472b40405"
+        ],
+        # "owners": [
+        #     "ffad4810-0bfb-4434-84cb-d2ab9b911c41",
+        #     "ca268e6b-7e45-4264-97bf-43b6c68fb21e"
+        # ],
+        # "facility_types": [
+        #     "8949eeb0-40b1-43d4-a38d-5d4933dc209f",
+        #     "1f1e3389-f13f-44b5-a48e-c1d2b822e5b5"
+        # ],
+        # "regulatory_bodies": [
+        #     "baea1c8b-ce63-47b3-8b0b-eb8f9d2d6afb",
+        #     "0c19f000-d9df-4ada-ba95-b4367dfb5296"
+        # ],
+        "infrastructure_categories": [
+            "4fcdcbaa-99e6-4bcd-83df-4bff71e9fdde",
+            "bcce5d62-656f-4ed6-ba1f-16eafb670816",
+            "467a324b-ac2f-40c2-a1db-db1e17f8885c"
         ]
     }
 }
