@@ -5,7 +5,16 @@ import functools
 from django.db.models import Q
 import uuid
 import os
+import io
 from django.conf import settings
+from openpyxl import Workbook
+from openpyxl.utils import get_column_letter
+from openpyxl.styles import Alignment
+from reportlab.lib.pagesizes import letter
+from reportlab.platypus import Table, TableStyle, SimpleDocTemplate
+from reportlab.lib import colors
+from django.http import HttpResponse
+
 
 from datetime import timedelta
 from collections import OrderedDict
@@ -31,6 +40,7 @@ from mfl_gis.models import FacilityCoordinates
 
 from .report_config import REPORTS
 from collections import defaultdict
+from openpyxl.styles import Font
 
 
 class FilterReportMixin(object):
@@ -527,3 +537,201 @@ class MatrixReportView(FilterReportMixin, APIView):
             'results': data,
             'file_path': file_path_saved,  # Include the saved file path in the response
         })
+
+class DownloadReportView(APIView):
+    # permission_classes = [IsAuthenticated]
+    
+    def convert_to_excel(self, rows, file_path):
+
+        file_name = os.path.basename(file_path).replace('.csv', '.xlsx')
+        output = io.BytesIO()
+        workbook = Workbook()
+        sheet = workbook.active
+        
+        headers = rows[0]
+        data_rows = rows[1:]
+        
+        # Build hierarchical data structure
+        hierarchy = {}
+        for row in data_rows:
+            current = hierarchy
+            for i, val in enumerate(row[:-1]):  # All columns except count
+                if val not in current:
+                    current[val] = {}
+                current = current[val]
+            current['COUNT'] = row[-1]  # Store count at the deepest level
+
+        # Write headers with proper nesting
+        bold_font = Font(bold=True)
+        sheet.merge_cells(start_row=1, start_column=1, end_row=2, end_column=1)
+        header_cell = sheet.cell(row=1, column=1, value=headers[0])  # County
+        header_cell.font = bold_font
+        
+        # Write middle headers (KEPH Level, Facility Type, Owner)
+        for col_idx, header in enumerate(headers[1:-1], start=2):
+            header_cell = sheet.cell(row=1, column=col_idx, value=header)
+            header_cell.font = bold_font
+            sheet.cell(row=2, column=col_idx, value="").font = bold_font
+        
+        sheet.merge_cells(start_row=1, start_column=len(headers), end_row=2, end_column=len(headers))
+        header_cell = sheet.cell(row=1, column=len(headers), value=headers[-1])  # Count
+        header_cell.font = bold_font
+
+        # Write data with proper nesting and merging
+        row_idx = 3
+        def write_nested_data(data, current_row, parent_cols):
+            nonlocal row_idx
+            if isinstance(data, dict):
+                for key, value in data.items():
+                    if key == 'COUNT':
+                        sheet.cell(row=current_row, column=len(headers), value=value)
+                        return current_row + 1
+                    
+                    # Determine which column this value belongs to
+                    col_idx = len(parent_cols) + 1
+                    sheet.cell(row=current_row, column=col_idx, value=key)
+                    
+                    new_row = write_nested_data(value, current_row, parent_cols + [col_idx])
+                    
+                    # Merge cells vertically for parent values
+                    if new_row > current_row + 1:
+                        for col in parent_cols:
+                            sheet.merge_cells(
+                                start_row=current_row, start_column=col,
+                                end_row=new_row-1, end_column=col
+                            )
+                    current_row = new_row
+            return current_row
+
+        write_nested_data(hierarchy, row_idx, [])
+
+        # Adjust column widths
+        for col in sheet.columns:
+            max_length = max((len(str(cell.value)) for cell in col if cell.value))
+            sheet.column_dimensions[get_column_letter(col[0].column)].width = max_length + 2
+        
+        workbook.save(output)
+        output.seek(0)
+        response = HttpResponse(
+            output.getvalue(),
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        response['Content-Disposition'] = f'attachment; filename="{file_name}"'
+        return response
+
+    def convert_to_pdf(self, rows, file_path):
+        pass
+        # file_name = os.path.basename(file_path).replace('.csv', '.pdf')
+        # output = io.BytesIO()
+        # doc = SimpleDocTemplate(output, pagesize=letter)
+        # elements = []
+        
+        # headers = rows[0]
+        # data_rows = rows[1:]
+        
+        # # Build hierarchical data structure
+        # hierarchy = {}
+        # for row in data_rows:
+        #     current = hierarchy
+        #     for val in row[:-1]:  # All columns except count
+        #         if val not in current:
+        #             current[val] = {}
+        #         current = current[val]
+        #     current['COUNT'] = row[-1]  # Store count at deepest level
+
+        # # Prepare PDF table data
+        # table_data = []
+        
+        # # Create header rows
+        # header_row1 = [headers[0]] + [""] * (len(headers) - 2) + [headers[-1]]
+        # header_row2 = [""] + headers[1:-1] + [""]
+        # table_data.extend([header_row1, header_row2])
+        
+        # # Add hierarchical data rows
+        # def add_nested_data(data, current_row, level=0):
+        #     if isinstance(data, dict):
+        #         for key, value in data.items():
+        #             if key == 'COUNT':
+        #                 current_row[-1] = value
+        #                 table_data.append(current_row.copy())
+        #                 return
+                    
+        #             if level < len(headers[1:-1]):
+        #                 current_row[level+1] = key
+                    
+        #             add_nested_data(value, current_row, level+1)
+        #             current_row[level+1] = ""  # Reset for next sibling
+        
+        # for county, county_data in hierarchy.items():
+        #     row = [county] + [""] * (len(headers) - 2) + [""]
+        #     add_nested_data(county_data, row)
+        
+        # # Create table with merged cells
+        # table = Table(table_data)
+        
+        # # Find ranges to merge
+        # merge_ranges = []
+        # for col in range(len(headers)):
+        #     start_row = None
+        #     for row in range(2, len(table_data)):
+        #         if table_data[row][col] != "":
+        #             if start_row is not None and start_row < row-1:
+        #                 merge_ranges.append((col, start_row, col, row-1))
+        #             start_row = row
+        #     if start_row is not None and start_row < len(table_data)-1:
+        #         merge_ranges.append((col, start_row, col, len(table_data)-1))
+        
+        # # Apply styles
+        # style = TableStyle([
+        #     ('BACKGROUND', (0,0), (-1,1), colors.grey),
+        #     ('TEXTCOLOR', (0,0), (-1,1), colors.whitesmoke),
+        #     ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+        #     ('FONTNAME', (0,0), (-1,1), 'Helvetica-Bold'),
+        #     ('FONTSIZE', (0,0), (-1,1), 10),
+        #     ('BOTTOMPADDING', (0,0), (-1,1), 12),
+        #     ('BACKGROUND', (0,2), (-1,-1), colors.beige),
+        #     ('GRID', (0,0), (-1,-1), 1, colors.black)
+        # ] + [
+        #     ('SPAN', (c1,r1,c2,r2)) for (c1,r1,c2,r2) in merge_ranges
+        # ])
+        
+        # table.setStyle(style)
+        # elements.append(table)
+        # doc.build(elements)
+        
+        # output.seek(0)
+        # response = HttpResponse(output.getvalue(), content_type='application/pdf')
+        # response['Content-Disposition'] = f'attachment; filename="{file_name}"'
+        # return response
+    
+    def post(self, request, *args, **kwargs):
+        file_path = request.data.get('file_path')
+        desired_format = request.data.get('format')
+        
+        if not file_path:
+            raise ValidationError("File path is required")
+        
+        if desired_format not in ['excel', 'pdf']:
+            raise ValidationError("Invalid format. Must be 'excel' or 'pdf'.")
+        
+        file_path_in_server = os.path.join(settings.MEDIA_ROOT, file_path)
+        if not os.path.exists(file_path_in_server):
+            raise NotFound(f"File {file_path} not found")
+        
+        try:
+            with open(file_path_in_server, newline='', encoding='utf-8') as csv_file:
+                reader = csv.reader(csv_file)
+                rows = list(reader)
+                if len(rows) < 2:  # Need headers and at least one data row
+                    raise ValidationError("CSV file must contain at least one data row")
+        except Exception as e:
+            raise ValidationError(f"Error reading CSV file: {str(e)}")
+        
+        try:
+            if desired_format == 'excel':
+                return self.convert_to_excel(rows, file_path)
+            elif desired_format == 'pdf':
+                # return self.convert_to_pdf(rows, file_path)
+                return Response("PDF conversion still in progress")
+        except Exception as e:
+            raise ValidationError(f"Error generating report: {str(e)}")
