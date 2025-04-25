@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 
 from django.test import TestCase
 from django.core.exceptions import ValidationError
+from django.utils import timezone
 
 from model_mommy import mommy
 
@@ -49,7 +50,7 @@ class TestCommunityHealthUnit(TestCase):
         self.assertEquals(1, CommunityHealthUnit.objects.count())
 
     def test_date_operational_less_than_date_established(self):
-        today = datetime.now().date()
+        today = timezone.now().date()
         last_week = today - timedelta(days=7)
         with self.assertRaises(ValidationError):
             mommy.make(
@@ -57,7 +58,7 @@ class TestCommunityHealthUnit(TestCase):
                 date_established=today, date_operational=last_week)
 
     def test_date_established_not_in_future(self):
-        today = datetime.now().date()
+        today = timezone.now().date()
         next_month = today + timedelta(days=30)
         with self.assertRaises(ValidationError):
             mommy.make(
@@ -65,7 +66,7 @@ class TestCommunityHealthUnit(TestCase):
                 date_established=today, date_operational=next_month)
 
     def test_valid_dates(self):
-        today = datetime.now().date()
+        today = timezone.now().date()
         last_week = today - timedelta(days=7)
         mommy.make(
             CommunityHealthUnit,

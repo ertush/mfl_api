@@ -1,6 +1,7 @@
 from __future__ import unicode_literals
 import json
-
+from django.contrib.gis.geos import Point
+from django.contrib.gis.geos import GEOSGeometry
 from django.db import transaction
 # from django.utils import six
 import six
@@ -35,6 +36,7 @@ class BufferCooridinatesMixin(object):
         return facility_update
 
     def buffer_coordinates(self, facility, validated_data):
+        point = GEOSGeometry(validated_data['coordinates'])
 
         facility = Facility.objects.get(id=facility.id) if hasattr(
             facility, 'id') else facility
@@ -45,6 +47,9 @@ class BufferCooridinatesMixin(object):
 
         if isinstance(validated_data.get('coordinates'), dict):
             coordinates = validated_data.get('coordinates')
+
+        if isinstance(validated_data.get('coordinates'), Point):
+            coordinates = [point.x, point.y]
 
         facility_update = self.get_facility_update(facility)
 
@@ -72,12 +77,15 @@ class BufferCooridinatesMixin(object):
                 source = GeoCodeSource.objects.get(id=source)
                 humanized_data['source_human'] = source.name
                 machine_data['source_id'] = str(source.id)
+        # Create the dictionary
+        coordinates_dict = {
+            "coordinates": [point.x, point.y],  # [longitude, latitude]
+            "type": "point"
 
-        long_lat = coordinates.get('coordinates')
-        humanized_data["longitude"] = long_lat[0]
-        humanized_data["latitude"] = long_lat[1]
-        machine_data["coordinates"] = coordinates
-
+        }
+        humanized_data["longitude"] = coordinates[0]
+        humanized_data["latitude"] = coordinates[1]
+        machine_data["coordinates"] = coordinates_dict
         serialized_data.update(humanized_data)
         serialized_data.update(machine_data)
         facility_update.geo_codes = json.dumps(serialized_data)
@@ -86,22 +94,19 @@ class BufferCooridinatesMixin(object):
 
 
 class GeoCodeSourceSerializer(
-        AbstractFieldsMixin, serializers.ModelSerializer):
-
+    AbstractFieldsMixin, serializers.ModelSerializer):
     class Meta(AbstractFieldsMixin.Meta):
         model = GeoCodeSource
 
 
-
 class GeoCodeMethodSerializer(
-        AbstractFieldsMixin, serializers.ModelSerializer):
-
+    AbstractFieldsMixin, serializers.ModelSerializer):
     class Meta(AbstractFieldsMixin.Meta):
         model = GeoCodeMethod
 
 
 class FacilityCoordinatesListSerializer(
-        AbstractFieldsMixin, GeoFeatureModelSerializer):
+    AbstractFieldsMixin, GeoFeatureModelSerializer):
     # DO NOT make this any fatter than it must be
     # The facility list JSON payload is already > 1MB!
     # That is why there is a detail serializer
@@ -127,7 +132,7 @@ class FacilityCoordinatesListSerializer(
 
 
 class FacilityCoordinatesDetailSerializer(
-        AbstractFieldsMixin, GeoFeatureModelSerializer):
+    AbstractFieldsMixin, GeoFeatureModelSerializer):
     facility_name = serializers.ReadOnlyField(source="facility.name")
     facility_id = serializers.ReadOnlyField(source="facility.id")
     ward = serializers.ReadOnlyField(source="facility.ward.id")
@@ -144,15 +149,19 @@ class FacilityCoordinatesDetailSerializer(
 
 
 class FacilityCoordinateSimpleSerializer(
-        AbstractFieldsMixin, BufferCooridinatesMixin,
-        serializers.ModelSerializer):
-
+    AbstractFieldsMixin, BufferCooridinatesMixin,
+    serializers.ModelSerializer):
     class Meta(object):
         model = FacilityCoordinates
         exclude = ('source', 'method')
 
     @transaction.atomic
     def update(self, instance, validated_data):
+        coordinates_ = validated_data["coordinates"]["coordinates"]
+        point = Point(coordinates_[0], coordinates_[1],
+                      srid=4326)  # SRID 4326 is WGS84 (standard for GPS coordinates)
+        #
+        validated_data["coordinates"] = point
         facility = instance.facility
         if facility.approved:
             FacilityCoordinates(**validated_data).clean()
@@ -164,7 +173,7 @@ class FacilityCoordinateSimpleSerializer(
 
 
 class AbstractBoundarySerializer(
-        AbstractFieldsMixin, GeoFeatureModelSerializer):
+    AbstractFieldsMixin, GeoFeatureModelSerializer):
     center = serializers.ReadOnlyField()
     facility_count = serializers.ReadOnlyField()
     density = serializers.ReadOnlyField()
@@ -226,12 +235,12 @@ class CountyBoundaryDetailSerializer(AbstractBoundarySerializer):
 
 
 class CountyBoundSerializer(
-        AbstractFieldsMixin, serializers.ModelSerializer):
+    AbstractFieldsMixin, serializers.ModelSerializer):
     bound = serializers.ReadOnlyField()
 
     class Meta(AbstractBoundarySerializer.Meta):
         model = CountyBoundary
-        fields = ("bound", )
+        fields = ("bound",)
 
 
 class ConstituencyBoundarySerializer(AbstractBoundarySerializer):
@@ -261,12 +270,12 @@ class ConstituencyBoundaryDetailSerializer(AbstractBoundarySerializer):
 
 
 class ConstituencyBoundSerializer(
-        AbstractFieldsMixin, serializers.ModelSerializer):
+    AbstractFieldsMixin, serializers.ModelSerializer):
     bound = serializers.ReadOnlyField()
 
     class Meta(AbstractBoundarySerializer.Meta):
         model = ConstituencyBoundary
-        fields = ("bound", )
+        fields = ("bound",)
 
 
 class WardBoundarySerializer(AbstractBoundarySerializer):
@@ -317,19 +326,16 @@ class DrillBoundarySerializer(GeoFeatureModelSerializer):
 
 
 class DrillCountyBoundarySerializer(DrillBoundarySerializer):
-
     class Meta(DrillBoundarySerializer.Meta):
         model = CountyBoundary
 
 
 class DrillConstituencyBoundarySerializer(DrillBoundarySerializer):
-
     class Meta(DrillBoundarySerializer.Meta):
         model = ConstituencyBoundary
 
 
 class DrillWardBoundarySerializer(DrillBoundarySerializer):
-
     area_id = serializers.ReadOnlyField(source='area.id')
     county_name = serializers.ReadOnlyField(
         source='area.constituency.county.name'
