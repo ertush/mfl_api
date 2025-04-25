@@ -1,5 +1,7 @@
 import logging
 import json
+from shapely.geometry import shape, mapping
+from shapely.ops import unary_union
 import reversion
 
 from django.db import models as db_models
@@ -295,31 +297,22 @@ class AdministrativeUnitBoundary(GISAbstractBase):
 
     @property
     def geometry(self):
-        """Reduce the precision of the geometries sent in list views
+        """Reduce the precision of the geometries sent in list views.
 
-        This produces a MASSIVE saving in rendering time
+        This produces a MASSIVE saving in rendering time.
         """
         if not self.mpoly:
-            return self.mpoly
+            return None
 
         def _simplify(tolerance, geometry):
-            if isinstance(geometry, MultiPolygon):
-                polygon = None
-                for child_polygon in geometry:
-                    if polygon:
-                        polygon.extend(child_polygon)
-                    else:
-                        polygon = child_polygon
-            else:
-                polygon = geometry
+            # Convert GEOSGeometry MultiPolygon to list of Shapely Polygons
+            shapely_polygons = [shape(json.loads(geom.geojson)) for geom in geometry]
+            # Merge using unary_union
+            unioned = unary_union(shapely_polygons)
+            # Simplify and return GeoJSON
+            return mapping(unioned.simplify(tolerance=tolerance))
 
-            return json.loads(
-                polygon.simplify(tolerance=tolerance).geojson
-            )
-
-        geojson_dict = _simplify(
-            tolerance=self.TOLERANCE, geometry=self.mpoly.cascaded_union
-        )
+        geojson_dict = _simplify(tolerance=self.TOLERANCE, geometry=self.mpoly)
         original_coordinates = geojson_dict['coordinates']
         assert original_coordinates
         new_coordinates = [
@@ -330,8 +323,8 @@ class AdministrativeUnitBoundary(GISAbstractBase):
                 ]
                 for coordinate_pair in original_coordinates[0]
                 if coordinate_pair and
-                isinstance(coordinate_pair[0], float) and
-                isinstance(coordinate_pair[1], float)
+                   isinstance(coordinate_pair[0], float) and
+                   isinstance(coordinate_pair[1], float)
             ]
         ]
         geojson_dict['coordinates'] = new_coordinates
