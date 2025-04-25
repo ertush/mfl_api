@@ -436,8 +436,8 @@ class MatrixReportView(FilterReportMixin, APIView):
         data, totals = self.get_report_data()
 
         return Response(data={
-            # 'columns_tree': parse_and_translate_col_dims(user_supplied_columns),
-            # 'base_comparison': base_comparison,
-            # 'totals': totals,
+            'columns_tree': parse_and_translate_col_dims(user_supplied_columns),
+            'base_comparison': base_comparison,
+            'totals': totals,
             'results': data,
         })

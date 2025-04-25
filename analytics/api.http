@@ -12,6 +12,7 @@ Authorization: Bearer v7LeFuTjWisker37Pi5SeGWl8PmpDa
     "metric": "number_of_facilities",
     "row_comparison": "county",
     "filters": {
+        "period": {"startdate":"2023-01-01","enddate":"2023-01-31"},
         "counties": [
             "95b08378-362e-4bf9-ad63-d685e1287db2",
             "bbc8803a-7d6f-411a-96f3-5f8472b40405"
