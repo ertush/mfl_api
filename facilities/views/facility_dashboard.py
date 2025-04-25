@@ -74,12 +74,12 @@ class DashBoard(QuerysetFilterMixin, APIView):
 
         top_10_counties_summary = []
         for item in top_ten_locations:
-            county = County.objects.get(name=item.keys()[0])
+            county = County.objects.get(name=list(item.keys())[0])
             chu_count = self.get_chu_count_in_county_summary(county)
             top_10_counties_summary.append(
                 {
-                    "name": item.keys()[0],
-                    "count": item.values()[0],
+                    "name": list(item.keys())[0],
+                    "count": list(item.values())[0],
                     "chu_count": chu_count
                 })
         return top_10_counties_summary if self.request.user.is_national else []
@@ -115,12 +115,12 @@ class DashBoard(QuerysetFilterMixin, APIView):
 
         top_10_subcounties_summary = []
         for item in top_ten_locations:
-            sub = SubCounty.objects.filter(name=item.keys()[0]) # SubCounty.objects.get(name=item.keys()[0])
+            sub = SubCounty.objects.filter(name=list(item.keys())[0]) # SubCounty.objects.get(name=item.keys()[0])
             chu_count = self.get_chu_count_in_constituency_summary(sub[0]) # self.get_chu_count_in_constituency_summary(sub)
             top_10_subcounties_summary.append(
                 {
-                    "name": item.keys()[0],
-                    "count": item.values()[0],
+                    "name": list(item.keys())[0],
+                    "count": list(item.values())[0],
                     "chu_count": chu_count
                 })
         return top_10_subcounties_summary
@@ -153,12 +153,12 @@ class DashBoard(QuerysetFilterMixin, APIView):
         top_10_wards = sorted(summary_array, key=lambda x: list(x.values())[0], reverse=True)[:10]
         top_10_wards_summary = []
         for item in top_10_wards:
-            ward = Ward.objects.get(code=item.keys()[0].split('|')[1])
+            ward = Ward.objects.get(code=list(item.keys())[0].split('|')[1])
             chu_count = self.get_chu_count_in_ward_summary(ward)
             top_10_wards_summary.append(
                 {
-                    "name": item.keys()[0],
-                    "count": item.values()[0],
+                    "name": list(item.keys())[0],
+                    "count": list(item.values())[0],
                     "chu_count": chu_count
                 })
         return top_10_wards_summary
@@ -199,7 +199,7 @@ class DashBoard(QuerysetFilterMixin, APIView):
 
         facility_type_summary_sorted = sorted(
             facility_type_summary,
-            key=lambda x: x, reverse=True)
+            key=lambda x: x['count'], reverse=True)
 
         return facility_type_summary_sorted
 
