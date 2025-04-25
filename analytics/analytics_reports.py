@@ -1,8 +1,11 @@
+import csv
 import datetime
 import itertools
 import functools
 from django.db.models import Q
 import uuid
+import os
+from django.conf import settings
 
 from datetime import timedelta
 from collections import OrderedDict
@@ -408,6 +411,81 @@ class FilterReportMixin(object):
         # Placeholder for other report types
         raise NotFound(detail='Report not found.')
 
+    def save_response_to_csv(self, data):
+        """
+        Receives a JSON response and saves it to a CSV file on server.
+        _summary_
+
+        Args:
+            data (_type_): _description_
+
+        Returns:
+            _type_: _description_
+        """
+        print(type(data))
+        print("my data",data)
+
+        columns_tree = data.get('columns_tree', [])
+        counts_data = data.get('results', {}).get('counts', {})
+        base_comparison = data.get('base_comparison', '')
+        timestamp = timezone.now().strftime('%Y%m%d%H%M%S')
+        
+        file_name = '_'.join(columns_tree).replace(' ', '_') + f'_{timestamp}.csv'
+        file_path_saved = os.path.join(settings.MEDIA_ROOT, file_name)
+        
+        flattened_rows = self.flatten_json(counts_data, base_comparison, columns_tree)
+        column_names = [base_comparison] + columns_tree + ["Count"]
+
+        # Write data to CSV file
+        with open(file_path_saved, mode='w', newline='') as df:
+            writer = csv.DictWriter(df, fieldnames=column_names)
+            writer.writeheader()
+            
+            for row in flattened_rows:
+                for col in column_names:
+                    row.setdefault(col, "")
+                writer.writerow(row)
+
+        return file_path_saved
+    
+    def flatten_json(self, nested_dict, base_comparison, columns_tree):
+        """
+        Flattens a nested dictionary into a list of rows.
+        _summary_
+
+        Args:
+            nested_dict (_type_): _description_
+            base_comparison (_type_): _description_
+            columns_tree (_type_): _description_
+
+        Returns:
+            _type_: _description_
+        """
+        rows = []
+
+        def recurse(d, path):
+            if isinstance(d, dict):
+                for k, v in d.items():
+                    path.append(k)
+                    recurse(v, path)
+                    path.pop()
+            else:
+                row = {}
+                
+                if len(path) < len(columns_tree) + 1:
+                    print(f"⚠️ Columns tree {columns_tree} does not match json response nesting{path}")
+                    return
+
+                row[base_comparison] = path[0]
+                
+                for idx, col in enumerate(columns_tree):
+                    row[col] = path[idx + 1]
+
+                row["Count"] = d
+                rows.append(row)
+
+        recurse(nested_dict, [])
+        return rows
 
 class MatrixReportView(FilterReportMixin, APIView):
     def post(self, request, *args, **kwargs):
@@ -435,9 +513,17 @@ class MatrixReportView(FilterReportMixin, APIView):
         # get actual report
         data, totals = self.get_report_data()
 
+        # Save the response data to a CSV file
+        file_path_saved = self.save_response_to_csv({
+            'columns_tree': parse_and_translate_col_dims(user_supplied_columns),
+            'base_comparison': base_comparison,
+            'results': data,
+        })
+
         return Response(data={
             'columns_tree': parse_and_translate_col_dims(user_supplied_columns),
             'base_comparison': base_comparison,
             'totals': totals,
             'results': data,
+            'file_path': file_path_saved,  # Include the saved file path in the response
         })
