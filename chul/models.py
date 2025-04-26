@@ -13,6 +13,7 @@ from django.conf import settings
 from django.contrib.postgres.fields import ArrayField
 from django.db.models import JSONField
 from django_filters import filters
+from django.utils import timezone
 
 from common.models import AbstractBase, Contact, SequenceMixin
 from common.fields import SequenceField
@@ -165,7 +166,7 @@ class CommunityHealthUnit(SequenceMixin, AbstractBase):
         is also not in future
         """
 
-        today = datetime.datetime.now().date()
+        today = timezone.now().date()
 
         if self.date_operational and self.date_operational > today:
             raise ValidationError(

@@ -1,4 +1,5 @@
 from django.db.models import Field
+from django.db.models import Lookup
 
 
 class SequenceField(Field):
@@ -27,6 +28,10 @@ class SequenceField(Field):
         return value
 
     def get_prep_value(self, value):
+        # Check if the value is a Lookup object (i.e., part of a filter query)
+        if isinstance(value, Lookup):
+            value = value.rhs  # Get the actual value for comparison
+
         value = super(SequenceField, self).get_prep_value(value)
         if value is None or value == '':
             return None
