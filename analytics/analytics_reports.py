@@ -458,45 +458,152 @@ class FilterReportMixin(object):
 
         return file_path_saved
     
-    def flatten_json(self, nested_dict, base_comparison, columns_tree):
+    # def flatten_json(self, nested_dict, base_comparison, columns_tree):
+    #     """
+    #     Flattens a nested dictionary into a list of rows.
+    #     _summary_
+
+    #     Args:
+    #         nested_dict (_type_): _description_
+    #         base_comparison (_type_): _description_
+    #         columns_tree (_type_): _description_
+
+    #     Returns:
+    #         _type_: _description_
+    #     """
+    #     rows = []
+
+    #     def recurse(d, path):
+    #         if isinstance(d, dict):
+    #             for k, v in d.items():
+    #                 path.append(k)
+    #                 recurse(v, path)
+    #                 path.pop()
+    #         else:
+    #             row = {}
+                
+    #             if len(path) < len(columns_tree) + 1:
+    #                 print(f"⚠️ Columns tree {columns_tree} does not match json response nesting{path}")
+    #                 return
+
+    #             row[base_comparison] = path[0]
+                
+    #             for idx, col in enumerate(columns_tree):
+    #                 row[col] = path[idx + 1]
+
+    #             row["Count"] = d
+    #             rows.append(row)
+
+    #     recurse(nested_dict, [])
+    #     return rows
+    
+    def _flatten_json(self, nested_dict, base_comparison, columns_tree):
         """
-        Flattens a nested dictionary into a list of rows.
-        _summary_
-
-        Args:
-            nested_dict (_type_): _description_
-            base_comparison (_type_): _description_
-            columns_tree (_type_): _description_
-
-        Returns:
-            _type_: _description_
+        Generator that yields (path, count) tuples from nested JSON structure
+        where path matches [base_comparison] + columns_tree hierarchy
         """
-        rows = []
-
-        def recurse(d, path):
+        def _recurse(d, path):
             if isinstance(d, dict):
-                for k, v in d.items():
-                    path.append(k)
-                    recurse(v, path)
-                    path.pop()
+                for key, value in d.items():
+                    yield from _recurse(value, path + [key])
             else:
-                row = {}
-                
-                if len(path) < len(columns_tree) + 1:
-                    print(f"⚠️ Columns tree {columns_tree} does not match json response nesting{path}")
-                    return
+                if len(path) == len(columns_tree) + 1:  # Verify path depth
+                    yield (path, d)
+                else:
+                    print(f"⚠️ Path length mismatch: Expected {len(columns_tree)+1} levels, got {path}")
 
-                row[base_comparison] = path[0]
-                
-                for idx, col in enumerate(columns_tree):
-                    row[col] = path[idx + 1]
+        yield from _recurse(nested_dict, [])
 
-                row["Count"] = d
-                rows.append(row)
+    def json_to_excel(self, json_data):
+        """
+        Directly converts JSON data to nested Excel format
+        Returns tuple of (file_path, file_name) for the generated Excel file
+        """
+        # Extract structure from JSON
+        columns_tree = json_data.get('columns_tree', [])
+        counts_data = json_data.get('results', {}).get('counts', {})
+        base_comparison = json_data.get('base_comparison', 'county')  # Default to 'county'
+        
+        # Generate filename with timestamp
+        timestamp = timezone.now().strftime('%Y%m%d%H%M%S')
+        safe_columns = '_'.join([col.replace(' ', '_') for col in columns_tree])
+        file_name = f"{base_comparison}_{safe_columns}_{timestamp}.xlsx"
+        file_path = os.path.join(settings.MEDIA_ROOT, file_name)
+        
+        workbook = Workbook()
+        sheet = workbook.active
+        
+        # Create headers from JSON structure
+        headers = [base_comparison] + columns_tree + ["Count"]
+        
+        # Build hierarchical data structure
+        hierarchy = {}
+        for path, count in self._flatten_json(counts_data, base_comparison, columns_tree):
+            current = hierarchy
+            for val in path[:-1]:  # All path elements except the last
+                if val not in current:
+                    current[val] = {}
+                current = current[val]
+            current[path[-1]] = count  # Store count at the deepest level
 
-        recurse(nested_dict, [])
-        return rows
+        # Write headers with proper nesting and styling
+        bold_font = Font(bold=True)
+        
+        # First column (base_comparison)
+        sheet.merge_cells(start_row=1, start_column=1, end_row=2, end_column=1)
+        header_cell = sheet.cell(row=1, column=1, value=headers[0])
+        header_cell.font = bold_font
+        
+        # Middle columns (columns_tree)
+        for col_idx, header in enumerate(headers[1:-1], start=2):
+            header_cell = sheet.cell(row=1, column=col_idx, value=header)
+            header_cell.font = bold_font
+            sheet.cell(row=2, column=col_idx, value="").font = bold_font  # Empty sub-header
+        
+        # Last column (Count)
+        sheet.merge_cells(start_row=1, start_column=len(headers), end_row=2, end_column=len(headers))
+        header_cell = sheet.cell(row=1, column=len(headers), value=headers[-1])
+        header_cell.font = bold_font
 
+        # Write data with proper nesting and merging
+        row_idx = 3
+        def _write_nested_data(data, current_row, parent_cols):
+            nonlocal row_idx
+            if isinstance(data, dict):
+                for key, value in data.items():
+                    # Determine which column this value belongs to
+                    col_idx = len(parent_cols) + 1
+                    sheet.cell(row=current_row, column=col_idx, value=key)
+                    
+                    new_row = _write_nested_data(value, current_row, parent_cols + [col_idx])
+                    
+                    # Merge cells vertically for parent values
+                    if new_row > current_row + 1:
+                        for col in parent_cols:
+                            sheet.merge_cells(
+                                start_row=current_row, start_column=col,
+                                end_row=new_row-1, end_column=col
+                            )
+                    current_row = new_row
+            else:
+                # Write the count value
+                sheet.cell(row=current_row, column=len(headers), value=data)
+                return current_row + 1
+            return current_row
+
+        _write_nested_data(hierarchy, row_idx, [])
+
+        # Adjust column widths to fit content
+        for col in sheet.columns:
+            max_length = max(
+                (len(str(cell.value)) for cell in col if cell.value),
+                default=10  # Default width if column is empty
+            )
+            sheet.column_dimensions[get_column_letter(col[0].column)].width = max_length + 2
+        
+        # Save to media directory
+        workbook.save(file_path)
+        return file_path, file_name
 class MatrixReportView(FilterReportMixin, APIView):
     def post(self, request, *args, **kwargs):
         # Get the JSON body content as a Python dict
@@ -524,7 +631,7 @@ class MatrixReportView(FilterReportMixin, APIView):
         data, totals = self.get_report_data()
 
         # Save the response data to a CSV file
-        file_path_saved = self.save_response_to_csv({
+        file_path_saved, file_name = self.json_to_excel({
             'columns_tree': parse_and_translate_col_dims(user_supplied_columns),
             'base_comparison': base_comparison,
             'results': data,
@@ -535,203 +642,109 @@ class MatrixReportView(FilterReportMixin, APIView):
             'base_comparison': base_comparison,
             'totals': totals,
             'results': data,
-            'file_path': file_path_saved,  # Include the saved file path in the response
+            'file_name': file_name,
         })
 
 class DownloadReportView(APIView):
-    # permission_classes = [IsAuthenticated]
-    
-    def convert_to_excel(self, rows, file_path):
 
-        file_name = os.path.basename(file_path).replace('.csv', '.xlsx')
-        output = io.BytesIO()
-        workbook = Workbook()
-        sheet = workbook.active
-        
-        headers = rows[0]
-        data_rows = rows[1:]
-        
-        # Build hierarchical data structure
-        hierarchy = {}
-        for row in data_rows:
-            current = hierarchy
-            for i, val in enumerate(row[:-1]):  # All columns except count
-                if val not in current:
-                    current[val] = {}
-                current = current[val]
-            current['COUNT'] = row[-1]  # Store count at the deepest level
-
-        # Write headers with proper nesting
-        bold_font = Font(bold=True)
-        sheet.merge_cells(start_row=1, start_column=1, end_row=2, end_column=1)
-        header_cell = sheet.cell(row=1, column=1, value=headers[0])  # County
-        header_cell.font = bold_font
-        
-        # Write middle headers (KEPH Level, Facility Type, Owner)
-        for col_idx, header in enumerate(headers[1:-1], start=2):
-            header_cell = sheet.cell(row=1, column=col_idx, value=header)
-            header_cell.font = bold_font
-            sheet.cell(row=2, column=col_idx, value="").font = bold_font
-        
-        sheet.merge_cells(start_row=1, start_column=len(headers), end_row=2, end_column=len(headers))
-        header_cell = sheet.cell(row=1, column=len(headers), value=headers[-1])  # Count
-        header_cell.font = bold_font
-
-        # Write data with proper nesting and merging
-        row_idx = 3
-        def write_nested_data(data, current_row, parent_cols):
-            nonlocal row_idx
-            if isinstance(data, dict):
-                for key, value in data.items():
-                    if key == 'COUNT':
-                        sheet.cell(row=current_row, column=len(headers), value=value)
-                        return current_row + 1
-                    
-                    # Determine which column this value belongs to
-                    col_idx = len(parent_cols) + 1
-                    sheet.cell(row=current_row, column=col_idx, value=key)
-                    
-                    new_row = write_nested_data(value, current_row, parent_cols + [col_idx])
-                    
-                    # Merge cells vertically for parent values
-                    if new_row > current_row + 1:
-                        for col in parent_cols:
-                            sheet.merge_cells(
-                                start_row=current_row, start_column=col,
-                                end_row=new_row-1, end_column=col
-                            )
-                    current_row = new_row
-            return current_row
-
-        write_nested_data(hierarchy, row_idx, [])
-
-        # Adjust column widths
-        for col in sheet.columns:
-            max_length = max((len(str(cell.value)) for cell in col if cell.value))
-            sheet.column_dimensions[get_column_letter(col[0].column)].width = max_length + 2
-        
-        workbook.save(output)
-        output.seek(0)
-        response = HttpResponse(
-            output.getvalue(),
-            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-        )
-        response['Content-Disposition'] = f'attachment; filename="{file_name}"'
-        return response
-
-    def convert_to_pdf(self, rows, file_path):
-        pass
-        # file_name = os.path.basename(file_path).replace('.csv', '.pdf')
-        # output = io.BytesIO()
-        # doc = SimpleDocTemplate(output, pagesize=letter)
-        # elements = []
-        
-        # headers = rows[0]
-        # data_rows = rows[1:]
-        
-        # # Build hierarchical data structure
-        # hierarchy = {}
-        # for row in data_rows:
-        #     current = hierarchy
-        #     for val in row[:-1]:  # All columns except count
-        #         if val not in current:
-        #             current[val] = {}
-        #         current = current[val]
-        #     current['COUNT'] = row[-1]  # Store count at deepest level
-
-        # # Prepare PDF table data
-        # table_data = []
-        
-        # # Create header rows
-        # header_row1 = [headers[0]] + [""] * (len(headers) - 2) + [headers[-1]]
-        # header_row2 = [""] + headers[1:-1] + [""]
-        # table_data.extend([header_row1, header_row2])
-        
-        # # Add hierarchical data rows
-        # def add_nested_data(data, current_row, level=0):
-        #     if isinstance(data, dict):
-        #         for key, value in data.items():
-        #             if key == 'COUNT':
-        #                 current_row[-1] = value
-        #                 table_data.append(current_row.copy())
-        #                 return
-                    
-        #             if level < len(headers[1:-1]):
-        #                 current_row[level+1] = key
-                    
-        #             add_nested_data(value, current_row, level+1)
-        #             current_row[level+1] = ""  # Reset for next sibling
-        
-        # for county, county_data in hierarchy.items():
-        #     row = [county] + [""] * (len(headers) - 2) + [""]
-        #     add_nested_data(county_data, row)
-        
-        # # Create table with merged cells
-        # table = Table(table_data)
-        
-        # # Find ranges to merge
-        # merge_ranges = []
-        # for col in range(len(headers)):
-        #     start_row = None
-        #     for row in range(2, len(table_data)):
-        #         if table_data[row][col] != "":
-        #             if start_row is not None and start_row < row-1:
-        #                 merge_ranges.append((col, start_row, col, row-1))
-        #             start_row = row
-        #     if start_row is not None and start_row < len(table_data)-1:
-        #         merge_ranges.append((col, start_row, col, len(table_data)-1))
-        
-        # # Apply styles
-        # style = TableStyle([
-        #     ('BACKGROUND', (0,0), (-1,1), colors.grey),
-        #     ('TEXTCOLOR', (0,0), (-1,1), colors.whitesmoke),
-        #     ('ALIGN', (0,0), (-1,-1), 'CENTER'),
-        #     ('FONTNAME', (0,0), (-1,1), 'Helvetica-Bold'),
-        #     ('FONTSIZE', (0,0), (-1,1), 10),
-        #     ('BOTTOMPADDING', (0,0), (-1,1), 12),
-        #     ('BACKGROUND', (0,2), (-1,-1), colors.beige),
-        #     ('GRID', (0,0), (-1,-1), 1, colors.black)
-        # ] + [
-        #     ('SPAN', (c1,r1,c2,r2)) for (c1,r1,c2,r2) in merge_ranges
-        # ])
-        
-        # table.setStyle(style)
-        # elements.append(table)
-        # doc.build(elements)
-        
-        # output.seek(0)
-        # response = HttpResponse(output.getvalue(), content_type='application/pdf')
-        # response['Content-Disposition'] = f'attachment; filename="{file_name}"'
-        # return response
+    def convert_xlsx_to_pdf(self, xlsx_path, pdf_path):
+        """Converts an XLSX file to PDF using pandas and pdfkit"""
+        try:
+            #  import when needed
+            import pandas as pd
+            import pdfkit
+            
+            df = pd.read_excel(xlsx_path)
+            
+            # Convert pd floats to int
+            for col in df.select_dtypes(include=['float']):
+                df[col] = df[col].astype('Int64', errors='ignore')
+            
+            # Replace all NA values with blank
+            df.fillna('', inplace=True)
+            
+            # Convert df to HTML
+            html_string = df.to_html(
+                na_rep='',
+                classes='table',
+                index=False
+            )
+            
+            # CSS styling and heading
+            html = f"""
+            <html>
+                <head>
+                    <style>
+                        table {{ border-collapse: collapse; width: 100%; }}
+                        th, td {{ border: 1px solid #ddd; padding: 8px; text-align: left; }}
+                        th {{ background-color: #f2f2f2; }}
+                        h1 {{ text-align: center; font-family: Arial, sans-serif; }}
+                    </style>
+                </head>
+                <body>
+                    <h1>Kenya Master Health Facility List Analytics Report</h1>
+                    {html_string}
+                </body>
+            </html>
+            """
+            
+            # PDF conversion options
+            options = {
+                'encoding': 'UTF-8',
+                'quiet': ''
+            }
+            config = pdfkit.configuration(wkhtmltopdf='/usr/bin/wkhtmltopdf')
+            
+            # Convert to PDF
+            pdfkit.from_string(html, pdf_path, configuration=config, options=options)
+            
+        except Exception as e:
+            raise ValidationError(f"PDF conversion failed: {str(e)}")
     
     def post(self, request, *args, **kwargs):
-        file_path = request.data.get('file_path')
         desired_format = request.data.get('format')
+        file_name = request.data.get('file_name')
         
-        if not file_path:
-            raise ValidationError("File path is required")
+        if not file_name:
+            raise ValidationError("File name is required.")
         
         if desired_format not in ['excel', 'pdf']:
             raise ValidationError("Invalid format. Must be 'excel' or 'pdf'.")
         
-        file_path_in_server = os.path.join(settings.MEDIA_ROOT, file_path)
-        if not os.path.exists(file_path_in_server):
-            raise NotFound(f"File {file_path} not found")
-        
         try:
-            with open(file_path_in_server, newline='', encoding='utf-8') as csv_file:
-                reader = csv.reader(csv_file)
-                rows = list(reader)
-                if len(rows) < 2:  # Need headers and at least one data row
-                    raise ValidationError("CSV file must contain at least one data row")
-        except Exception as e:
-            raise ValidationError(f"Error reading CSV file: {str(e)}")
-        
-        try:
+            # Construct the file path from the media directory
+            file_path = os.path.join(settings.MEDIA_ROOT, file_name)
+            
+            if not os.path.exists(file_path):
+                raise FileNotFoundError(f"File not found: {file_path}")
+            
             if desired_format == 'excel':
-                return self.convert_to_excel(rows, file_path)
+                with open(file_path, 'rb') as f:
+                    response = HttpResponse(
+                    f.read(),
+                    content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                    )
+                    response['Content-Disposition'] = f'attachment; filename="{file_name}"'
+                    return response
+            
             elif desired_format == 'pdf':
-                # return self.convert_to_pdf(rows, file_path)
-                return Response("PDF conversion still in progress")
+                pdf_path = file_path.replace('.xlsx', '.pdf')
+                self.convert_xlsx_to_pdf(file_path, pdf_path)
+                
+                if not os.path.exists(pdf_path):
+                    raise FileNotFoundError(f"PDF conversion failed: {pdf_path}")
+                
+                with open(pdf_path, 'rb') as f:
+                    response = HttpResponse(
+                    f.read(),
+                    content_type='application/pdf'
+                    )
+                    response['Content-Disposition'] = f'attachment; filename="{os.path.basename(pdf_path)}"'
+                return response
+        
+        except FileNotFoundError as fnf_error:
+            raise ValidationError(f"File not found: {str(fnf_error)}")
         except Exception as e:
-            raise ValidationError(f"Error generating report: {str(e)}")
+            raise ValidationError(f"An error occurred while processing the file: {str(e)}")
+            
+
