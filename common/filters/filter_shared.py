@@ -2,6 +2,7 @@ import django_filters
 import uuid
 
 from distutils.util import strtobool
+from rest_framework.exceptions import ValidationError
 
 from django import forms
 from django.utils.encoding import force_str
@@ -15,7 +16,6 @@ from ..constants import BOOLEAN_CHOICES
 
 
 class NullFilter(django_filters.Filter):
-
     """
     Filter a field on whether it is null or not.
     """
@@ -25,7 +25,6 @@ class NullFilter(django_filters.Filter):
 
 
 class IsoDateTimeField(forms.DateTimeField):
-
     """
     It support 'iso-8601' date format too which is out the scope of
     the ``datetime.strptime`` standard library
@@ -44,69 +43,86 @@ class IsoDateTimeField(forms.DateTimeField):
 
 
 class IsoDateTimeFilter(django_filters.DateTimeFilter):
-
     """ Extend ``DateTimeFilter`` to filter by ISO 8601 formated dates too"""
     field_class = IsoDateTimeField
 
 
-class ListFilterMixin(object):
-
+class ListFilterMixin:
     """
-    Enable filtering by comma separated values.
-
-    eg ?number=1,2,3&name=a,b
-
-    Apply this mixin to a type of django_filters.Filter that
-    filters character strings. To filter a different type,
-    override the customize method in the filter that this
-    mixin is mixed into.
-
-    For an example, look at ListCharFilter, ListIntegerFilter below.
+    Mixin to enable filtering by comma-separated values.
     """
-
-    def _format_value(self, value):
-        return value
-
     _lookup_expr = 'in'
-    _customize_fxn = _format_value
+    _customize_fxn = staticmethod(lambda v: v)  # By default, no customization
 
     def sanitize(self, value_list):
-        """
-        remove empty items
-        """
-        return [v for v in value_list if v != u'']
+        return [v for v in value_list if v]
 
     def customize(self, value):
         return self._customize_fxn(value)
 
     def filter(self, qs, value):
-        multiple_vals = value.split(u",")
-        multiple_vals = self.sanitize(multiple_vals)
-        multiple_vals = map(self.customize, multiple_vals)
-        actual_filter = django_filters.fields.Lookup(
-            multiple_vals, self._lookup_expr
-        )
-        return super(ListFilterMixin, self).filter(qs, actual_filter)
+        if not value:
+            return qs
+
+        if isinstance(value, (list, tuple)):
+            multiple_vals = self.sanitize(value)
+        else:
+            multiple_vals = self.sanitize(value.split(","))
+
+        if not multiple_vals:
+            return qs
+
+        try:
+            multiple_vals = [self.customize(v) for v in multiple_vals]
+        except (ValueError, TypeError) as e:
+            # Optional: raise a 400 API error instead of ignoring
+            return qs  # or raise ValidationError('Invalid input.')
+
+        lookup = {self.field_name: multiple_vals} if self._lookup_expr == 'in' else {
+            f"{self.field_name}__{self._lookup_expr}": multiple_vals
+        }
+        return qs.filter(**lookup)
 
 
 class ListCharFilter(ListFilterMixin, django_filters.CharFilter):
-
     """
     Enable filtering of comma separated strings.
     """
     pass
 
 
-class ListUUIDFilter(ListFilterMixin, django_filters.CharFilter):
+class ListUUIDFilter(django_filters.Filter):
     """
-    Enable filtering a list of UUUIDs in an array field
+    Accept a single UUID or multiple comma-separated UUIDs.
     """
-    _lookup_expr = 'contains'
-    _customize_fxn = uuid.UUID
+
+    def filter(self, qs, value):
+        if not value:
+            return qs
+
+        if isinstance(value, list):
+            uuid_list = value
+        else:
+            uuid_list = value.split(",")
+
+        # Clean and validate
+        clean_uuids = []
+        for val in uuid_list:
+            val = val.strip()
+            if not val:
+                continue
+            try:
+                clean_uuids.append(uuid.UUID(val))
+            except (ValueError, AttributeError):
+                raise ValidationError(f"Invalid UUID: {val}")
+
+        if not clean_uuids:
+            return qs
+
+        return qs.filter(**{f"{self.field_name}__in": clean_uuids})
 
 
 class ListIntegerFilter(ListCharFilter):
-
     """
     Enable filtering of comma separated integers.
     """
@@ -115,7 +131,6 @@ class ListIntegerFilter(ListCharFilter):
 
 
 class CommonFieldsFilterset(django_filters.FilterSet):
-
     """Every model that descends from AbstractBase should have this
 
     The usage pattern for this is presently simplistic; mix it in, then add to
