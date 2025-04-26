@@ -71,10 +71,12 @@ class DhisAuth(ApiAuthentication):
 
     @set_interval(30.0, -1)
     def refresh_oauth2_token(self):
+        auth_vars = bytes(settings.DHIS_CLIENT_ID + ":" + settings.DHIS_CLIENT_SECRET, "UTF-8")
+        header_vars = base64.b64encode(auth_vars).decode("utf-8")
         r = requests.post(
             settings.DHIS_ENDPOINT+"uaa/oauth/token",
             headers={
-                "Authorization": "Basic " + base64.b64encode(settings.DHIS_CLIENT_ID + ":" + settings.DHIS_CLIENT_SECRET),
+                "Authorization": "Basic " + header_vars,
                 "Accept": "application/json"
             },
             params={
@@ -84,16 +86,21 @@ class DhisAuth(ApiAuthentication):
             }
         )
 
-        response = str(r.json())
+        if r.status_code == 200:
+            response = str(r.json())
+        else:
+            response = ''
         # print("Response @ refresh_oauth2 ", response)
         self.session_store[self.oauth2_token_variable_name] = response
         self.session_store.save()
 
     def get_oauth2_token(self):
+        auth_vars = bytes(settings.DHIS_CLIENT_ID + ":" + settings.DHIS_CLIENT_SECRET, "UTF-8")
+        header_vars = base64.b64encode(auth_vars).decode("utf-8")
         r = requests.post(
             settings.DHIS_ENDPOINT+"uaa/oauth/token",
             headers={
-                "Authorization": "Basic "+base64.b64encode(settings.DHIS_CLIENT_ID+":"+settings.DHIS_CLIENT_SECRET),
+                "Authorization": "Basic " + header_vars,
                 "Accept": "application/json"
             },
             params={
@@ -103,7 +110,10 @@ class DhisAuth(ApiAuthentication):
             }
         )
 
-        response = str(r.json())
+        if r.status_code == 200:
+            response = str(r.json())
+        else:
+            response = ''
         # print("Response @ get_oauth2 ", response)
         self.session_store[self.oauth2_token_variable_name] = response
         self.session_store.save()

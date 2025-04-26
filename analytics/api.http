@@ -12,11 +12,11 @@ Authorization: Bearer v7LeFuTjWisker37Pi5SeGWl8PmpDa
     "metric": "number_of_facilities",
     "row_comparison": "county",
     "filters": {
-        "period": {"startdate":"2023-01-01","enddate":"2023-01-31"},
-        "counties": [
-            "95b08378-362e-4bf9-ad63-d685e1287db2",
-            "bbc8803a-7d6f-411a-96f3-5f8472b40405"
-        ],
+        "period": {"startdate":"2023-01-01","enddate":"2025-01-31"}
+        # "counties": [
+        #     "95b08378-362e-4bf9-ad63-d685e1287db2",
+        #     "bbc8803a-7d6f-411a-96f3-5f8472b40405"
+        # ],
         # "owners": [
         #     "ffad4810-0bfb-4434-84cb-d2ab9b911c41",
         #     "ca268e6b-7e45-4264-97bf-43b6c68fb21e"
@@ -29,10 +29,10 @@ Authorization: Bearer v7LeFuTjWisker37Pi5SeGWl8PmpDa
         #     "baea1c8b-ce63-47b3-8b0b-eb8f9d2d6afb",
         #     "0c19f000-d9df-4ada-ba95-b4367dfb5296"
         # ],
-        "infrastructure_categories": [
-            "4fcdcbaa-99e6-4bcd-83df-4bff71e9fdde",
-            "bcce5d62-656f-4ed6-ba1f-16eafb670816",
-            "467a324b-ac2f-40c2-a1db-db1e17f8885c"
-        ]
+        # "infrastructure_categories": [
+        #     "4fcdcbaa-99e6-4bcd-83df-4bff71e9fdde",
+        #     "bcce5d62-656f-4ed6-ba1f-16eafb670816",
+        #     "467a324b-ac2f-40c2-a1db-db1e17f8885c"
+        # ]
     }
 }

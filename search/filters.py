@@ -11,7 +11,6 @@ import django_filters
 
 from search.search_utils import ElasticAPI
 
-
 FIELD_TYPES = [
     'SequenceField', 'CharField', 'EmailField'
 ]
@@ -112,9 +111,11 @@ class ClassicSearchFilter(django_filters.filters.Filter):
         """
         {"query":{"query_string":{"default_field":"name","query":"olympus"}}}
         """
+        if not value:
+            return qs  # 👈 if no value, just return original queryset
         try:
             result = json.loads(value)
-            value =  result.get('query').get('query_string').get('query')
+            value = result.get('query').get('query_string').get('query')
 
         except (ValueError, AttributeError):
             pass
@@ -127,8 +128,8 @@ class ClassicSearchFilter(django_filters.filters.Filter):
             else:
                 return model.objects.filter(name__search=value)
 
-
-        fields = [field.name for field in model._meta.get_fields()if field.concrete and field.get_internal_type() in FIELD_TYPES]
+        fields = [field.name for field in model._meta.get_fields() if
+                  field.concrete and field.get_internal_type() in FIELD_TYPES]
 
         filter_params = {}
 
@@ -146,15 +147,8 @@ class ClassicSearchFilter(django_filters.filters.Filter):
         for key, value in filter_params.items():
             q_filter += "Q({0}='{1}') | ".format(key, value)
 
-    
         # remove the pipe character at the end of the string
         q_filter_reverse = q_filter[::-1]
         q_filter = q_filter_reverse[3:len(q_filter_reverse) + 1]
         q_filter = q_filter[::-1]
         return qs.filter(eval(q_filter))
-
-
-
-
-
-

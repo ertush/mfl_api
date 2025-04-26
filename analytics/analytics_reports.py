@@ -140,10 +140,14 @@ class FilterReportMixin(object):
                 continue
 
             if key == 'period':
-                start = values.get('start')
-                end = values.get('end')
+                start = values.get('startdate')
+                end = values.get('enddate')
                 if start and end:
-                    filters &= Q(created__range=[start, end])  # or `date_established__range`
+                    filters &= Q(created__range=[start, end])
+                elif start:
+                    filters &= Q(created__gte=start)
+                elif end:
+                    filters &= Q(created__lte=end)  # or `date_established__range`
             else:
                 # Match the model fields
                 field_map = {

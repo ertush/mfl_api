@@ -85,7 +85,7 @@ class AbstractBaseModelTest(TestCase):
         # Test that we don't need to make created timezone aware
         # It is already tizezone aware
         self.assertTrue(timezone.is_aware(instance.created))
-        created_naive_datetime = datetime.now()
+        created_naive_datetime = timezone.now()
         instance.create = created_naive_datetime  # This should not even update
         instance.save()
         self.assertTrue(timezone.is_aware(instance.created))
