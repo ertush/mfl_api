@@ -283,7 +283,7 @@ class FacilityLevelChangeReasonListView(generics.ListCreateAPIView):
     deleted -- Boolean is the record deleted
     """
     queryset = FacilityLevelChangeReason.objects.all()
-    filter_class = FacilityLevelChangeReasonFilter
+    filterset_class = FacilityLevelChangeReasonFilter
     serializer_class = FacilityLevelChangeReasonSerializer
     ordering_fields = ('reason', 'description', 'is_upgrade_reason')
 
@@ -310,7 +310,7 @@ class KephLevelListView(generics.ListCreateAPIView):
     deleted -- Boolean is the record deleted
     """
     queryset = KephLevel.objects.all()
-    filter_class = KephLevelFilter
+    filterset_class = KephLevelFilter
     serializer_class = KephLevelSerializer
     ordering_fields = ('name', 'value', 'description')
 
@@ -341,7 +341,7 @@ class FacilityUnitsListView(generics.ListCreateAPIView):
     queryset = FacilityUnit.objects.all()
     serializer_class = FacilityUnitSerializer
     ordering_fields = ('name', 'facility', 'regulating_body',)
-    filter_class = FacilityUnitFilter
+    filterset_class = FacilityUnitFilter
 
 
 class FacilityUnitDetailView(
@@ -369,7 +369,7 @@ class OfficerContactListView(generics.ListCreateAPIView):
     queryset = OfficerContact.objects.all()
     serializer_class = OfficerContactSerializer
     ordering_fields = ('officer', 'contact',)
-    filter_class = OfficerContactFilter
+    filterset_class = OfficerContactFilter
 
 
 class OfficerContactDetailView(
@@ -399,7 +399,7 @@ class OwnerListView(generics.ListCreateAPIView):
     """
     queryset = Owner.objects.all()
     serializer_class = OwnerSerializer
-    filter_class = OwnerFilter
+    filterset_class = OwnerFilter
     ordering_fields = ('name', 'code', 'owner_type',)
 
 
@@ -468,7 +468,7 @@ class FacilityExportMaterialListView(
     QuerysetFilterMixin, generics.ListAPIView):
     queryset = FacilityExportExcelMaterialView.objects.all()
     serializer_class = FacilityExportExcelMaterialViewSerializer
-    filter_class = FacilityExportExcelMaterialViewFilter
+    filterset_class = FacilityExportExcelMaterialViewFilter
     # ordering_fields = '__all__'
 
 
@@ -844,7 +844,7 @@ class FacilityContactDetailView(
 class FacilityOfficerListView(generics.ListCreateAPIView):
     serializer_class = FacilityOfficerSerializer
     queryset = FacilityOfficer.objects.all()
-    filter_class = FacilityOfficerFilter
+    filterset_class = FacilityOfficerFilter
     ordering_fields = (
         'name', 'id_number', 'registration_number',
         'facility_name')
@@ -859,7 +859,7 @@ class FacilityOfficerDetailView(
 class FacilityUnitRegulationListView(generics.ListCreateAPIView):
     queryset = FacilityUnitRegulation.objects.all()
     serializer_class = FacilityUnitRegulationSerializer
-    filter_class = FacilityUnitRegulationFilter
+    filterset_class = FacilityUnitRegulationFilter
     ordering_fields = ('facility_unit', 'regulation_status')
 
 
@@ -907,7 +907,7 @@ class CustomFacilityOfficerView(CreateFacilityOfficerMixin, APIView):
 class OptionGroupListView(generics.ListCreateAPIView):
     queryset = OptionGroup.objects.all()
     serializer_class = OptionGroupSerializer
-    filter_class = OptionGroupFilter
+    filterset_class = OptionGroupFilter
     ordering_fields = ('name',)
 
 
@@ -920,7 +920,7 @@ class OptionGroupDetailView(
 class RegulatorSyncListView(generics.ListCreateAPIView):
     queryset = RegulatorSync.objects.all()
     serializer_class = RegulatorSyncSerializer
-    filter_class = RegulatorSyncFilter
+    filterset_class = RegulatorSyncFilter
     ordering_fields = (
         'name', 'registration_number', 'county',
         'owner', 'mfl_code')
@@ -968,7 +968,7 @@ class SpecialityCategoryListView(generics.ListCreateAPIView):
     """
     queryset = SpecialityCategory.objects.all()
     serializer_class = SpecialityCategorySerializer
-    filter_class = SpecialityCategoryFilter
+    filterset_class = SpecialityCategoryFilter
     ordering_fields = ('name', 'description', 'abbreviation')
 
 
@@ -995,7 +995,7 @@ class SpecialityListView(generics.ListCreateAPIView):
     """
     queryset = Speciality.objects.all()
     serializer_class = SpecialitySerializer
-    filter_class = SpecialityFilter
+    filterset_class = SpecialityFilter
     ordering_fields = ('created', 'name')
 
 
@@ -1022,7 +1022,7 @@ class FacilitySpecialistListView(generics.ListCreateAPIView):
     """
     queryset = FacilitySpecialist.objects.all()
     serializer_class = FacilitySpecialistSerializer
-    filter_class = FacilitySpecialistFilter
+    filterset_class = FacilitySpecialistFilter
     ordering_fields = ('facility', 'created')
 
 
@@ -1049,7 +1049,7 @@ class InfrastructureCategoryListView(generics.ListCreateAPIView):
     """
     queryset = InfrastructureCategory.objects.all()
     serializer_class = InfrastructureCategorySerializer
-    filter_class = InfrastructureCategoryFilter
+    filterset_class = InfrastructureCategoryFilter
     ordering_fields = ('name', 'description', 'abbreviation')
 
 
@@ -1076,7 +1076,7 @@ class InfrastructureListView(generics.ListCreateAPIView):
     """
     queryset = Infrastructure.objects.all()
     serializer_class = InfrastructureSerializer
-    filter_class = InfrastructureFilter
+    filterset_class = InfrastructureFilter
     ordering_fields = ('created', 'name')
 
 
@@ -1103,7 +1103,7 @@ class FacilityInfrastructureListView(generics.ListCreateAPIView):
     """
     queryset = FacilityInfrastructure.objects.all()
     serializer_class = FacilityInfrastructureSerializer
-    filter_class = FacilityInfrastructureFilter
+    filterset_class = FacilityInfrastructureFilter
     ordering_fields = ('facility', 'created')
 
 

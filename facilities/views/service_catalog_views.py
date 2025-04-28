@@ -66,7 +66,7 @@ class ServiceCategoryListView(generics.ListCreateAPIView):
 
     queryset = ServiceCategory.objects.all()
     serializer_class = ServiceCategorySerializer
-    filter_class = ServiceCategoryFilter
+    filterset_class = ServiceCategoryFilter
     ordering_fields = ('name', 'description', 'abbreviation')
 
 
@@ -92,7 +92,7 @@ class OptionListView(generics.ListCreateAPIView):
     """
     queryset = Option.objects.all()
     serializer_class = OptionSerializer
-    filter_class = OptionFilter
+    filterset_class = OptionFilter
     ordering_fields = ('option_type', 'display_text', 'value', )
 
 
@@ -119,7 +119,7 @@ class ServiceListView(generics.ListCreateAPIView):
     """
     queryset = Service.objects.all()
     serializer_class = ServiceSerializer
-    filter_class = ServiceFilter
+    filterset_class = ServiceFilter
     ordering_fields = ('name', 'category', 'code', 'abbreviation')
 
 
@@ -147,7 +147,7 @@ class FacilityServiceListView(generics.ListCreateAPIView):
     """
     queryset = FacilityService.objects.all()
     serializer_class = FacilityServiceSerializer
-    filter_class = FacilityServiceFilter
+    filterset_class = FacilityServiceFilter
     ordering_fields = ('facility', 'service')
 
 
@@ -167,7 +167,7 @@ class FacilityServiceRatingListView(generics.ListCreateAPIView):
     throttle_scope = 'rating'
     queryset = FacilityServiceRating.objects.all()
     serializer_class = FacilityServiceRatingSerializer
-    filter_class = FacilityServiceRatingFilter
+    filterset_class = FacilityServiceRatingFilter
     ordering_fields = ('rating', )
 
 

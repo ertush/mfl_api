@@ -48,7 +48,7 @@ class AdminOfficeListView(
 
     queryset = AdminOffice.objects.all()
     serializer_class = AdminOfficeSerializer
-    filter_class = AdminOfficeFilter
+    filterset_class = AdminOfficeFilter
     ordering_fields = (
         'county', 'name', 'sub_county', 'is_national')
 
@@ -85,7 +85,7 @@ class AdminOfficeContactListView(
     """
     queryset = AdminOfficeContact.objects.all()
     serializer_class = AdminOfficeContactSerializer
-    filter_class = AdminOfficeContactFilter
+    filterset_class = AdminOfficeContactFilter
     ordering_fields = ('contact_type', 'contact',)
 
 

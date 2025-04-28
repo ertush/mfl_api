@@ -117,7 +117,7 @@ class FacilityTypeDetailsListView(generics.ListCreateAPIView):
     """
     queryset = FacilityType.objects.all()
     serializer_class = FacilityTypeSerializer
-    filter_class = FacilityTypeFilter
+    filterset_class = FacilityTypeFilter
     ordering_fields = ('name', )
 
 
@@ -148,7 +148,7 @@ class RegulationStatusListView(
     """
     queryset = RegulationStatus.objects.all()
     serializer_class = RegulationStatusSerializer
-    filter_class = RegulationStatusFilter
+    filterset_class = RegulationStatusFilter
     ordering_fields = ('name', )
 
 
@@ -247,7 +247,7 @@ class FacilityUpgradeListView(generics.ListCreateAPIView):
     """
     queryset = FacilityUpgrade.objects.all()
     serializer_class = FacilityUpgradeSerializer
-    filter_class = FacilityUpgradeFilter
+    filterset_class = FacilityUpgradeFilter
     ordering_fields = ('facility', 'facility_type', 'reason', )
 
 
@@ -274,7 +274,7 @@ class FacilityOperationStateListView(generics.ListCreateAPIView):
     """
     queryset = FacilityOperationState.objects.all()
     serializer_class = FacilityOperationStateSerializer
-    filter_class = FacilityOperationStateFilter
+    filterset_class = FacilityOperationStateFilter
     ordering_fields = ('facility', 'operation_status', 'reason')
 
 
@@ -302,7 +302,7 @@ class FacilityApprovalListView(generics.ListCreateAPIView):
     """
     queryset = FacilityApproval.objects.all()
     serializer_class = FacilityApprovalSerializer
-    filter_class = FacilityApprovalFilter
+    filterset_class = FacilityApprovalFilter
     ordering_fields = ('facility', 'comment', )
 
 
@@ -322,7 +322,7 @@ class RegulatoryBodyUserListView(generics.ListCreateAPIView):
     """
     queryset = RegulatoryBodyUser.objects.all()
     serializer_class = RegulatoryBodyUserSerializer
-    filter_class = RegulatoryBodyUserFilter
+    filterset_class = RegulatoryBodyUserFilter
     ordering_fields = ('regulatory_body', 'user')
 
 
@@ -342,7 +342,7 @@ class FacilityUpdatesListView(generics.ListCreateAPIView):
     """
     queryset = FacilityUpdates.objects.all()
     serializer_class = FacilityUpdatesSerializer
-    filter_class = FacilityUpdatesFilter
+    filterset_class = FacilityUpdatesFilter
     ordering_fields = ('facility', 'approved')
 
 

@@ -78,14 +78,14 @@ class CommunityHealthUnitFilter(CommonFieldsFilterset):
     #         )
 
     name = django_filters.CharFilter(lookup_expr='icontains')
-    ward = ListCharFilter(name='facility__ward')
-    code = ListCharFilter(name='code')
+    ward = ListCharFilter(field_name='facility__ward')
+    code = ListCharFilter(field_name='code')
     constituency = ListCharFilter(
-        name='facility__ward__constituency')
+        field_name='facility__ward__constituency')
     county = ListCharFilter(
-        name='facility__ward__constituency__county')
+        field_name='facility__ward__constituency__county')
     sub_county = ListCharFilter(
-        name='facility__ward__sub_county')
+        field_name='facility__ward__sub_county')
 
     is_approved = django_filters.TypedChoiceFilter(
         choices=BOOLEAN_CHOICES, coerce=strtobool
@@ -110,11 +110,11 @@ class CommunityHealthWorkerFilter(CommonFieldsFilterset):
     first_name = django_filters.CharFilter(lookup_expr='icontains')
     last_name = django_filters.CharFilter(lookup_expr='icontains')
     username = django_filters.CharFilter(lookup_expr='icontains')
-    ward = django_filters.CharFilter(name='health_unit__community__ward')
+    ward = django_filters.CharFilter(field_name='health_unit__community__ward')
     constituency = django_filters.CharFilter(
-        name='health_unit__community_ward__constituency')
+        field_name='health_unit__community_ward__constituency')
     county = django_filters.CharFilter(
-        name='health_unit__community__ward__constituency__county')
+        field_name='health_unit__community__ward__constituency__county')
 
     class Meta(CommonFieldsFilterset.Meta):
         model = CommunityHealthWorker

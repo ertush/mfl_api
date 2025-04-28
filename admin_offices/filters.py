@@ -4,7 +4,7 @@ from .models import AdminOffice, AdminOfficeContact
 
 
 class AdminOfficeFilter(CommonFieldsFilterset):
-	code = ListCharFilter(name='code')
+	code = ListCharFilter(field_name='code')
 
 	class Meta(CommonFieldsFilterset.Meta):
 		model = AdminOffice

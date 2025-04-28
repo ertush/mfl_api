@@ -51,7 +51,7 @@ class FacilityStatusListView(generics.ListCreateAPIView):
     queryset = FacilityStatus.objects.all()
     serializer_class = FacilityStatusSerializer
     ordering_fields = ('name',)
-    filter_class = FacilityStatusFilter
+    filterset_class = FacilityStatusFilter
 
 
 class FacilityAdmissionStatusListView(generics.ListCreateAPIView):
@@ -69,7 +69,7 @@ class FacilityAdmissionStatusListView(generics.ListCreateAPIView):
     queryset = FacilityAdmissionStatus.objects.all()
     serializer_class = FacilityAdmissionStatusSerializer
     ordering_fields = ('name',)
-    filter_class = FacilityAdmissionStatusFilter
+    filterset_class = FacilityAdmissionStatusFilter
 
 
 class FacilityStatusDetailView(
@@ -106,7 +106,7 @@ class JobTitleListView(generics.ListCreateAPIView):
     queryset = JobTitle.objects.all()
     serializer_class = JobTitleSerializer
     ordering_fields = ('name',)
-    filter_class = JobTitleFilter
+    filterset_class = JobTitleFilter
 
 
 class JobTitleDetailView(
@@ -137,7 +137,7 @@ class OfficerListView(generics.ListCreateAPIView):
     queryset = Officer.objects.all()
     serializer_class = OfficerSerializer
     ordering_fields = ('name', 'job_title', 'registration_number',)
-    filter_class = OfficerFilter
+    filterset_class = OfficerFilter
 
 
 class OfficerDetailView(
@@ -167,7 +167,7 @@ class RegulatingBodyListView(generics.ListCreateAPIView):
     queryset = RegulatingBody.objects.all()
     serializer_class = RegulatingBodySerializer
     ordering_fields = ('name', 'abbreviation',)
-    filter_class = RegulatingBodyFilter
+    filterset_class = RegulatingBodyFilter
 
 
 class RegulatingBodyDetailView(
@@ -197,7 +197,7 @@ class OwnerTypeListView(generics.ListCreateAPIView):
     queryset = OwnerType.objects.all()
     serializer_class = OwnerTypeSerializer
     ordering_fields = ('name', )
-    filter_class = OwnerTypeFilter
+    filterset_class = OwnerTypeFilter
 
 
 class OwnerTypeDetailView(
@@ -226,7 +226,7 @@ class RegulatingBodyContactListView(generics.ListCreateAPIView):
     """
     queryset = RegulatingBodyContact.objects.all()
     serializer_class = RegulatingBodyContactSerializer
-    filter_class = RegulatingBodyContactFilter
+    filterset_class = RegulatingBodyContactFilter
     ordering_fields = ('regulating_body', 'contact', )
 
 
@@ -253,7 +253,7 @@ class FacilityDepartmentListView(generics.ListCreateAPIView):
     """
     queryset = FacilityDepartment.objects.all()
     serializer_class = FacilityDepartmentSerializer
-    filter_class = FacilityDepartmentFilter
+    filterset_class = FacilityDepartmentFilter
 
 
 class FacilityDepartmentDetailView(CustomRetrieveUpdateDestroyView):
