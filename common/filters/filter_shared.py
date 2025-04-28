@@ -1,4 +1,5 @@
 import django_filters
+from django_filters import rest_framework as filters
 import uuid
 
 from distutils.util import strtobool
@@ -130,7 +131,7 @@ class ListIntegerFilter(ListCharFilter):
     _customize_fxn = int
 
 
-class CommonFieldsFilterset(django_filters.FilterSet):
+class CommonFieldsFilterset(filters.FilterSet):
     """Every model that descends from AbstractBase should have this
 
     The usage pattern for this is presently simplistic; mix it in, then add to
@@ -142,37 +143,43 @@ class CommonFieldsFilterset(django_filters.FilterSet):
     filter fields ( every model field gets one ) stay in place.
     """
     updated_before = IsoDateTimeFilter(
-        name='updated', lookup_expr='lte',
+        field_name='updated', lookup_expr='lte',
         input_formats=(ISO_8601, '%m/%d/%Y %H:%M:%S'))
     created_before = IsoDateTimeFilter(
-        name='created', lookup_expr='lte',
+        field_name='created', lookup_expr='lte',
         input_formats=(ISO_8601, '%m/%d/%Y %H:%M:%S'))
 
     updated_after = IsoDateTimeFilter(
-        name='updated', lookup_expr='gte',
+        field_name='updated', lookup_expr='gte',
         input_formats=(ISO_8601, '%m/%d/%Y %H:%M:%S'))
     created_after = IsoDateTimeFilter(
-        name='created', lookup_expr='gte',
+        field_name='created', lookup_expr='gte',
         input_formats=(ISO_8601, '%m/%d/%Y %H:%M:%S'))
 
     updated_on = IsoDateTimeFilter(
-        name='updated', lookup_expr='exact',
+        field_name='updated', lookup_expr='exact',
         input_formats=(ISO_8601, '%m/%d/%Y %H:%M:%S'))
     created_on = IsoDateTimeFilter(
-        name='created', lookup_expr='exact',
+        field_name='created', lookup_expr='exact',
         input_formats=(ISO_8601, '%m/%d/%Y %H:%M:%S'))
 
     is_deleted = django_filters.TypedChoiceFilter(
-        name='deleted', choices=BOOLEAN_CHOICES, coerce=strtobool)
+        field_name='deleted', choices=BOOLEAN_CHOICES, coerce=strtobool)
 
     is_active = django_filters.TypedChoiceFilter(
-        name='active', choices=BOOLEAN_CHOICES, coerce=strtobool)
+        field_name='active', choices=BOOLEAN_CHOICES, coerce=strtobool)
 
-    search = ClassicSearchFilter(name='name')
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
-    q = ClassicSearchFilter(name='name')
-    search_auto = AutoCompleteSearchFilter(name='name')
-    q_auto = AutoCompleteSearchFilter(name='name')
+        model = getattr(getattr(self, 'Meta', None), 'model', None)
+        if model and hasattr(model, '_meta'):
+            fields = {f.name for f in model._meta.get_fields()}
+            if 'name' in fields:
+                self.filters['search'] = filters.CharFilter(field_name='name', lookup_expr='icontains')
+                self.filters['q'] = filters.CharFilter(field_name='name', lookup_expr='icontains')
+                self.filters['search_auto'] = filters.CharFilter(field_name='name', lookup_expr='icontains')
+                self.filters['q_auto'] = filters.CharFilter(field_name='name', lookup_expr='icontains')
 
     class Meta:
         fields = '__all__'

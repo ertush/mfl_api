@@ -1,5 +1,7 @@
 from distutils.util import strtobool
 from random import choices
+
+import django_filters
 from django.db.models import Q
 
 from django_filters import rest_framework as filters
@@ -140,18 +142,18 @@ class FacilityOfficerFilter(CommonFieldsFilterset):
 
 class FacilityServiceRatingFilter(CommonFieldsFilterset):
     facility = filters.AllValuesFilter(
-        name='facility_service__facility',
+        field_name='facility_service__facility',
         lookup_expr='exact')
     service = filters.AllValuesFilter(
-        name="facility_service__service", lookup_expr='exact')
+        field_name="facility_service__service", lookup_expr='exact')
     county = filters.AllValuesFilter(
-        name="facility_service__facility__ward__constituency__county",
+        field_name="facility_service__facility__ward__constituency__county",
         lookup_expr='exact')
     constituency = filters.AllValuesFilter(
-        name="facility_service__facility__ward__constituency",
+        field_name="facility_service__facility__ward__constituency",
         lookup_expr='exact')
     ward = filters.AllValuesFilter(
-        name="facility_service__facility__ward", lookup_expr='exact')
+        field_name="facility_service__facility__ward", lookup_expr='exact')
 
     class Meta(CommonFieldsFilterset.Meta):
         model = FacilityServiceRating
@@ -325,14 +327,14 @@ class FacilityRegulationStatusFilter(CommonFieldsFilterset):
 
 
 class FacilityContactFilter(CommonFieldsFilterset):
-    facility = filters.CharFilter(lookup_expr='exact')
-    contact = filters.CharFilter(lookup_expr='exact')
+    facility = django_filters.CharFilter(lookup_expr='exact')
+    contact = django_filters.CharFilter(lookup_expr='exact')
 
     class Meta(CommonFieldsFilterset.Meta):
         model = FacilityContact
 
 
-class FacilityFilterNew(filters.FilterSet):
+class FacilityFilter(CommonFieldsFilterset):
     """
     FilterSet for the Facility model, compatible with django-filter version 23.5.
     Allows filtering on various fields including foreign keys, boolean fields, and text fields.
@@ -567,7 +569,7 @@ class FacilityFilterNew(filters.FilterSet):
     is_approved = filters.CharFilter(
         method='filter_approved_facilities')
 
-    service = filters.CharFilter(
+    service = filters.sCharFilter(
         method=service_filter)
     infrastructure = filters.CharFilter(
         method='infrastructure_filter')
