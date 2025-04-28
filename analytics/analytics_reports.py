@@ -14,6 +14,7 @@ from reportlab.lib.pagesizes import letter
 from reportlab.platypus import Table, TableStyle, SimpleDocTemplate
 from reportlab.lib import colors
 from django.http import HttpResponse
+from pytz import timezone as tz
 
 
 from datetime import timedelta
@@ -425,42 +426,42 @@ class FilterReportMixin(object):
         # Placeholder for other report types
         raise NotFound(detail='Report not found.')
 
-    def save_response_to_csv(self, data):
-        """
-        Receives a JSON response and saves it to a CSV file on server.
-        _summary_
+    # def save_response_to_csv(self, data):
+    #     """
+    #     Receives a JSON response and saves it to a CSV file on server.
+    #     _summary_
 
-        Args:
-            data (_type_): _description_
+    #     Args:
+    #         data (_type_): _description_
 
-        Returns:
-            _type_: _description_
-        """
-        print(type(data))
-        print("my data",data)
+    #     Returns:
+    #         _type_: _description_
+    #     """
+    #     print(type(data))
+    #     print("my data",data)
 
-        columns_tree = data.get('columns_tree', [])
-        counts_data = data.get('results', {}).get('counts', {})
-        base_comparison = data.get('base_comparison', '')
-        timestamp = timezone.now().strftime('%Y%m%d%H%M%S')
+    #     columns_tree = data.get('columns_tree', [])
+    #     counts_data = data.get('results', {}).get('counts', {})
+    #     base_comparison = data.get('base_comparison', '')
+    #     timestamp = timezone.now().strftime('%Y%m%d%H%M%S')
         
-        file_name = '_'.join(columns_tree).replace(' ', '_') + f'_{timestamp}.csv'
-        file_path_saved = os.path.join(settings.MEDIA_ROOT, file_name)
+    #     file_name = '_'.join(columns_tree).replace(' ', '_') + f'_{timestamp}.csv'
+    #     file_path_saved = os.path.join(settings.MEDIA_ROOT, file_name)
         
-        flattened_rows = self.flatten_json(counts_data, base_comparison, columns_tree)
-        column_names = [base_comparison] + columns_tree + ["Count"]
+    #     flattened_rows = self.flatten_json(counts_data, base_comparison, columns_tree)
+    #     column_names = [base_comparison] + columns_tree + ["Count"]
 
-        # Write data to CSV file
-        with open(file_path_saved, mode='w', newline='') as df:
-            writer = csv.DictWriter(df, fieldnames=column_names)
-            writer.writeheader()
+    #     # Write data to CSV file
+    #     with open(file_path_saved, mode='w', newline='') as df:
+    #         writer = csv.DictWriter(df, fieldnames=column_names)
+    #         writer.writeheader()
             
-            for row in flattened_rows:
-                for col in column_names:
-                    row.setdefault(col, "")
-                writer.writerow(row)
+    #         for row in flattened_rows:
+    #             for col in column_names:
+    #                 row.setdefault(col, "")
+    #             writer.writerow(row)
 
-        return file_path_saved
+    #     return file_path_saved
     
     # def flatten_json(self, nested_dict, base_comparison, columns_tree):
     #     """
@@ -521,15 +522,17 @@ class FilterReportMixin(object):
     def json_to_excel(self, json_data):
         """
         Directly converts JSON data to nested Excel format
+        Saves file in media directory
+        _summary_
         Returns tuple of (file_path, file_name) for the generated Excel file
         """
-        # Extract structure from JSON
         columns_tree = json_data.get('columns_tree', [])
         counts_data = json_data.get('results', {}).get('counts', {})
-        base_comparison = json_data.get('base_comparison', 'county')  # Default to 'county'
+        base_comparison = json_data.get('base_comparison', 'Hierachy') 
         
         # Generate filename with timestamp
-        timestamp = timezone.now().strftime('%Y%m%d%H%M%S')
+        nairobi_tz = tz('Africa/Nairobi')
+        timestamp = timezone.now().astimezone(nairobi_tz).strftime('%Y%m%d%H%M%S')
         safe_columns = '_'.join([col.replace(' ', '_') for col in columns_tree])
         file_name = f"{base_comparison}_{safe_columns}_{timestamp}.xlsx"
         file_path = os.path.join(settings.MEDIA_ROOT, file_name)
@@ -537,20 +540,20 @@ class FilterReportMixin(object):
         workbook = Workbook()
         sheet = workbook.active
         
-        # Create headers from JSON structure
+        # table headers
         headers = [base_comparison] + columns_tree + ["Count"]
         
         # Build hierarchical data structure
         hierarchy = {}
         for path, count in self._flatten_json(counts_data, base_comparison, columns_tree):
             current = hierarchy
-            for val in path[:-1]:  # All path elements except the last
+            for val in path[:-1]:
                 if val not in current:
                     current[val] = {}
                 current = current[val]
-            current[path[-1]] = count  # Store count at the deepest level
+            current[path[-1]] = count
 
-        # Write headers with proper nesting and styling
+        # bold headers
         bold_font = Font(bold=True)
         
         # First column (base_comparison)
@@ -575,7 +578,7 @@ class FilterReportMixin(object):
             nonlocal row_idx
             if isinstance(data, dict):
                 for key, value in data.items():
-                    # Determine which column this value belongs to
+                    # match column to value
                     col_idx = len(parent_cols) + 1
                     sheet.cell(row=current_row, column=col_idx, value=key)
                     
@@ -590,7 +593,7 @@ class FilterReportMixin(object):
                             )
                     current_row = new_row
             else:
-                # Write the count value
+                # count value
                 sheet.cell(row=current_row, column=len(headers), value=data)
                 return current_row + 1
             return current_row
@@ -657,14 +660,15 @@ class DownloadReportView(APIView):
             #  import when needed
             import pandas as pd
             import pdfkit
+
             
             df = pd.read_excel(xlsx_path)
             
-            # Convert pd floats to int
+            # cleanup: pd floats to int
             for col in df.select_dtypes(include=['float']):
-                df[col] = df[col].astype('Int64', errors='ignore')
+                df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0).astype('Int64', errors='ignore')
             
-            # Replace all NA values with blank
+            # Replace NA values with blank
             df.fillna('', inplace=True)
             
             # Convert df to HTML
