@@ -1,8 +1,21 @@
+import csv
 import datetime
 import itertools
 import functools
 from django.db.models import Q
 import uuid
+import os
+import io
+from django.conf import settings
+from openpyxl import Workbook
+from openpyxl.utils import get_column_letter
+from openpyxl.styles import Alignment
+from reportlab.lib.pagesizes import letter
+from reportlab.platypus import Table, TableStyle, SimpleDocTemplate
+from reportlab.lib import colors
+from django.http import HttpResponse
+from pytz import timezone as tz
+
 
 from datetime import timedelta
 from collections import OrderedDict
@@ -28,6 +41,7 @@ from mfl_gis.models import FacilityCoordinates
 
 from .report_config import REPORTS
 from collections import defaultdict
+from openpyxl.styles import Font
 
 
 class FilterReportMixin(object):
@@ -412,7 +426,191 @@ class FilterReportMixin(object):
         # Placeholder for other report types
         raise NotFound(detail='Report not found.')
 
+    # def save_response_to_csv(self, data):
+    #     """
+    #     Receives a JSON response and saves it to a CSV file on server.
+    #     _summary_
 
+    #     Args:
+    #         data (_type_): _description_
+
+    #     Returns:
+    #         _type_: _description_
+    #     """
+    #     print(type(data))
+    #     print("my data",data)
+
+    #     columns_tree = data.get('columns_tree', [])
+    #     counts_data = data.get('results', {}).get('counts', {})
+    #     base_comparison = data.get('base_comparison', '')
+    #     timestamp = timezone.now().strftime('%Y%m%d%H%M%S')
+        
+    #     file_name = '_'.join(columns_tree).replace(' ', '_') + f'_{timestamp}.csv'
+    #     file_path_saved = os.path.join(settings.MEDIA_ROOT, file_name)
+        
+    #     flattened_rows = self.flatten_json(counts_data, base_comparison, columns_tree)
+    #     column_names = [base_comparison] + columns_tree + ["Count"]
+
+    #     # Write data to CSV file
+    #     with open(file_path_saved, mode='w', newline='') as df:
+    #         writer = csv.DictWriter(df, fieldnames=column_names)
+    #         writer.writeheader()
+            
+    #         for row in flattened_rows:
+    #             for col in column_names:
+    #                 row.setdefault(col, "")
+    #             writer.writerow(row)
+
+    #     return file_path_saved
+    
+    # def flatten_json(self, nested_dict, base_comparison, columns_tree):
+    #     """
+    #     Flattens a nested dictionary into a list of rows.
+    #     _summary_
+
+    #     Args:
+    #         nested_dict (_type_): _description_
+    #         base_comparison (_type_): _description_
+    #         columns_tree (_type_): _description_
+
+    #     Returns:
+    #         _type_: _description_
+    #     """
+    #     rows = []
+
+    #     def recurse(d, path):
+    #         if isinstance(d, dict):
+    #             for k, v in d.items():
+    #                 path.append(k)
+    #                 recurse(v, path)
+    #                 path.pop()
+    #         else:
+    #             row = {}
+                
+    #             if len(path) < len(columns_tree) + 1:
+    #                 print(f"⚠️ Columns tree {columns_tree} does not match json response nesting{path}")
+    #                 return
+
+    #             row[base_comparison] = path[0]
+                
+    #             for idx, col in enumerate(columns_tree):
+    #                 row[col] = path[idx + 1]
+
+    #             row["Count"] = d
+    #             rows.append(row)
+
+    #     recurse(nested_dict, [])
+    #     return rows
+    
+    def _flatten_json(self, nested_dict, base_comparison, columns_tree):
+        """
+        Generator that yields (path, count) tuples from nested JSON structure
+        where path matches [base_comparison] + columns_tree hierarchy
+        """
+        def _recurse(d, path):
+            if isinstance(d, dict):
+                for key, value in d.items():
+                    yield from _recurse(value, path + [key])
+            else:
+                if len(path) == len(columns_tree) + 1:  # Verify path depth
+                    yield (path, d)
+                else:
+                    print(f"⚠️ Path length mismatch: Expected {len(columns_tree)+1} levels, got {path}")
+
+        yield from _recurse(nested_dict, [])
+
+    def json_to_excel(self, json_data):
+        """
+        Directly converts JSON data to nested Excel format
+        Saves file in media directory
+        _summary_
+        Returns tuple of (file_path, file_name) for the generated Excel file
+        """
+        columns_tree = json_data.get('columns_tree', [])
+        counts_data = json_data.get('results', {}).get('counts', {})
+        base_comparison = json_data.get('base_comparison', 'Hierachy') 
+        
+        # Generate filename with timestamp
+        nairobi_tz = tz('Africa/Nairobi')
+        timestamp = timezone.now().astimezone(nairobi_tz).strftime('%Y%m%d%H%M%S')
+        safe_columns = '_'.join([col.replace(' ', '_') for col in columns_tree])
+        file_name = f"{base_comparison}_{safe_columns}_{timestamp}.xlsx"
+        file_path = os.path.join(settings.MEDIA_ROOT, file_name)
+        
+        workbook = Workbook()
+        sheet = workbook.active
+        
+        # table headers
+        headers = [base_comparison] + columns_tree + ["Count"]
+        
+        # Build hierarchical data structure
+        hierarchy = {}
+        for path, count in self._flatten_json(counts_data, base_comparison, columns_tree):
+            current = hierarchy
+            for val in path[:-1]:
+                if val not in current:
+                    current[val] = {}
+                current = current[val]
+            current[path[-1]] = count
+
+        # bold headers
+        bold_font = Font(bold=True)
+        
+        # First column (base_comparison)
+        sheet.merge_cells(start_row=1, start_column=1, end_row=2, end_column=1)
+        header_cell = sheet.cell(row=1, column=1, value=headers[0])
+        header_cell.font = bold_font
+        
+        # Middle columns (columns_tree)
+        for col_idx, header in enumerate(headers[1:-1], start=2):
+            header_cell = sheet.cell(row=1, column=col_idx, value=header)
+            header_cell.font = bold_font
+            sheet.cell(row=2, column=col_idx, value="").font = bold_font  # Empty sub-header
+        
+        # Last column (Count)
+        sheet.merge_cells(start_row=1, start_column=len(headers), end_row=2, end_column=len(headers))
+        header_cell = sheet.cell(row=1, column=len(headers), value=headers[-1])
+        header_cell.font = bold_font
+
+        # Write data with proper nesting and merging
+        row_idx = 3
+        def _write_nested_data(data, current_row, parent_cols):
+            nonlocal row_idx
+            if isinstance(data, dict):
+                for key, value in data.items():
+                    # match column to value
+                    col_idx = len(parent_cols) + 1
+                    sheet.cell(row=current_row, column=col_idx, value=key)
+                    
+                    new_row = _write_nested_data(value, current_row, parent_cols + [col_idx])
+                    
+                    # Merge cells vertically for parent values
+                    if new_row > current_row + 1:
+                        for col in parent_cols:
+                            sheet.merge_cells(
+                                start_row=current_row, start_column=col,
+                                end_row=new_row-1, end_column=col
+                            )
+                    current_row = new_row
+            else:
+                # count value
+                sheet.cell(row=current_row, column=len(headers), value=data)
+                return current_row + 1
+            return current_row
+
+        _write_nested_data(hierarchy, row_idx, [])
+
+        # Adjust column widths to fit content
+        for col in sheet.columns:
+            max_length = max(
+                (len(str(cell.value)) for cell in col if cell.value),
+                default=10  # Default width if column is empty
+            )
+            sheet.column_dimensions[get_column_letter(col[0].column)].width = max_length + 2
+        
+        # Save to media directory
+        workbook.save(file_path)
+        return file_path, file_name
 class MatrixReportView(FilterReportMixin, APIView):
     def post(self, request, *args, **kwargs):
         # Get the JSON body content as a Python dict
@@ -439,9 +637,122 @@ class MatrixReportView(FilterReportMixin, APIView):
         # get actual report
         data, totals = self.get_report_data()
 
+        # Save the response data to a CSV file
+        file_path_saved, file_name = self.json_to_excel({
+            'columns_tree': parse_and_translate_col_dims(user_supplied_columns),
+            'base_comparison': base_comparison,
+            'results': data,
+        })
+
         return Response(data={
             'columns_tree': parse_and_translate_col_dims(user_supplied_columns),
             'base_comparison': base_comparison,
             'totals': totals,
             'results': data,
+            'file_name': file_name,
         })
+
+class DownloadReportView(APIView):
+
+    def convert_xlsx_to_pdf(self, xlsx_path, pdf_path):
+        """Converts an XLSX file to PDF using pandas and pdfkit"""
+        try:
+            #  import when needed
+            import pandas as pd
+            import pdfkit
+
+            
+            df = pd.read_excel(xlsx_path)
+            
+            # cleanup: pd floats to int
+            for col in df.select_dtypes(include=['float']):
+                df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0).astype('Int64', errors='ignore')
+            
+            # Replace NA values with blank
+            df.fillna('', inplace=True)
+            
+            # Convert df to HTML
+            html_string = df.to_html(
+                na_rep='',
+                classes='table',
+                index=False
+            )
+            
+            # CSS styling and heading
+            html = f"""
+            <html>
+                <head>
+                    <style>
+                        table {{ border-collapse: collapse; width: 100%; }}
+                        th, td {{ border: 1px solid #ddd; padding: 8px; text-align: left; }}
+                        th {{ background-color: #f2f2f2; }}
+                        h1 {{ text-align: center; font-family: Arial, sans-serif; }}
+                    </style>
+                </head>
+                <body>
+                    <h1>Kenya Master Health Facility List Analytics Report</h1>
+                    {html_string}
+                </body>
+            </html>
+            """
+            
+            # PDF conversion options
+            options = {
+                'encoding': 'UTF-8',
+                'quiet': ''
+            }
+            config = pdfkit.configuration(wkhtmltopdf='/usr/bin/wkhtmltopdf')
+            
+            # Convert to PDF
+            pdfkit.from_string(html, pdf_path, configuration=config, options=options)
+            
+        except Exception as e:
+            raise ValidationError(f"PDF conversion failed: {str(e)}")
+    
+    def post(self, request, *args, **kwargs):
+        desired_format = request.data.get('format')
+        file_name = request.data.get('file_name')
+        
+        if not file_name:
+            raise ValidationError("File name is required.")
+        
+        if desired_format not in ['excel', 'pdf']:
+            raise ValidationError("Invalid format. Must be 'excel' or 'pdf'.")
+        
+        try:
+            # Construct the file path from the media directory
+            file_path = os.path.join(settings.MEDIA_ROOT, file_name)
+            
+            if not os.path.exists(file_path):
+                raise FileNotFoundError(f"File not found: {file_path}")
+            
+            if desired_format == 'excel':
+                with open(file_path, 'rb') as f:
+                    response = HttpResponse(
+                    f.read(),
+                    content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                    )
+                    response['Content-Disposition'] = f'attachment; filename="{file_name}"'
+                    return response
+            
+            elif desired_format == 'pdf':
+                pdf_path = file_path.replace('.xlsx', '.pdf')
+                self.convert_xlsx_to_pdf(file_path, pdf_path)
+                
+                if not os.path.exists(pdf_path):
+                    raise FileNotFoundError(f"PDF conversion failed: {pdf_path}")
+                
+                with open(pdf_path, 'rb') as f:
+                    response = HttpResponse(
+                    f.read(),
+                    content_type='application/pdf'
+                    )
+                    response['Content-Disposition'] = f'attachment; filename="{os.path.basename(pdf_path)}"'
+                return response
+        
+        except FileNotFoundError as fnf_error:
+            raise ValidationError(f"File not found: {str(fnf_error)}")
+        except Exception as e:
+            raise ValidationError(f"An error occurred while processing the file: {str(e)}")
+            
+
