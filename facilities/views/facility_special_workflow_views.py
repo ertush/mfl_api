@@ -66,7 +66,7 @@ class FacilityRegulationStatusListView(generics.ListCreateAPIView):
     """
     queryset = FacilityRegulationStatus.objects.all()
     serializer_class = FacilityRegulationStatusSerializer
-    filter_class = FacilityRegulationStatusFilter
+    filterset_class = FacilityRegulationStatusFilter
     ordering_fields = (
         'facility', 'regulating_body', 'regulation_status',)
 
@@ -98,7 +98,7 @@ class FacilityTypeListView(generics.ListCreateAPIView):
     """
     queryset = FacilityType.objects.all()
     serializer_class = FacilityTypeSerializer
-    filter_class = FacilityTypeFilter
+    filterset_class = FacilityTypeFilter
     ordering_fields = ('name', )
 
 

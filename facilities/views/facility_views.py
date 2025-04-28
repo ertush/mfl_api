@@ -9,7 +9,6 @@ from rest_framework.parsers import MultiPartParser
 from common.views import AuditableDetailViewMixin
 from common.utilities import CustomRetrieveUpdateDestroyView
 
-
 from common.models import (
     ContactType, UserConstituency, UserCounty, UserSubCounty
 )
@@ -63,8 +62,7 @@ from ..serializers import (
     InfrastructureSerializer,
     FacilityInfrastructureSerializer,
 )
-from ..filters_new import (
-    FacilityFilterNew)
+from ..filters import (FacilityFilter)
 
 from ..filters import (
     FacilityUnitFilter,
@@ -96,8 +94,8 @@ from ..utils import (
     _officer_data_is_valid
 )
 
-
 LOGGER = logging.getLogger(__name__)
+
 
 class QuerysetFilterMixin(object):
     """
@@ -111,12 +109,13 @@ class QuerysetFilterMixin(object):
     only on views for resources that are directly linked to counties
     e.g. facilities ).
     """
+
     def filter_for_county_users(self):
         if not self.request.user.is_national and \
                 self.request.user.county \
                 and 'ward' in [
-                field.name for field in
-                self.queryset.model._meta.get_fields()]:
+            field.name for field in
+            self.queryset.model._meta.get_fields()]:
             try:
                 self.queryset = self.queryset.filter(
                     ward__constituency__county__in=[
@@ -130,9 +129,9 @@ class QuerysetFilterMixin(object):
 
     def filter_for_sub_county_users(self):
         if (self.request.user.sub_county and 'ward' in [
-                field.name for field in
-                self.queryset.model._meta.get_fields()] and not
-                self.request.user.constituency):
+            field.name for field in
+            self.queryset.model._meta.get_fields()] and not
+        self.request.user.constituency):
             try:
                 self.queryset = self.queryset.filter(
                     ward__sub_county__in=[
@@ -149,7 +148,7 @@ class QuerysetFilterMixin(object):
     def filter_for_consituency_users(self):
         if (self.request.user.constituency and hasattr(
                 self.queryset.model, 'ward') and not
-                self.request.user.sub_county):
+        self.request.user.sub_county):
             try:
                 self.queryset = self.queryset.filter(
                     ward__constituency__in=[
@@ -165,8 +164,8 @@ class QuerysetFilterMixin(object):
 
     def filter_for_sub_county_and_constituency_users(self):
         if (self.request.user.sub_county and 'ward' in [
-                field.name for field in
-                self.queryset.model._meta.get_fields()] and
+            field.name for field in
+            self.queryset.model._meta.get_fields()] and
                 self.request.user.constituency):
             try:
                 self.queryset = self.queryset.filter(
@@ -184,17 +183,17 @@ class QuerysetFilterMixin(object):
     def filter_classified_facilities(self):
         if self.request.user.has_perm(
                 "facilities.view_classified_facilities") \
-            is False and 'is_classified' in [
-                field.name for field in
-                self.queryset.model._meta.get_fields()]:
+                is False and 'is_classified' in [
+            field.name for field in
+            self.queryset.model._meta.get_fields()]:
             self.queryset = self.queryset.filter(is_classified=False)
 
     def filter_approved_facilities(self):
         if self.request.user.has_perm(
-            "facilities.view_unapproved_facilities") \
-            is False and 'approved' in [
-                field.name for field in
-                self.queryset.model._meta.get_fields()]:
+                "facilities.view_unapproved_facilities") \
+                is False and 'approved' in [
+            field.name for field in
+            self.queryset.model._meta.get_fields()]:
 
             # filter both facilities and facilities materialized view
             try:
@@ -204,16 +203,16 @@ class QuerysetFilterMixin(object):
 
     def filter_rejected_facilities(self):
         if self.request.user.has_perm("facilities.view_rejected_facilities") \
-            is False and ('rejected' in [
-                field.name for field in
-                self.queryset.model._meta.get_fields()]):
+                is False and ('rejected' in [
+            field.name for field in
+            self.queryset.model._meta.get_fields()]):
             self.queryset = self.queryset.filter(rejected=False)
 
     def filter_closed_facilities(self):
         if self.request.user.has_perm(
-            "facilities.view_closed_facilities") is False and \
-            'closed' in [field.name for field in
-                         self.queryset.model._meta.get_fields()]:
+                "facilities.view_closed_facilities") is False and \
+                'closed' in [field.name for field in
+                             self.queryset.model._meta.get_fields()]:
             self.queryset = self.queryset.filter(closed=False)
 
     def filter_for_regulators(self):
@@ -221,29 +220,28 @@ class QuerysetFilterMixin(object):
                 self.queryset.model, 'regulatory_body'):
             self.queryset = self.queryset.filter(
                 regulatory_body=self.request.user.regulator)
-            
+
     def filter_for_infrastructure(self):
         if self.request.user and hasattr(self.request, 'infrastruture'):
-        # if self.request.user.has_perm("facilities.view_infrastructure") \
-        #     is False and ('infrastructure' in [
-        #         field.name for field in
-        #         self.queryset.model._meta.get_fields()]):
+            # if self.request.user.has_perm("facilities.view_infrastructure") \
+            #     is False and ('infrastructure' in [
+            #         field.name for field in
+            #         self.queryset.model._meta.get_fields()]):
             self.queryset = self.queryset.filter(infrastructure=self.request.infrastructure)
-
 
     def filter_for_services(self):
         if self.request.user.has_perm("facilities.view_facilityservice") \
-            is False and ('service' in [
-                field.name for field in
-                self.queryset.model._meta.get_fields()]):
+                is False and ('service' in [
+            field.name for field in
+            self.queryset.model._meta.get_fields()]):
             self.queryset = self.queryset.filter(service=self.request.service)
 
     def filter_for_speciality(self):
         if self.request.user and hasattr(self.request, 'speciality'):
-        # if self.request.user.has_perm("facilities.view_facilityservice") \
-        #     is False and ('service' in [
-        #         field.name for field in
-        #         self.queryset.model._meta.get_fields()]):
+            # if self.request.user.has_perm("facilities.view_facilityservice") \
+            #     is False and ('service' in [
+            #         field.name for field in
+            #         self.queryset.model._meta.get_fields()]):
             self.queryset = self.queryset.filter(speciality=self.request.speciality)
 
     def get_queryset(self, *args, **kwargs):
@@ -291,7 +289,7 @@ class FacilityLevelChangeReasonListView(generics.ListCreateAPIView):
 
 
 class FacilityLevelChangeReasonDetailView(
-        AuditableDetailViewMixin, CustomRetrieveUpdateDestroyView):
+    AuditableDetailViewMixin, CustomRetrieveUpdateDestroyView):
     """
     Retrieves a single facility level change reason
     """
@@ -318,7 +316,7 @@ class KephLevelListView(generics.ListCreateAPIView):
 
 
 class KephLevelDetailView(
-        AuditableDetailViewMixin, CustomRetrieveUpdateDestroyView):
+    AuditableDetailViewMixin, CustomRetrieveUpdateDestroyView):
     """
     Retrieves a single KEPH level
     """
@@ -347,7 +345,7 @@ class FacilityUnitsListView(generics.ListCreateAPIView):
 
 
 class FacilityUnitDetailView(
-        AuditableDetailViewMixin, CustomRetrieveUpdateDestroyView):
+    AuditableDetailViewMixin, CustomRetrieveUpdateDestroyView):
     """
     Retrieves a particular facility unit's detail
     """
@@ -375,7 +373,7 @@ class OfficerContactListView(generics.ListCreateAPIView):
 
 
 class OfficerContactDetailView(
-        AuditableDetailViewMixin, CustomRetrieveUpdateDestroyView):
+    AuditableDetailViewMixin, CustomRetrieveUpdateDestroyView):
     """
     Retrieves a particular officer contact detail
     """
@@ -406,7 +404,7 @@ class OwnerListView(generics.ListCreateAPIView):
 
 
 class OwnerDetailView(
-        AuditableDetailViewMixin, CustomRetrieveUpdateDestroyView):
+    AuditableDetailViewMixin, CustomRetrieveUpdateDestroyView):
     """
     Retrieves a particular owner's details
     """
@@ -414,7 +412,7 @@ class OwnerDetailView(
     serializer_class = OwnerSerializer
 
 
-class FacilityListView( generics.ListCreateAPIView):
+class FacilityListView(generics.ListCreateAPIView):
     """
     Lists and creates facilities
 
@@ -446,10 +444,10 @@ class FacilityListView( generics.ListCreateAPIView):
     """
     queryset = Facility.objects.all()
     serializer_class = FacilitySerializer
-    filterset_class = FacilityFilterNew
+    filterset_class = FacilityFilter
     ordering_fields = (
         'name', 'code', 'number_of_beds', 'number_of_cots',
-        'operation_status', 'ward', 'owner', 'facility_type','updated'
+        'operation_status', 'ward', 'owner', 'facility_type', 'updated'
     )
 
 
@@ -459,15 +457,15 @@ class FacilityListReadOnlyView(QuerysetFilterMixin, generics.ListAPIView):
     """
     queryset = Facility.objects.all()
     serializer_class = FacilityListSerializer
-    filterset_class = FacilityFilterNew
+    filterset_class = FacilityFilter
     ordering_fields = (
         'code', 'name', 'county', 'constituency', 'facility_type_name',
-        'owner_type_name', 'is_published','updated'
+        'owner_type_name', 'is_published', 'updated'
     )
 
 
 class FacilityExportMaterialListView(
-        QuerysetFilterMixin, generics.ListAPIView):
+    QuerysetFilterMixin, generics.ListAPIView):
     queryset = FacilityExportExcelMaterialView.objects.all()
     serializer_class = FacilityExportExcelMaterialViewSerializer
     filter_class = FacilityExportExcelMaterialViewFilter
@@ -475,8 +473,8 @@ class FacilityExportMaterialListView(
 
 
 class FacilityDetailView(
-        QuerysetFilterMixin, AuditableDetailViewMixin,
-        generics.RetrieveUpdateDestroyAPIView):
+    QuerysetFilterMixin, AuditableDetailViewMixin,
+    generics.RetrieveUpdateDestroyAPIView):
     """
     Retrieves a particular facility
     """
@@ -495,7 +493,7 @@ class FacilityDetailView(
             # remove duplicates
             updated_contacts = [
                 contact for contact in contacts if contact not in
-                proposed_contacts
+                                                   proposed_contacts
             ]
 
             update.contacts = json.dumps(proposed_contacts + updated_contacts)
@@ -513,7 +511,7 @@ class FacilityDetailView(
             # remove duplicates
             updated_services = [
                 service for service in services if service not in
-                proposed_services
+                                                   proposed_services
             ]
             update.services = json.dumps(proposed_services + updated_services)
         else:
@@ -530,7 +528,7 @@ class FacilityDetailView(
             # remove duplicates
             updated_humanresources = [
                 hr for hr in humanresources if hr not in
-                proposed_humanresources
+                                               proposed_humanresources
             ]
             update.humanresources = json.dumps(proposed_humanresources + updated_humanresources)
         else:
@@ -547,7 +545,7 @@ class FacilityDetailView(
             # remove duplicates
             updated_infrastructure = [
                 infra for infra in infrastructure if infra not in
-                proposed_infrastructure
+                                                     proposed_infrastructure
             ]
             update.infrastructure = json.dumps(proposed_infrastructure + updated_infrastructure)
         else:
@@ -563,7 +561,7 @@ class FacilityDetailView(
             # remove duplicates
             updated_units = [
                 unit for unit in units if unit not in
-                proposed_units
+                                          proposed_units
             ]
             update.units = json.dumps(proposed_units + updated_units)
         else:
@@ -699,8 +697,8 @@ class FacilityDetailView(
             self, services, humanresources, infrastructure, contacts, units, officer_in_charge, instance):
 
         if (services == [] and humanresources == [] and infrastructure == [] and contacts == [] and units == [] and not
-                self.should_buffer_officer_incharge(
-                    officer_in_charge, instance)):
+        self.should_buffer_officer_incharge(
+            officer_in_charge, instance)):
             return False
         return True
 
@@ -715,7 +713,7 @@ class FacilityDetailView(
         hr_errors = _validate_humanresources(humanresources)
         if hr_errors:
             self.validation_errors.update({"humanresources": hr_errors})
-        
+
         infra_errors = _validate_infrastructure(infrastructure)
         if infra_errors:
             self.validation_errors.update({"infrastructure": infra_errors})
@@ -759,7 +757,7 @@ class FacilityDetailView(
         if officer_in_charge:
             officer_in_charge['facility_id'] = str(instance.id)
 
-        self. _validate_payload(services, humanresources, infrastructure, contacts, units, officer_in_charge)
+        self._validate_payload(services, humanresources, infrastructure, contacts, units, officer_in_charge)
         if any(self.validation_errors):
             return Response(
                 data=self.validation_errors,
@@ -830,12 +828,12 @@ class FacilityContactListView(generics.ListCreateAPIView):
     """
     queryset = FacilityContact.objects.all()
     serializer_class = FacilityContactSerializer
-    filter_class = FacilityContactFilter
+    filterset_class = FacilityContactFilter
     ordering_fields = ('facility', 'contact',)
 
 
 class FacilityContactDetailView(
-        AuditableDetailViewMixin, CustomRetrieveUpdateDestroyView):
+    AuditableDetailViewMixin, CustomRetrieveUpdateDestroyView):
     """
     Retrieves a particular facility contact
     """
@@ -853,7 +851,7 @@ class FacilityOfficerListView(generics.ListCreateAPIView):
 
 
 class FacilityOfficerDetailView(
-        AuditableDetailViewMixin, CustomRetrieveUpdateDestroyView):
+    AuditableDetailViewMixin, CustomRetrieveUpdateDestroyView):
     serializer_class = FacilityOfficerSerializer
     queryset = FacilityOfficer.objects.all()
 
@@ -866,7 +864,7 @@ class FacilityUnitRegulationListView(generics.ListCreateAPIView):
 
 
 class FacilityUnitRegulationDetailView(
-        AuditableDetailViewMixin, CustomRetrieveUpdateDestroyView):
+    AuditableDetailViewMixin, CustomRetrieveUpdateDestroyView):
     queryset = FacilityUnitRegulation.objects.all()
     serializer_class = FacilityUnitRegulationSerializer
 
@@ -910,11 +908,11 @@ class OptionGroupListView(generics.ListCreateAPIView):
     queryset = OptionGroup.objects.all()
     serializer_class = OptionGroupSerializer
     filter_class = OptionGroupFilter
-    ordering_fields = ('name', )
+    ordering_fields = ('name',)
 
 
 class OptionGroupDetailView(
-        AuditableDetailViewMixin, CustomRetrieveUpdateDestroyView):
+    AuditableDetailViewMixin, CustomRetrieveUpdateDestroyView):
     queryset = OptionGroup.objects.all()
     serializer_class = OptionGroupSerializer
 
@@ -929,13 +927,12 @@ class RegulatorSyncListView(generics.ListCreateAPIView):
 
 
 class RegulatorSyncDetailView(
-        AuditableDetailViewMixin, CustomRetrieveUpdateDestroyView):
+    AuditableDetailViewMixin, CustomRetrieveUpdateDestroyView):
     queryset = RegulatorSync.objects.all()
     serializer_class = RegulatorSyncSerializer
 
 
 class RegulatorSyncUpdateView(generics.GenericAPIView):
-
     """Updates RegulatorSync object with an MFL code"""
     serializer_class = RegulatorSyncSerializer
 
@@ -954,7 +951,6 @@ class RegulatorSyncUpdateView(generics.GenericAPIView):
         sync_obj.update_facility(facility)
         serializer = self.get_serializer(sync_obj)
         return Response(serializer.data)
-
 
 
 # -------------------
@@ -977,7 +973,7 @@ class SpecialityCategoryListView(generics.ListCreateAPIView):
 
 
 class SpecialityCategoryDetailView(
-        AuditableDetailViewMixin, CustomRetrieveUpdateDestroyView):
+    AuditableDetailViewMixin, CustomRetrieveUpdateDestroyView):
     """
     Retrieves a particular speciality category.
     """
@@ -1004,7 +1000,7 @@ class SpecialityListView(generics.ListCreateAPIView):
 
 
 class SpecialityDetailView(
-        AuditableDetailViewMixin, CustomRetrieveUpdateDestroyView):
+    AuditableDetailViewMixin, CustomRetrieveUpdateDestroyView):
     """
     Retrieves a particular speciality detail
     """
@@ -1031,7 +1027,7 @@ class FacilitySpecialistListView(generics.ListCreateAPIView):
 
 
 class FacilitySpecialistDetailView(
-        AuditableDetailViewMixin, CustomRetrieveUpdateDestroyView):
+    AuditableDetailViewMixin, CustomRetrieveUpdateDestroyView):
     """
     Retrieves a particular facility specialist detail
     """
@@ -1058,7 +1054,7 @@ class InfrastructureCategoryListView(generics.ListCreateAPIView):
 
 
 class InfrastructureCategoryDetailView(
-        AuditableDetailViewMixin, CustomRetrieveUpdateDestroyView):
+    AuditableDetailViewMixin, CustomRetrieveUpdateDestroyView):
     """
     Retrieves a particular speciality category.
     """
@@ -1085,7 +1081,7 @@ class InfrastructureListView(generics.ListCreateAPIView):
 
 
 class InfrastructureDetailView(
-        AuditableDetailViewMixin, CustomRetrieveUpdateDestroyView):
+    AuditableDetailViewMixin, CustomRetrieveUpdateDestroyView):
     """
     Retrieves a particular infrastructure detail
     """
@@ -1112,7 +1108,7 @@ class FacilityInfrastructureListView(generics.ListCreateAPIView):
 
 
 class FacilityInfrastructureDetailView(
-        AuditableDetailViewMixin, CustomRetrieveUpdateDestroyView):
+    AuditableDetailViewMixin, CustomRetrieveUpdateDestroyView):
     """
     Retrieves a particular facility infrastructure detail
     """
