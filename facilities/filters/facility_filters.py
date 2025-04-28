@@ -569,7 +569,7 @@ class FacilityFilter(CommonFieldsFilterset):
     is_approved = filters.CharFilter(
         method='filter_approved_facilities')
 
-    service = filters.sCharFilter(
+    service = filters.CharFilter(
         method=service_filter)
     infrastructure = filters.CharFilter(
         method='infrastructure_filter')

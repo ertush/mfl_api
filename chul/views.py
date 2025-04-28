@@ -147,7 +147,7 @@ class CHUServiceListView(generics.ListCreateAPIView):
     """
     queryset = CHUService.objects.all()
     serializer_class = CHUServiceSerializer
-    filter_class = CHUServiceFilter
+    filterset_class = CHUServiceFilter
     ordering_fields = ('name', 'description', 'date_established')
 
 
@@ -175,7 +175,7 @@ class StatusListView(generics.ListCreateAPIView):
     """
     queryset = Status.objects.all()
     serializer_class = StatusSerializer
-    filter_class = StatusFilter
+    filterset_class = StatusFilter
     ordering_fields = ('name', 'description', )
 
 
@@ -205,7 +205,7 @@ class CommunityHealthUnitContactListView(generics.ListCreateAPIView):
     """
     queryset = CommunityHealthUnitContact.objects.all()
     serializer_class = CommunityHealthUnitContactSerializer
-    filter_class = CommunityHealthUnitContactFilter
+    filterset_class = CommunityHealthUnitContactFilter
     ordering_fields = ('health_unit', 'contact', )
 
 
@@ -235,7 +235,7 @@ class CommunityHealthUnitListView(
     """
     queryset = CommunityHealthUnit.objects.all()
     serializer_class = CommunityHealthUnitSerializer
-    filter_class = CommunityHealthUnitFilter
+    filterset_class = CommunityHealthUnitFilter
     ordering_fields = ('name', 'facility', 'code',)
 
 
@@ -264,7 +264,7 @@ class CommunityHealthWorkerListView(generics.ListCreateAPIView):
     """
     queryset = CommunityHealthWorker.objects.all()
     serializer_class = CommunityHealthWorkerSerializer
-    filter_class = CommunityHealthWorkerFilter
+    filterset_class = CommunityHealthWorkerFilter
     ordering_fields = ('first_name', 'last_name', 'username',)
 
 
@@ -294,7 +294,7 @@ class CommunityHealthWorkerContactListView(generics.ListCreateAPIView):
     """
     queryset = CommunityHealthWorkerContact.objects.all()
     serializer_class = CommunityHealthWorkerContactSerializer
-    filter_class = CommunityHealthWorkerContactFilter
+    filterset_class = CommunityHealthWorkerContactFilter
     ordering_fields = ('contact',)
 
 
@@ -327,7 +327,7 @@ class CHURatingListView(AuditableDetailViewMixin, generics.ListCreateAPIView):
     """
     queryset = CHURating.objects.all()
     serializer_class = CHURatingSerializer
-    filter_class = CHURatingFilter
+    filterset_class = CHURatingFilter
     ordering_fields = ('chu', )
 
 
@@ -343,7 +343,7 @@ class ChuUpdateBufferListView(
         AuditableDetailViewMixin, generics.ListCreateAPIView):
     queryset = ChuUpdateBuffer.objects.all()
     serializer_class = ChuUpdateBufferSerializer
-    filter_class = ChuUpdateBufferFilter
+    filterset_class = ChuUpdateBufferFilter
     ordering_fields = ('health_unit', )
 
 

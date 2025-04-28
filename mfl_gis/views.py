@@ -73,7 +73,7 @@ class GeoCodeSourceListView(generics.ListCreateAPIView):
     queryset = GeoCodeSource.objects.all()
     serializer_class = GeoCodeSourceSerializer
     ordering_fields = ('name', 'abbreviation',)
-    filter_class = GeoCodeSourceFilter
+    filterset_class = GeoCodeSourceFilter
 
 
 class GeoCodeSourceDetailView(
@@ -103,7 +103,7 @@ class GeoCodeMethodListView(GISListCreateAPIView):
     """
     queryset = GeoCodeMethod.objects.all()
     serializer_class = GeoCodeMethodSerializer
-    filter_class = GeoCodeMethodFilter
+    filterset_class = GeoCodeMethodFilter
     ordering_fields = ('name', )
 
 
@@ -139,7 +139,7 @@ class FacilityCoordinatesListView(GISListCreateAPIView):
     # permission_classes = (DjangoModelPermissions,)
     queryset = FacilityCoordinates.objects.all()
     serializer_class = FacilityCoordinatesListSerializer
-    filter_class = FacilityCoordinatesFilter
+    filterset_class = FacilityCoordinatesFilter
     ordering_fields = (
         'facility', 'latitude', 'longitude', 'source', 'method',)
     pagination_class = GISPageNumberPagination
@@ -198,7 +198,7 @@ class FacilityCoordinatesCreationAndListing(
     # permission_classes = (DjangoModelPermissions,)
     queryset = FacilityCoordinates.objects.all()
     serializer_class = FacilityCoordinateSimpleSerializer
-    filter_class = FacilityCoordinatesFilter
+    filterset_class = FacilityCoordinatesFilter
     ordering_fields = (
         'facility', 'latitude', 'longitude',)
     pagination_class = GISPageNumberPagination
@@ -258,7 +258,7 @@ class WorldBorderListView(GISListCreateAPIView):
     """
     queryset = WorldBorder.objects.all()
     serializer_class = WorldBorderSerializer
-    filter_class = WorldBorderFilter
+    filterset_class = WorldBorderFilter
     ordering_fields = ('name', 'code',)
     pagination_class = GISPageNumberPagination
 
@@ -290,7 +290,7 @@ class CountyBoundaryListView(GISListCreateAPIView):
     """
     queryset = CountyBoundary.objects.all()
     serializer_class = CountyBoundarySerializer
-    filter_class = CountyBoundaryFilter
+    filterset_class = CountyBoundaryFilter
     ordering_fields = ('name', 'code',)
     pagination_class = GISPageNumberPagination
 
@@ -332,7 +332,7 @@ class ConstituencyBoundaryListView(GISListCreateAPIView):
     """
     queryset = ConstituencyBoundary.objects.all()
     serializer_class = ConstituencyBoundarySerializer
-    filter_class = ConstituencyBoundaryFilter
+    filterset_class = ConstituencyBoundaryFilter
     ordering_fields = ('name', 'code',)
     pagination_class = GISPageNumberPagination
 
@@ -374,7 +374,7 @@ class WardBoundaryListView(GISListCreateAPIView):
     """
     queryset = WardBoundary.objects.all()
     serializer_class = WardBoundarySerializer
-    filter_class = WardBoundaryFilter
+    filterset_class = WardBoundaryFilter
     ordering_fields = ('name', 'code',)
     pagination_class = GISPageNumberPagination
 

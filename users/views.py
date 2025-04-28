@@ -30,14 +30,14 @@ class PermissionsListView(generics.ListAPIView):
     """
     queryset = Permission.objects.all()
     serializer_class = PermissionSerializer
-    filter_class = PermissionFilter
+    filterset_class = PermissionFilter
     ordering_fields = ('name', )
 
 
 class GroupListView(generics.ListCreateAPIView):
     queryset = ProxyGroup.objects.all()
     serializer_class = GroupSerializer
-    filter_class = GroupFilter
+    filterset_class = GroupFilter
     ordering_fields = ('name', )
 
     def get_queryset(self, *args, **kwargs):
@@ -81,7 +81,7 @@ class GroupDetailView(CustomRetrieveUpdateDestroyView):
 class UserList(generics.ListCreateAPIView):
     queryset = MflUser.objects.all()
     serializer_class = MflUserSerializer
-    filter_class = MFLUserFilter
+    filterset_class = MFLUserFilter
     ordering_fields = (
         'first_name', 'email', 'is_active',
         'last_login', 'employee_number'

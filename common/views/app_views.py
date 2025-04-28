@@ -80,7 +80,7 @@ class NotificationListView(generics.ListCreateAPIView):
     queryset = Notification.objects.all()
     serializer_class = NotificationSerializer
     ordering_fields = ('group', 'created', 'title')
-    filter_class = NotificationFilter
+    filterset_class = NotificationFilter
 
     def get_queryset(self, *args, **kwargs):
         user = self.request.user
@@ -112,7 +112,7 @@ class UserSubCountyListView(generics.ListCreateAPIView):
     queryset = UserSubCounty.objects.all()
     serializer_class = UserSubCountySerializer
     ordering_fields = ('user', 'sub_county',)
-    filter_class = UserSubCountyFilter
+    filterset_class = UserSubCountyFilter
 
 
 class UserSubCountyDetailView(
@@ -143,7 +143,7 @@ class SubCountyListView(generics.ListCreateAPIView):
     queryset = SubCounty.objects.all()
     serializer_class = SubCountySerializer
     ordering_fields = ('name', 'code', 'county')
-    filter_class = SubCountyFilter
+    filterset_class = SubCountyFilter
 
     def get_queryset(self):
         if self.request.user.sub_county:
@@ -193,7 +193,7 @@ class ContactView(generics.ListCreateAPIView):
     queryset = Contact.objects.all()
     serializer_class = ContactSerializer
     ordering_fields = ('contact_type', 'contact',)
-    filter_class = ContactFilter
+    filterset_class = ContactFilter
 
 
 class ContactDetailView(
@@ -221,7 +221,7 @@ class PhysicalAddressView(generics.ListCreateAPIView):
     queryset = PhysicalAddress.objects.all()
     serializer_class = PhysicalAddressSerializer
     ordering_fields = ('town', )
-    filter_class = PhysicalAddressFilter
+    filterset_class = PhysicalAddressFilter
 
 
 class PhysicalAddressDetailView(
@@ -249,7 +249,7 @@ class CountyView(generics.ListCreateAPIView):
     queryset = County.objects.all()
     serializer_class = CountySerializer
     ordering_fields = ('name', 'code',)
-    filter_class = CountyFilter
+    filterset_class = CountyFilter
 
     def get_queryset(self):
         if self.request.user.county:
@@ -313,7 +313,7 @@ class WardView(generics.ListCreateAPIView):
     """
     queryset = Ward.objects.all()
     serializer_class = WardSerializer
-    filter_class = WardFilter
+    filterset_class = WardFilter
     ordering_fields = ('name', 'code', 'constituency',)
 
     def get_queryset(self):
@@ -385,7 +385,7 @@ class ConstituencyView(generics.ListCreateAPIView):
     """
     queryset = Constituency.objects.all()
     serializer_class = ConstituencySerializer
-    filter_class = ConstituencyFilter
+    filterset_class = ConstituencyFilter
     ordering_fields = ('name', 'code', 'county',)
 
     def get_queryset(self):
@@ -444,7 +444,7 @@ class ContactTypeListView(generics.ListCreateAPIView):
     queryset = ContactType.objects.all()
     serializer_class = ContactTypeSerializer
     ordering_fields = ('name', )
-    filter_class = ContactTypeFilter
+    filterset_class = ContactTypeFilter
 
 
 class ContactTypeDetailView(
@@ -473,7 +473,7 @@ class UserCountyView(generics.ListCreateAPIView):
     """
     queryset = UserCounty.objects.all()
     serializer_class = UserCountySerializer
-    filter_class = UserCountyFilter
+    filterset_class = UserCountyFilter
     ordering_fields = ('user', 'county',)
 
 
@@ -500,7 +500,7 @@ class UserContactListView(generics.ListCreateAPIView):
     """
     queryset = UserContact.objects.all()
     serializer_class = UserContactSerializer
-    filter_class = UserContactFilter
+    filterset_class = UserContactFilter
     ordering_fields = ('user', 'contact',)
 
 
@@ -527,7 +527,7 @@ class TownListView(generics.ListCreateAPIView):
     """
     queryset = Town.objects.all()
     serializer_class = TownSerializer
-    filter_class = TownFilter
+    filterset_class = TownFilter
     ordering_fields = ('name', )
 
 
@@ -697,7 +697,7 @@ class FilteringSummariesView(views.APIView):
 
 class UserConstituencyListView(generics.ListCreateAPIView):
     serializer_class = UserConstituencySerializer
-    filter_class = UserConstituencyFilter
+    filterset_class = UserConstituencyFilter
     queryset = UserConstituency.objects.all()
     ordering_fields = ('user', 'constituency')
 
@@ -718,7 +718,7 @@ class DocumentUploadDetailView(
 class DocumentUploadListView(generics.ListCreateAPIView):
     serializer_class = DocumentUploadSerializer
     queryset = DocumentUpload.objects.all()
-    filter_class = DocumentUploadFilter
+    filterset_class = DocumentUploadFilter
     ordering_fields = ('name', )
     parser_classes = (parsers.JSONParser, parsers.MultiPartParser, XMLParser, )
 
@@ -729,7 +729,7 @@ class ErrorQueueListView(generics.ListCreateAPIView):
     """
 
     serializer_class = ErrorQueueSerializer
-    filter_class = ErrorQueueFilter
+    filterset_class = ErrorQueueFilter
     queryset = ErrorQueue.objects.all()
     ordering_fields = ('app_label', )
 
