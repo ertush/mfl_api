@@ -22,7 +22,14 @@ class NullFilter(django_filters.Filter):
     """
 
     def filter(self, qs, value):
-        return qs.filter(**{self.name + '__isnull': (value.lower() == 'true')})
+        if value is None:
+            return qs
+
+        value_str = str(value).strip().lower()
+        if value_str not in ('true', 'false'):
+            return qs  # Ignore invalid values
+
+        return qs.filter(**{f"{self.field_name}__isnull": value_str == 'true'})
 
 
 class IsoDateTimeField(forms.DateTimeField):
