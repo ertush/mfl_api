@@ -503,7 +503,7 @@ class TestSearchFilter(ViewTestBase):
         mommy.make(Facility)
         qs = Facility.objects.all()
 
-        search_filter = SearchFilter(name='search')
+        search_filter = SearchFilter(field_name='search')
         result = search_filter.filter(qs, 'test')
         # no documents have been indexed
         self.assertEquals(result.count(), 0)

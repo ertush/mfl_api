@@ -25,7 +25,7 @@ class TestNullFilter(APITestCase):
         ContactType.objects.create(name="a", description="desc")
         ContactType.objects.create(name="b")
 
-        nf = NullFilter(name='description')
+        nf = NullFilter(field_name=='description')
         qs = nf.filter(ContactType.objects.all(), 'true')
         self.assertEqual(qs.count(), 1)
         self.assertEqual(qs[0].name, "b")

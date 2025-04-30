@@ -54,7 +54,7 @@ class SubCountyFilter(CommonFieldsFilterset):
 
 class UserConstituencyFilter(CommonFieldsFilterset):
     county = django_filters.CharFilter(
-        lookup_expr='exact', name='constituency__county')
+        lookup_expr='exact', field_name='constituency__county')
     constituency = ListCharFilter(lookup_expr='exact')
 
     class Meta(CommonFieldsFilterset.Meta):
@@ -90,7 +90,7 @@ class PhysicalAddressFilter(CommonFieldsFilterset):
 class CountyFilter(CommonFieldsFilterset):
     name = ListCharFilter(lookup_expr='icontains')
     code = ListIntegerFilter(lookup_expr='exact')
-    county_id = ListCharFilter(name='id', lookup_expr='icontains')
+    county_id = ListCharFilter(field_name='id', lookup_expr='icontains')
 
     class Meta(CommonFieldsFilterset.Meta):
         model = County
@@ -100,20 +100,20 @@ class ConstituencyFilter(CommonFieldsFilterset):
     name = ListCharFilter(lookup_expr='icontains')
     code = ListIntegerFilter(lookup_expr='exact')
     county = ListCharFilter(lookup_expr='exact')
-    constituency_id = ListCharFilter(name='id', lookup_expr='exact')
+    constituency_id = ListCharFilter(field_name='id', lookup_expr='exact')
 
     class Meta(CommonFieldsFilterset.Meta):
         model = Constituency
 
 
 class WardFilter(CommonFieldsFilterset):
-    ward_id = ListCharFilter(name='id', lookup_expr='exact')
+    ward_id = ListCharFilter(field_name='id', lookup_expr='exact')
     name = ListCharFilter(lookup_expr='icontains')
     code = ListIntegerFilter(lookup_expr='exact')
     constituency = ListCharFilter(lookup_expr='exact')
     sub_county = ListCharFilter(lookup_expr='exact')
     county = ListCharFilter(
-        lookup_expr='exact', name='constituency__county')
+        lookup_expr='exact', field_name='constituency__county')
 
     class Meta(CommonFieldsFilterset.Meta):
         model = Ward
