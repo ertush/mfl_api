@@ -621,6 +621,8 @@ class FacilityUnitFilter(CommonFieldsFilterset):
 
     class Meta(CommonFieldsFilterset.Meta):
         model = FacilityUnit
+        
+        
 
 
 class FacilityUnitRegulationFilter(CommonFieldsFilterset):
