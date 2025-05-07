@@ -22,7 +22,7 @@ from common.fields import SequenceField
 from .filter_shared import (
     CommonFieldsFilterset,
     ListCharFilter,
-    ListIntegerFilter
+    ListIntegerFilter, ListUUIDFilter
 )
 
 
@@ -99,7 +99,7 @@ class CountyFilter(CommonFieldsFilterset):
 class ConstituencyFilter(CommonFieldsFilterset):
     name = ListCharFilter(lookup_expr='icontains')
     code = ListIntegerFilter(lookup_expr='exact')
-    county = ListCharFilter(lookup_expr='exact')
+    county = ListUUIDFilter(lookup_expr='in')
     constituency_id = ListCharFilter(field_name='id', lookup_expr='exact')
 
     class Meta(CommonFieldsFilterset.Meta):
