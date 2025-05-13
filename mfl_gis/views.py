@@ -212,6 +212,8 @@ class FacilityCoordinatesCreationAndListing(
         facility = Facility.objects.get(id=facility_id)
         if facility.approved:
             self.buffer_coordinates(facility, request.data)
+            instance = FacilityCoordinates.objects.get(facility=facility_id)
+            serializer = self.get_serializer(instance)  # re-serialize saved instance
         else:
             self.perform_create(serializer)
         return views.Response(
