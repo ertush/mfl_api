@@ -110,9 +110,9 @@ class WardFilter(CommonFieldsFilterset):
     ward_id = ListCharFilter(field_name='id', lookup_expr='exact')
     name = ListCharFilter(lookup_expr='icontains')
     code = ListIntegerFilter(lookup_expr='exact')
-    constituency = ListCharFilter(lookup_expr='exact')
-    sub_county = ListCharFilter(lookup_expr='exact')
-    county = ListCharFilter(
+    constituency = ListUUIDFilter(lookup_expr='exact')
+    sub_county = ListUUIDFilter(lookup_expr='exact')
+    county = ListUUIDFilter(
         lookup_expr='exact', field_name='constituency__county')
 
     class Meta(CommonFieldsFilterset.Meta):
