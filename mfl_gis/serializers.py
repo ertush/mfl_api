@@ -36,12 +36,11 @@ class BufferCooridinatesMixin(object):
         return facility_update
 
     def buffer_coordinates(self, facility, validated_data):
-        point = GEOSGeometry(validated_data['coordinates'])
 
         facility = Facility.objects.get(id=facility.id) if hasattr(
             facility, 'id') else facility
 
-        coordinates = []
+        coordinates = {}
         if isinstance(validated_data.get('coordinates'), six.string_types):
             coordinates = json.loads(validated_data.get('coordinates'))
 
@@ -49,7 +48,8 @@ class BufferCooridinatesMixin(object):
             coordinates = validated_data.get('coordinates')
 
         if isinstance(validated_data.get('coordinates'), Point):
-            coordinates = [point.x, point.y]
+            point = GEOSGeometry(validated_data['coordinates'])
+            coordinates = {"coordinates": [point.x, point.y], "type": "point"}
 
         facility_update = self.get_facility_update(facility)
 
@@ -68,6 +68,7 @@ class BufferCooridinatesMixin(object):
                 method = GeoCodeMethod.objects.get(id=method)
                 humanized_data['method_human'] = method.name
                 machine_data['method_id'] = str(method.id)
+
         if 'source' in validated_data:
             try:
                 humanized_data['source_human'] = source.name
@@ -77,15 +78,12 @@ class BufferCooridinatesMixin(object):
                 source = GeoCodeSource.objects.get(id=source)
                 humanized_data['source_human'] = source.name
                 machine_data['source_id'] = str(source.id)
-        # Create the dictionary
-        coordinates_dict = {
-            "coordinates": [point.x, point.y],  # [longitude, latitude]
-            "type": "point"
 
-        }
-        humanized_data["longitude"] = coordinates[0]
-        humanized_data["latitude"] = coordinates[1]
-        machine_data["coordinates"] = coordinates_dict
+        long_lat = coordinates.get('coordinates')
+        humanized_data["longitude"] = long_lat[0]
+        humanized_data["latitude"] = long_lat[1]
+        machine_data["coordinates"] = coordinates
+
         serialized_data.update(humanized_data)
         serialized_data.update(machine_data)
         facility_update.geo_codes = json.dumps(serialized_data)
