@@ -12,7 +12,7 @@ from .models import (
 
 from common.filters.filter_shared import (
     CommonFieldsFilterset,
-    ListCharFilter
+    ListCharFilter, ListUUIDFilter
 )
 
 
@@ -35,11 +35,11 @@ class GeoCodeMethodFilter(CommonFieldsFilterset):
 
 class FacilityCoordinatesFilter(CommonFieldsFilterset):
 
-    ward = ListCharFilter(lookup_expr='exact', field_name='facility__ward')
-    constituency = ListCharFilter(
+    ward = ListUUIDFilter(lookup_expr='exact', field_name='facility__ward')
+    constituency = ListUUIDFilter(
         lookup_expr='exact', field_name='facility__ward__constituency'
     )
-    county = ListCharFilter(
+    county = ListUUIDFilter(
         lookup_expr='exact', field_name='facility__ward__constituency__county'
     )
 
