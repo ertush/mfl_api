@@ -1104,6 +1104,7 @@ class FacilityExportExcelMaterialView(models.Model):
         managed = False
         ordering = ('-created', )
         db_table = 'facilities_excel_export'
+        permissions = ()
 
 
 @reversion.register(follow=[
