@@ -495,11 +495,11 @@ class FacilityExportMaterialListView(
     serializer_class = FacilityExportExcelMaterialViewSerializer
     filter_class = FacilityExportExcelMaterialViewFilter
 
-    def __init__(self):
+    def Meta(self):
         if self.request.user.is_superuser:
             self.queryset = FacilityExportExcelMaterialView.objects.all()
-        
-            
+        else:
+            self.queryset = FacilityExportExcelMaterialView.objects.none()
     # ordering_fields = '__all__'
 
 
