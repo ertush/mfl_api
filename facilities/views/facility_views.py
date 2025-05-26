@@ -467,7 +467,7 @@ class FacilityListReadOnlyView(QuerysetFilterMixin, generics.ListAPIView):
 
 class FacilityExportMaterialListView(
         QuerysetFilterMixin, generics.ListAPIView):
-    queryset = FacilityExportExcelMaterialView.objects.all()
+    queryset = FacilityExportExcelMaterialView.objects.none()
     serializer_class = FacilityExportExcelMaterialViewSerializer
     filter_class = FacilityExportExcelMaterialViewFilter
     # ordering_fields = '__all__'
