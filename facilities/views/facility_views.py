@@ -491,15 +491,17 @@ class FacilityListReadOnlyView(QuerysetFilterMixin, generics.ListAPIView):
 
 class FacilityExportMaterialListView(
         QuerysetFilterMixin, generics.ListAPIView):
-    queryset = FacilityExportExcelMaterialView.objects.none()
-    serializer_class = FacilityExportExcelMaterialViewSerializer
-    filter_class = FacilityExportExcelMaterialViewFilter
+    # queryset = FacilityExportExcelMaterialView.objects.none()
+    # serializer_class = FacilityExportExcelMaterialViewSerializer
+    # filter_class = FacilityExportExcelMaterialViewFilter
 
-    def Meta(self):
+    def get(self, *args, **kwargs):
+        serializer_class = FacilityExportExcelMaterialViewSerializer
+        filter_class = FacilityExportExcelMaterialViewFilter
         if self.request.user.is_superuser:
-            self.queryset = FacilityExportExcelMaterialView.objects.all()
+            queryset = FacilityExportExcelMaterialView.objects.all()
         else:
-            self.queryset = FacilityExportExcelMaterialView.objects.none()
+            queryset = FacilityExportExcelMaterialView.objects.none()
     # ordering_fields = '__all__'
 
 
