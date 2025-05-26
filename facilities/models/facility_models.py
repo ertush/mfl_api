@@ -1103,7 +1103,7 @@ class FacilityExportExcelMaterialView(models.Model):
     class Meta(object):
         managed = False
         ordering = ('-created', )
-        db_table = 'facilities_excel_export' // facilities_excel_export
+        db_table = 'facilities_excel_export' # facilities_excel_export
         permissions = ()
 
 
